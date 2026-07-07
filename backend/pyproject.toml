@@ -1,0 +1,10 @@
+[project]
+name = "stadiumpulse-backend"
+version = "0.1.0"
+description = "FastAPI backend for StadiumPulse match-day operations and fan experience."
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
