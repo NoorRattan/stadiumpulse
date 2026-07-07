@@ -1,0 +1,10 @@
+{
+  "name": "StadiumPulse",
+  "short_name": "StadiumPulse",
+  "description": "The live intelligence layer for match-day operations and fan experience",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B1220",
+  "theme_color": "#1F8A5A",
+  "icons": []
+}
