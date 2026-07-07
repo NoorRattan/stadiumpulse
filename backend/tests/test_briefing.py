@@ -52,3 +52,11 @@ def test_briefing_missing_zone_validation(client: TestClient) -> None:
         headers=auth_headers("staff-1", UserRole.staff),
     )
     assert response.status_code == 404
+
+
+def test_briefing_get_missing_zone_and_missing_briefing(client: TestClient) -> None:
+    missing_zone = client.get("/api/briefings/missing-zone", headers=auth_headers("staff-1", UserRole.staff))
+    empty_zone = client.get("/api/briefings/gate-2", headers=auth_headers("staff-1", UserRole.staff))
+
+    assert missing_zone.status_code == 404
+    assert empty_zone.status_code == 404

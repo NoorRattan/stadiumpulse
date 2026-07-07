@@ -303,10 +303,9 @@ async def test_current_user_override(
 def client(mock_firestore: FakeFirestore) -> Iterator[TestClient]:
     app.dependency_overrides[get_firestore_client] = lambda: mock_firestore
     app.dependency_overrides[get_current_user] = test_current_user_override
-    try:
-        limiter.limiter.storage.reset()
-    except AttributeError:
-        pass
+    reset_storage = getattr(limiter.limiter.storage, "reset", None)
+    if callable(reset_storage):
+        reset_storage()
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()

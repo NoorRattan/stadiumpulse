@@ -32,3 +32,18 @@ def test_bootstrap_always_creates_fan_role(client: TestClient, mock_firestore: F
     assert response.status_code == 201
     assert response.json()["role"] == "fan"
     assert mock_firestore.store["users"]["staff-token"]["role"] == "fan"
+
+
+def test_bootstrap_returns_existing_profile(client: TestClient, mock_firestore: FakeFirestore) -> None:
+    mock_firestore.store["users"]["fan-1"] = {
+        "displayName": "Existing Fan",
+        "email": "fan@example.com",
+        "role": "fan",
+        "preferredLanguage": "es",
+    }
+
+    response = client.post("/api/auth/bootstrap", headers=auth_headers("fan-1", UserRole.fan))
+
+    assert response.status_code == 201
+    assert response.json()["displayName"] == "Existing Fan"
+    assert response.json()["preferredLanguage"] == "es"

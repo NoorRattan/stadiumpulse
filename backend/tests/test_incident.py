@@ -1,7 +1,10 @@
-from conftest import FakeFirestore, auth_headers
+import pytest
+from conftest import FakeFirestore, FakeSnapshot, auth_headers
 from fastapi.testclient import TestClient
 
 from models.user import UserRole
+from routes.incident_routes import incident_from_snapshot
+from services.exceptions import ResourceNotFoundError
 
 
 def test_incident_staff_create_happy_path(client: TestClient) -> None:
@@ -53,6 +56,13 @@ def test_incident_create_missing_zone_returns_404(client: TestClient) -> None:
     assert response.status_code == 404
 
 
+def test_incident_from_empty_snapshot_raises_not_found(mock_firestore: FakeFirestore) -> None:
+    snapshot = FakeSnapshot("empty", {}, mock_firestore.collection("incidents").document("empty"))
+
+    with pytest.raises(ResourceNotFoundError):
+        incident_from_snapshot(snapshot)
+
+
 def test_incident_volunteer_cannot_patch(client: TestClient) -> None:
     response = client.patch(
         "/api/incidents/incident-old",
@@ -89,3 +99,41 @@ def test_incident_list_caps_limit(client: TestClient, mock_firestore: FakeFirest
 def test_incident_rejects_missing_auth(client: TestClient) -> None:
     response = client.get("/api/incidents")
     assert response.status_code == 401
+
+
+def test_incident_list_zone_filter_status_filter_and_empty_snapshot(
+    client: TestClient,
+    mock_firestore: FakeFirestore,
+) -> None:
+    mock_firestore.store["incidents"]["empty"] = {}
+
+    response = client.get(
+        "/api/incidents?zoneId=gate-4&status=draft&limit=5",
+        headers=auth_headers("staff-1", UserRole.staff),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["items"][0]["incidentId"] == "incident-old"
+
+
+def test_incident_list_missing_zone_returns_404(client: TestClient) -> None:
+    response = client.get("/api/incidents?zoneId=missing-zone", headers=auth_headers("staff-1", UserRole.staff))
+
+    assert response.status_code == 404
+
+
+def test_incident_staff_patch_missing_and_resolved(client: TestClient) -> None:
+    missing = client.patch(
+        "/api/incidents/missing-incident",
+        json={"status": "resolved"},
+        headers=auth_headers("staff-1", UserRole.staff),
+    )
+    resolved = client.patch(
+        "/api/incidents/incident-old",
+        json={"status": "resolved"},
+        headers=auth_headers("staff-1", UserRole.staff),
+    )
+
+    assert missing.status_code == 404
+    assert resolved.status_code == 200
+    assert resolved.json()["resolvedAt"] is not None
