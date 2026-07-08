@@ -8,12 +8,14 @@ def test_crowd_zones_staff_happy_path(client: TestClient) -> None:
     response = client.get("/api/crowd/zones", headers=auth_headers("staff-1", UserRole.staff))
     assert response.status_code == 200
     assert response.json()["zones"][0]["zoneId"] == "gate-2"
+    assert response.json()["zones"][0]["band"] == "normal"
 
 
 def test_crowd_zones_volunteer_happy_path(client: TestClient) -> None:
     response = client.get("/api/crowd/zones/gate-4", headers=auth_headers("vol-1", UserRole.volunteer))
     assert response.status_code == 200
     assert response.json()["zoneId"] == "gate-4"
+    assert response.json()["band"] == "high"
     assert isinstance(response.json()["alert"], str)
 
 

@@ -6,7 +6,7 @@ from limiter import limiter
 from models.user import UserRole
 from models.zone import Zone
 from schemas.responses import CrowdZonesResponse, CrowdZoneSummary
-from services.crowd_service import build_alert, load_zones
+from services.crowd_service import build_alert, congestion_band, load_zones
 from services.exceptions import ResourceNotFoundError
 from services.firestore_client import get_firestore_client
 
@@ -19,6 +19,7 @@ def flatten_zone(zone: Zone, zones: list[Zone], db: firestore.Client) -> CrowdZo
         zoneId=zone.zone_id,
         name=zone.name,
         currentDensityPct=zone.current_density_pct,
+        band=congestion_band(zone.current_density_pct).lower(),
         alert=alert.message if alert else "",
     )
 

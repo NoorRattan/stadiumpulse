@@ -1,19 +1,136 @@
-import { useAuth } from "../hooks/useAuth";
+import { useState, type FormEvent } from "react";
+import {
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+} from "firebase/auth";
+import { LogIn, Mail } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
-/** Placeholder: replaced in Session 6. */
+import { AppShell } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/useAuth";
+import { firebaseAuth } from "@/services/firebaseConfig";
+
+/** Sign-in page with Google, email, and primary anonymous fan access. */
 export default function LoginPage(): JSX.Element {
   const { signInGuest } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const finishSignIn = () => {
+    void navigate("/");
+  };
+
+  const handleEmailSignIn = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitting(true);
+    try {
+      await signInWithEmailAndPassword(firebaseAuth, email, password);
+      finishSignIn();
+    } catch (caught) {
+      toast.error(
+        caught instanceof Error ? caught.message : "Email sign-in failed.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <main className="mx-auto max-w-md px-6 py-10" id="main-content">
-      <h1 className="font-display text-4xl text-text-primary">Sign In</h1>
-      <button
-        className="mt-6 rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        type="button"
-        onClick={() => void signInGuest()}
-      >
-        Continue as guest
-      </button>
-    </main>
+    <AppShell>
+      <div className="mx-auto grid max-w-xl gap-6">
+        <section className="grid gap-2">
+          <h1 className="font-display text-4xl font-bold text-foreground">
+            Sign In
+          </h1>
+          <p className="text-muted-foreground">
+            Use staff credentials for ops tools, or continue anonymously for the
+            fan PWA.
+          </p>
+        </section>
+
+        <div className="grid gap-4 rounded-lg border border-border bg-card p-4">
+          <Button
+            className="min-h-12 w-full"
+            disabled={submitting}
+            onClick={() =>
+              void signInWithPopup(firebaseAuth, new GoogleAuthProvider())
+                .then(finishSignIn)
+                .catch((caught: unknown) =>
+                  toast.error(
+                    caught instanceof Error
+                      ? caught.message
+                      : "Google sign-in failed.",
+                  ),
+                )
+            }
+            type="button"
+            variant="outline"
+          >
+            <LogIn aria-hidden="true" className="size-4" />
+            Continue with Google
+          </Button>
+
+          <form
+            className="grid gap-3"
+            onSubmit={(event) => void handleEmailSignIn(event)}
+          >
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                autoComplete="email"
+                id="email"
+                onChange={(event) => setEmail(event.target.value)}
+                type="email"
+                value={email}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                autoComplete="current-password"
+                id="password"
+                onChange={(event) => setPassword(event.target.value)}
+                type="password"
+                value={password}
+              />
+            </div>
+            <Button
+              className="min-h-12 w-full"
+              disabled={submitting}
+              type="submit"
+            >
+              <Mail aria-hidden="true" className="size-4" />
+              Continue with email
+            </Button>
+          </form>
+
+          <Button
+            className="min-h-12 w-full"
+            disabled={submitting}
+            onClick={() =>
+              void signInGuest()
+                .then(finishSignIn)
+                .catch((caught: unknown) =>
+                  toast.error(
+                    caught instanceof Error
+                      ? caught.message
+                      : "Anonymous sign-in failed.",
+                  ),
+                )
+            }
+            type="button"
+          >
+            Continue without an account
+          </Button>
+        </div>
+      </div>
+    </AppShell>
   );
 }

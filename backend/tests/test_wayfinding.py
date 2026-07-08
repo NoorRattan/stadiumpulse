@@ -21,6 +21,27 @@ def test_wayfinding_happy_path(client: TestClient) -> None:
     assert response.json()["generatedBy"] == "ai"
 
 
+@pytest.mark.parametrize("role", [UserRole.fan, UserRole.staff, UserRole.volunteer])
+def test_wayfinding_zone_options_available_to_any_signed_in_role(
+    client: TestClient,
+    role: UserRole,
+) -> None:
+    response = client.get(
+        "/api/wayfinding/zones",
+        headers=auth_headers(f"{role.value}-1", role),
+    )
+    assert response.status_code == 200
+    zones = response.json()["zones"]
+    assert zones[0] == {"zoneId": "gate-2", "name": "Gate 2", "type": "gate"}
+    assert "currentDensityPct" not in zones[0]
+    assert "capacity" not in zones[0]
+
+
+def test_wayfinding_zone_options_rejects_missing_auth(client: TestClient) -> None:
+    response = client.get("/api/wayfinding/zones")
+    assert response.status_code == 401
+
+
 def test_wayfinding_ai_failure_returns_fallback(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     def fail_flow(
         baseline_path: list[str],

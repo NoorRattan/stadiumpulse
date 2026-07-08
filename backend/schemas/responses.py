@@ -1,10 +1,11 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from models.briefing import Briefing
 from models.incident import IncidentReport
 from models.route import RouteOption
+from models.zone import ZoneType
 
 MAX_PAGE_LIMIT = 50
 
@@ -47,6 +48,20 @@ class RouteResponse(BaseModel):
     generated_by: str = Field(alias="generatedBy", pattern=r"^(ai|fallback)$")
 
 
+class ZoneSummary(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    zone_id: str = Field(alias="zoneId")
+    name: str = Field(alias="name")
+    type: ZoneType = Field(alias="type")
+
+
+class ZoneListResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    zones: list[ZoneSummary] = Field(alias="zones")
+
+
 class AccessibilitySettingsResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -76,6 +91,7 @@ class CrowdZoneSummary(BaseModel):
     zone_id: str = Field(alias="zoneId")
     name: str = Field(alias="name")
     current_density_pct: float = Field(alias="currentDensityPct", ge=0, le=100)
+    band: Literal["normal", "moderate", "high", "critical"] = Field(alias="band")
     alert: str = Field(alias="alert")
 
 

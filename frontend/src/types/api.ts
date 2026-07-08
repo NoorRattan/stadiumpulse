@@ -8,6 +8,7 @@ import type {
   RouteOption,
   TravelSuggestion,
   UserProfile,
+  ZoneSummary,
 } from "./domain";
 
 /** Backend error code taxonomy from File 04. */
@@ -77,6 +78,11 @@ export interface RouteRequest {
 export interface RouteResponse {
   routeOptions: RouteOption[];
   generatedBy: "ai" | "fallback";
+}
+
+/** Identity-only zone options response body. */
+export interface ZoneListResponse {
+  zones: ZoneSummary[];
 }
 
 /** Incident create request body. */

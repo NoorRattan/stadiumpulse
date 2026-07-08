@@ -71,16 +71,31 @@ def seed_zones(db: firestore.Client, timestamp: datetime) -> None:
 
 
 def seed_matches(db: firestore.Client, timestamp: datetime) -> None:
-    db.collection("matches").document("m_2026_014").set(
-        {
+    matches: Mapping[str, dict[str, Any]] = {
+        "m_2026_014": {
             "venueZoneIds": ["north-concourse", "gate-4", "seat-block-114"],
             "kickoffAt": timestamp,
             "homeTeam": "United States",
             "awayTeam": "Canada",
             "transitLoadEstimate": "high",
         },
-        merge=True,
-    )
+        "m_2026_021": {
+            "venueZoneIds": ["gate-2", "east-concourse", "seat-block-114"],
+            "kickoffAt": timestamp,
+            "homeTeam": "Mexico",
+            "awayTeam": "Japan",
+            "transitLoadEstimate": "medium",
+        },
+        "m_2026_032": {
+            "venueZoneIds": ["south-transit-hub", "gate-2", "north-concourse"],
+            "kickoffAt": timestamp,
+            "homeTeam": "Brazil",
+            "awayTeam": "Germany",
+            "transitLoadEstimate": "low",
+        },
+    }
+    for match_id, payload in matches.items():
+        db.collection("matches").document(match_id).set(payload, merge=True)
 
 
 def seed_incidents(db: firestore.Client, timestamp: datetime) -> None:

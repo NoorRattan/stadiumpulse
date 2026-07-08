@@ -1,8 +1,130 @@
-/** Placeholder: replaced in Session 6. */
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+
+import { BriefingGenerator, BriefingPreview } from "@/components/briefings";
+import { AppShell } from "@/components/layout";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useZoneOptions } from "@/hooks/useZoneOptions";
+import { apiRequest } from "@/services/apiClient";
+import type { BriefingGenerateRequest } from "@/types/api";
+import type { Briefing, Zone, ZoneSummary } from "@/types/domain";
+
+function zoneSummaryToZone(zone: ZoneSummary): Zone {
+  return {
+    zoneId: zone.zoneId,
+    name: zone.name,
+    type: zone.type,
+    capacity: 1,
+    currentDensityPct: 0,
+    lastUpdated: "",
+    coordinates: { lat: 0, lng: 0 },
+  };
+}
+
+/** Volunteer briefings page with staff generation and read-only preview. */
 export default function BriefingsPage(): JSX.Element {
+  const { zones: zoneOptions } = useZoneOptions();
+  const zones = useMemo(
+    () => zoneOptions.map(zoneSummaryToZone),
+    [zoneOptions],
+  );
+  const [selectedZoneId, setSelectedZoneId] = useState("");
+  const [briefings, setBriefings] = useState<Briefing[]>([]);
+  const activeZoneId = selectedZoneId || zoneOptions[0]?.zoneId || "";
+
+  useEffect(() => {
+    if (!activeZoneId) {
+      return;
+    }
+    let active = true;
+    void apiRequest<Briefing>(`/api/briefings/${activeZoneId}`)
+      .then((briefing) => {
+        if (active) {
+          setBriefings([briefing]);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setBriefings([]);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [activeZoneId]);
+
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10" id="main-content">
-      <h1 className="font-display text-4xl text-text-primary">Briefings</h1>
-    </main>
+    <AppShell>
+      <div className="grid gap-6">
+        <section className="grid gap-2">
+          <h1 className="font-display text-4xl font-bold text-foreground">
+            Volunteer Briefings
+          </h1>
+          <p className="max-w-3xl text-muted-foreground">
+            Staff can generate zone-specific shift briefings. Volunteers receive
+            the read-only briefing list.
+          </p>
+        </section>
+
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
+          <BriefingGenerator
+            zones={zones}
+            onGenerate={async (input) => {
+              const briefing = await apiRequest<
+                Briefing,
+                BriefingGenerateRequest
+              >("/api/briefings/generate", {
+                method: "POST",
+                body: input,
+              });
+              toast.success("Briefing generated.");
+              return briefing;
+            }}
+            onGenerated={(briefing) => {
+              setSelectedZoneId(briefing.zoneId);
+              setBriefings([briefing]);
+            }}
+          />
+
+          <section
+            className="grid gap-4"
+            aria-labelledby="briefing-preview-heading"
+          >
+            <div className="grid gap-2">
+              <h2
+                className="font-display text-2xl font-bold text-foreground"
+                id="briefing-preview-heading"
+              >
+                Briefing Preview
+              </h2>
+              <Label id="briefing-preview-zone-label">Preview zone</Label>
+              <Select value={activeZoneId} onValueChange={setSelectedZoneId}>
+                <SelectTrigger
+                  aria-labelledby="briefing-preview-zone-label"
+                  className="min-h-11 w-full"
+                >
+                  <SelectValue placeholder="Select a zone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {zoneOptions.map((zone) => (
+                    <SelectItem key={zone.zoneId} value={zone.zoneId}>
+                      {zone.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <BriefingPreview briefings={briefings} />
+          </section>
+        </div>
+      </div>
+    </AppShell>
   );
 }

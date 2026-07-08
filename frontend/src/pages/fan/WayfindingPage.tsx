@@ -1,8 +1,184 @@
-/** Placeholder: replaced in Session 6. */
+import { useMemo, useState, type FormEvent } from "react";
+import { Navigation } from "lucide-react";
+import { toast } from "sonner";
+
+import { AppShell } from "@/components/layout";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { RouteLine, StepList } from "@/components/wayfinding";
+import { useWayfinding } from "@/hooks/useWayfinding";
+import { useZoneOptions } from "@/hooks/useZoneOptions";
+import type { AccessibilityNeed } from "@/types/domain";
+
+const accessibilityNeeds: readonly {
+  value: AccessibilityNeed;
+  label: string;
+}[] = [
+  { value: "wheelchair", label: "Step-free route" },
+  { value: "visual", label: "Visual assistance" },
+  { value: "hearing", label: "Hearing assistance" },
+  { value: "cognitive", label: "Simple directions" },
+];
+
+/** Fan wayfinding page with zone selectors and accessible route steps. */
 export default function WayfindingPage(): JSX.Element {
+  const { zones, loading, error } = useZoneOptions();
+  const { route, loading: routeLoading, getRoute } = useWayfinding();
+  const [fromZoneId, setFromZoneId] = useState("");
+  const [toZoneId, setToZoneId] = useState("");
+  const [selectedNeeds, setSelectedNeeds] = useState<AccessibilityNeed[]>([]);
+
+  const firstRoute = route?.routeOptions[0] ?? null;
+  const fallback = route?.generatedBy === "fallback";
+  const zoneItems = useMemo(
+    () =>
+      zones.map((zone) => (
+        <SelectItem key={zone.zoneId} value={zone.zoneId}>
+          {zone.name}
+        </SelectItem>
+      )),
+    [zones],
+  );
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!fromZoneId || !toZoneId) {
+      toast.error("Choose both a start and destination zone.");
+      return;
+    }
+    try {
+      await getRoute({
+        fromZoneId,
+        toZoneId,
+        accessibilityNeeds: selectedNeeds.length > 0 ? selectedNeeds : ["none"],
+      });
+    } catch (caught) {
+      toast.error(
+        caught instanceof Error
+          ? caught.message
+          : "Route fetch failed. Please try again.",
+      );
+    }
+  };
+
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10" id="main-content">
-      <h1 className="font-display text-4xl text-text-primary">Wayfinding</h1>
-    </main>
+    <AppShell>
+      <div className="grid gap-6">
+        <section className="grid gap-2">
+          <h1 className="font-display text-4xl font-bold text-foreground">
+            Find Your Way
+          </h1>
+          <p className="max-w-3xl text-muted-foreground">
+            Choose where you are and where you need to go. StadiumPulse keeps
+            the full route available as steps, not only as a visual line.
+          </p>
+        </section>
+
+        {error && (
+          <p className="rounded-lg border border-error-text bg-card p-4 text-sm text-error-text">
+            Zone options could not be loaded. Please sign in and try again.
+          </p>
+        )}
+
+        <form
+          className="grid gap-4 rounded-lg border border-border bg-card p-4"
+          onSubmit={(event) => void handleSubmit(event)}
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-2">
+              <Label id="from-zone-label">From zone</Label>
+              <Select value={fromZoneId} onValueChange={setFromZoneId}>
+                <SelectTrigger
+                  aria-labelledby="from-zone-label"
+                  className="min-h-11 w-full"
+                >
+                  <SelectValue
+                    placeholder={
+                      loading ? "Loading zones..." : "Choose a start zone"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>{zoneItems}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label id="to-zone-label">To zone</Label>
+              <Select value={toZoneId} onValueChange={setToZoneId}>
+                <SelectTrigger
+                  aria-labelledby="to-zone-label"
+                  className="min-h-11 w-full"
+                >
+                  <SelectValue
+                    placeholder={
+                      loading ? "Loading zones..." : "Choose a destination"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>{zoneItems}</SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <fieldset className="grid gap-3">
+            <legend className="text-sm font-medium text-foreground">
+              Accessibility needs
+            </legend>
+            <div className="grid gap-3 md:grid-cols-2">
+              {accessibilityNeeds.map((need) => (
+                <label
+                  className="flex min-h-11 items-center gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground"
+                  key={need.value}
+                >
+                  <Checkbox
+                    checked={selectedNeeds.includes(need.value)}
+                    onCheckedChange={(checked) =>
+                      setSelectedNeeds((current) =>
+                        checked
+                          ? [...current, need.value]
+                          : current.filter((value) => value !== need.value),
+                      )
+                    }
+                  />
+                  {need.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <Button
+            className="min-h-11 justify-self-start"
+            disabled={routeLoading || loading}
+            type="submit"
+          >
+            <Navigation aria-hidden="true" className="size-4" />
+            Generate route
+          </Button>
+        </form>
+
+        {routeLoading && (
+          <p className="text-sm text-accent" role="status">
+            Finding the least-congested route...
+          </p>
+        )}
+        {fallback && (
+          <p className="rounded-lg border border-secondary bg-card p-4 text-sm text-secondary">
+            Showing the standard route — live directions are temporarily
+            unavailable
+          </p>
+        )}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,28rem)]">
+          <RouteLine generatedBy={route?.generatedBy} route={firstRoute} />
+          <StepList route={firstRoute} />
+        </div>
+      </div>
+    </AppShell>
   );
 }

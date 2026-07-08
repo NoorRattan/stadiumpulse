@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function hasRole(role) {
+      return isSignedIn() && request.auth.token.role == role;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Users can read/write their own profile, but can never set their own role —
+    // role changes only happen server-side when a custom claim is granted.
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid)
+                    && request.resource.data.role == 'fan';
+      allow update: if isOwner(uid)
+                    && request.resource.data.role == resource.data.role;
+    }
+
+    // Accessibility settings: fully owned by the user, no cross-user access.
+    match /accessibilitySettings/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // Concierge sessions: user can read their own session metadata and
+    // messages, but messages are written only by the backend (Admin SDK).
+    match /conciergeSessions/{sessionId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn()
+                    && get(/databases/$(database)/documents/conciergeSessions/$(sessionId)).data.userId == request.auth.uid;
+        allow write: if false;
+      }
+    }
+
+    // Zones + live density readings: read-only, staff/volunteer only.
+    // Fans get congestion info via the wayfinding API, never a raw feed.
+    match /zones/{zoneId} {
+      allow read: if hasRole('staff') || hasRole('volunteer');
+      allow write: if false;
+
+      match /readings/{readingId} {
+        allow read: if hasRole('staff') || hasRole('volunteer');
+        allow write: if false;
+      }
+    }
+
+    // Tournament schedule: public read-only reference data.
+    match /matches/{matchId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Incidents, briefings, travel cache: backend API only, no direct client access.
+    match /incidents/{incidentId} {
+      allow read, write: if false;
+    }
+    match /briefings/{briefingId} {
+      allow read, write: if false;
+    }
+    match /travelSuggestionsCache/{matchId} {
+      allow read, write: if false;
+    }
+  }
+}

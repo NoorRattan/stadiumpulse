@@ -31,6 +31,9 @@ export type AccessibilityNeed =
 /** Congestion level returned on route options. */
 export type CongestionLevel = "low" | "medium" | "high" | "critical";
 
+/** Server-derived crowd band returned by crowd routes. */
+export type CrowdBand = "normal" | "moderate" | "high" | "critical";
+
 /** Incident workflow status. */
 export type IncidentStatus = "draft" | "submitted" | "resolved";
 
@@ -64,6 +67,23 @@ export interface Zone {
   coordinates: Coordinates;
 }
 
+/** Identity-only zone option returned to all signed-in users. */
+export interface ZoneSummary {
+  zoneId: string;
+  name: string;
+  type: ZoneType;
+}
+
+/** Public tournament match schedule document hydrated with its document ID. */
+export interface Match {
+  matchId: string;
+  venueZoneIds: string[];
+  kickoffAt: string;
+  homeTeam: string;
+  awayTeam: string;
+  transitLoadEstimate: "low" | "medium" | "high";
+}
+
 /** Raw zone density reading from the zone readings subcollection. */
 export interface CrowdDensityReading {
   readingId: string;
@@ -78,6 +98,7 @@ export interface CrowdZoneSummary {
   zoneId: string;
   name: string;
   currentDensityPct: number;
+  band: CrowdBand;
   alert: string;
 }
 

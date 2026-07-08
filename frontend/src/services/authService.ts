@@ -6,6 +6,8 @@ import {
 } from "firebase/auth";
 
 import { firebaseAuth } from "./firebaseConfig";
+import { apiRequest } from "./apiClient";
+import type { UserProfileResponse } from "../types/api";
 import type { UserRole } from "../types/domain";
 
 function normalizeRole(value: unknown): UserRole {
@@ -16,6 +18,17 @@ function normalizeRole(value: unknown): UserRole {
 export async function signInAsGuest(): Promise<User> {
   const credential = await signInAnonymously(firebaseAuth);
   return credential.user;
+}
+
+/** Creates or reads the backend profile for the current Firebase user. */
+export async function bootstrapUserProfile(): Promise<UserProfileResponse> {
+  return apiRequest<UserProfileResponse, Record<string, never>>(
+    "/api/auth/bootstrap",
+    {
+      method: "POST",
+      body: {},
+    },
+  );
 }
 
 /** Signs out the current Firebase Auth user. */
