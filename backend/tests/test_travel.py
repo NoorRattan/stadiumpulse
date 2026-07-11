@@ -1,4 +1,4 @@
-from conftest import FakeFirestore, auth_headers
+from conftest import FakeDb, auth_headers
 from fastapi.testclient import TestClient
 
 from models.user import UserRole
@@ -15,10 +15,10 @@ def test_travel_suggestions_happy_path(client: TestClient) -> None:
     assert body["suggestions"][0]["mode"] == "rail"
 
 
-def test_travel_uses_fresh_cache(client: TestClient, mock_firestore: FakeFirestore) -> None:
+def test_travel_uses_fresh_cache(client: TestClient, mock_db: FakeDb) -> None:
     from datetime import UTC, datetime, timedelta
 
-    mock_firestore.store["travelSuggestionsCache"]["m_2026_014"] = {
+    mock_db.store["travelSuggestionsCache"]["m_2026_014"] = {
         "generatedAt": datetime.now(tz=UTC),
         "expireAt": datetime.now(tz=UTC) + timedelta(hours=1),
         "suggestions": [{"mode": "rail", "description": "Cached rail option"}],

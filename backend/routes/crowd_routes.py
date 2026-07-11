@@ -1,20 +1,22 @@
+import asyncpg
 from fastapi import APIRouter, Depends, Request
-from google.cloud import firestore
 
 from dependencies import AuthenticatedUser, require_role
 from limiter import limiter
 from models.user import UserRole
 from models.zone import Zone
 from schemas.responses import CrowdZonesResponse, CrowdZoneSummary
-from services.crowd_service import build_alert, congestion_band, load_zones
+from services.crowd_service import auto_flag_incident, build_alert, congestion_band, load_zones
+from services.db import get_pool
 from services.exceptions import ResourceNotFoundError
-from services.firestore_client import get_firestore_client
 
 router = APIRouter(prefix="/api/crowd", tags=["crowd"])
 
 
-def flatten_zone(zone: Zone, zones: list[Zone], db: firestore.Client) -> CrowdZoneSummary:
+async def flatten_zone(zone: Zone, zones: list[Zone], db: asyncpg.Pool) -> CrowdZoneSummary:
     alert = build_alert(zone, zones, db=db)
+    if alert and alert.band == "CRITICAL":
+        await auto_flag_incident(zone, zone.current_density_pct, db=db)
     return CrowdZoneSummary(
         zoneId=zone.zone_id,
         name=zone.name,
@@ -29,10 +31,10 @@ def flatten_zone(zone: Zone, zones: list[Zone], db: firestore.Client) -> CrowdZo
 async def get_zones(
     request: Request,
     current_user: AuthenticatedUser = Depends(require_role(UserRole.staff, UserRole.volunteer)),
-    db: firestore.Client = Depends(get_firestore_client),
+    db: asyncpg.Pool = Depends(get_pool),
 ) -> CrowdZonesResponse:
-    zones = load_zones(db)
-    return CrowdZonesResponse(zones=[flatten_zone(zone, zones, db) for zone in zones])
+    zones = await load_zones(db)
+    return CrowdZonesResponse(zones=[await flatten_zone(zone, zones, db) for zone in zones])
 
 
 @router.get("/zones/{zone_id}", response_model=CrowdZoneSummary)
@@ -41,10 +43,10 @@ async def get_zone(
     request: Request,
     zone_id: str,
     current_user: AuthenticatedUser = Depends(require_role(UserRole.staff, UserRole.volunteer)),
-    db: firestore.Client = Depends(get_firestore_client),
+    db: asyncpg.Pool = Depends(get_pool),
 ) -> CrowdZoneSummary:
-    zones = load_zones(db)
+    zones = await load_zones(db)
     for zone in zones:
         if zone.zone_id == zone_id:
-            return flatten_zone(zone, zones, db)
+            return await flatten_zone(zone, zones, db)
     raise ResourceNotFoundError(f"Zone not found: {zone_id}")

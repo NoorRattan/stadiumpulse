@@ -1,4 +1,4 @@
-import { firebaseAuth } from "./firebaseConfig";
+import { supabase } from "./supabaseConfig";
 import { ApiClientError, type ErrorResponse } from "../types/api";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -21,7 +21,7 @@ function buildUrl(path: string): string {
 }
 
 async function authHeader(): Promise<Record<string, string>> {
-  const token = await firebaseAuth.currentUser?.getIdToken();
+  const token = (await supabase.auth.getSession()).data.session?.access_token;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -37,7 +37,7 @@ function isErrorResponse(value: unknown): value is ErrorResponse {
   );
 }
 
-/** Sends a typed request to the FastAPI backend with the current Firebase ID token. */
+/** Sends a typed request to the FastAPI backend with the current Supabase access token. */
 export async function apiRequest<TResponse, TBody = unknown>(
   path: string,
   options: RequestOptions<TBody> = {},

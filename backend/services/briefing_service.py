@@ -1,33 +1,59 @@
 from datetime import UTC, datetime
 
-from google.cloud import firestore
+import asyncpg
 
 from models.briefing import Briefing
 from models.incident import IncidentReport
 from models.zone import Zone
+from services.crowd_service import zone_from_row
+from services.db import get_pool
 from services.exceptions import ResourceNotFoundError
-from services.firestore_client import get_firestore_client
 from services.genkit_flows import briefingFlow
 
 
-def load_zone(db: firestore.Client, zone_id: str) -> Zone:
-    snapshot = db.collection("zones").document(zone_id).get()
-    data = snapshot.to_dict() if snapshot.exists else None
-    if not data:
-        raise ResourceNotFoundError(f"Zone not found: {zone_id}")
-    return Zone(zoneId=snapshot.id, **data)
-
-
-def load_open_incidents(db: firestore.Client, zone_id: str) -> list[IncidentReport]:
-    snapshots = (
-        db.collection("incidents").where("zoneId", "==", zone_id).where("status", "!=", "resolved").limit(20).stream()
+async def load_zone(db: asyncpg.Pool, zone_id: str) -> Zone:
+    row = await db.fetchrow(
+        """
+        select zone_id, name, type, capacity, current_density_pct, last_updated, lat, lng
+        from public.zones
+        where zone_id = $1
+        """,
+        zone_id,
     )
-    incidents: list[IncidentReport] = []
-    for snapshot in snapshots:
-        data = snapshot.to_dict()
-        if data:
-            incidents.append(IncidentReport(incidentId=snapshot.id, **data))
-    return incidents
+    if row is None:
+        raise ResourceNotFoundError(f"Zone not found: {zone_id}")
+    return zone_from_row(row)
+
+
+def incident_from_row(row: object) -> IncidentReport:
+    data = dict(row)
+    return IncidentReport(
+        incidentId=str(data["id"]),
+        zoneId=data["zone_id"],
+        status=data["status"],
+        rawInput=data["raw_input"],
+        aiDraftSummary=data["ai_draft_summary"],
+        severity=data["severity"],
+        reportedByUid=str(data["reported_by_uid"]) if data["reported_by_uid"] is not None else None,
+        createdAt=data["created_at"],
+        submittedAt=data["submitted_at"],
+        resolvedAt=data["resolved_at"],
+    )
+
+
+async def load_open_incidents(db: asyncpg.Pool, zone_id: str) -> list[IncidentReport]:
+    rows = await db.fetch(
+        """
+        select id, zone_id, status, raw_input, ai_draft_summary, severity, reported_by_uid,
+               created_at, submitted_at, resolved_at
+        from public.incidents
+        where zone_id = $1 and status <> 'resolved'
+        order by created_at desc
+        limit 20
+        """,
+        zone_id,
+    )
+    return [incident_from_row(row) for row in rows if row]
 
 
 def summarize_incidents(incidents: list[IncidentReport]) -> str:
@@ -52,29 +78,40 @@ def build_briefing_content(zone: Zone, shift_label: str, incidents: list[Inciden
     )
 
 
-def generate_briefing(
+async def generate_briefing(
     zone_id: str,
     shift_label: str,
     generated_by_uid: str,
-    db: firestore.Client | None = None,
+    db: asyncpg.Pool | None = None,
 ) -> Briefing:
-    firestore_client = db or get_firestore_client()
-    zone = load_zone(firestore_client, zone_id)
-    incidents = load_open_incidents(firestore_client, zone_id)
+    pool = db or await get_pool()
+    zone = await load_zone(pool, zone_id)
+    incidents = await load_open_incidents(pool, zone_id)
     paragraph = briefingFlow(
         zone.model_dump(by_alias=True),
         shift_label,
         [incident.model_dump(by_alias=True) for incident in incidents],
     )
     generated_at = datetime.now(tz=UTC)
-    briefing_ref = firestore_client.collection("briefings").document()
+    content = build_briefing_content(zone, shift_label, incidents, paragraph)
+    briefing_id = await pool.fetchval(
+        """
+        insert into public.briefings (zone_id, shift_label, content, generated_by_uid, generated_at)
+        values ($1, $2, $3, $4, $5)
+        returning id
+        """,
+        zone.zone_id,
+        shift_label,
+        content,
+        generated_by_uid,
+        generated_at,
+    )
     briefing = Briefing(
-        briefingId=briefing_ref.id,
+        briefingId=str(briefing_id),
         zoneId=zone.zone_id,
         shiftLabel=shift_label,
-        content=build_briefing_content(zone, shift_label, incidents, paragraph),
+        content=content,
         generatedByUid=generated_by_uid,
         generatedAt=generated_at,
     )
-    briefing_ref.set(briefing.model_dump(by_alias=True, exclude={"briefing_id"}))
     return briefing

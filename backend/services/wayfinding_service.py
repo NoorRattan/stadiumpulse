@@ -3,13 +3,14 @@ from functools import lru_cache
 from heapq import heappop, heappush
 from math import ceil
 
-from google.cloud import firestore
+import asyncpg
 
 from models.route import AccessibilityNeed, CongestionLevel, RouteOption, RouteStep
 from models.zone import Zone
 from schemas.responses import RouteResponse
+from services.crowd_service import zone_from_row
+from services.db import get_pool
 from services.exceptions import AIServiceError, ResourceNotFoundError
-from services.firestore_client import get_firestore_client
 from services.genkit_flows import wayfindingFlow
 
 
@@ -72,14 +73,16 @@ def remove_edges_tagged(graph: ZoneGraph, tag: str) -> ZoneGraph:
     return {zone_id: [edge for edge in edges if tag not in edge.tags] for zone_id, edges in graph.items()}
 
 
-def load_zones(db: firestore.Client) -> dict[str, Zone]:
-    snapshots = db.collection("zones").limit(50).stream()
-    zones: dict[str, Zone] = {}
-    for snapshot in snapshots:
-        data = snapshot.to_dict()
-        if data:
-            zones[snapshot.id] = Zone(zoneId=snapshot.id, **data)
-    return zones
+async def load_zones(db: asyncpg.Pool) -> dict[str, Zone]:
+    rows = await db.fetch(
+        """
+        select zone_id, name, type, capacity, current_density_pct, last_updated, lat, lng
+        from public.zones
+        order by zone_id
+        limit 50
+        """
+    )
+    return {zone.zone_id: zone for row in rows if row for zone in [zone_from_row(row)]}
 
 
 def edge_weight(edge: GraphEdge, zones: dict[str, Zone]) -> float:
@@ -164,18 +167,18 @@ def format_route_as_static_steps(path: PathResult, zones: dict[str, Zone]) -> Ro
     )
 
 
-def get_route(
+async def get_route(
     from_zone_id: str,
     to_zone_id: str,
     accessibility_needs: list[AccessibilityNeed],
-    db: firestore.Client | None = None,
+    db: asyncpg.Pool | None = None,
 ) -> RouteResponse:
     graph = load_zone_graph()
     if AccessibilityNeed.wheelchair in accessibility_needs:
         graph = remove_edges_tagged(graph, "stairs_only")
 
-    firestore_client = db or get_firestore_client()
-    zones = load_zones(firestore_client)
+    pool = db or await get_pool()
+    zones = await load_zones(pool)
     missing = [zone_id for zone_id in (from_zone_id, to_zone_id) if zone_id not in graph or zone_id not in zones]
     if missing:
         raise ResourceNotFoundError(f"Zone not found: {', '.join(missing)}")

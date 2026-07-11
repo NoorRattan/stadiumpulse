@@ -1,10 +1,10 @@
+import asyncpg
 from fastapi import APIRouter, Depends, Request
-from google.cloud import firestore
 
 from dependencies import AuthenticatedUser, get_current_user
 from limiter import limiter
 from models.accessibility import AccessibilitySettings
-from services.firestore_client import get_firestore_client
+from services.db import get_pool
 
 router = APIRouter(prefix="/api/accessibility", tags=["accessibility"])
 
@@ -14,11 +14,24 @@ router = APIRouter(prefix="/api/accessibility", tags=["accessibility"])
 async def get_settings(
     request: Request,
     current_user: AuthenticatedUser = Depends(get_current_user),
-    db: firestore.Client = Depends(get_firestore_client),
+    db: asyncpg.Pool = Depends(get_pool),
 ) -> AccessibilitySettings:
-    snapshot = db.collection("accessibilitySettings").document(current_user.uid).get()
-    data = snapshot.to_dict() if snapshot.exists else None
-    return AccessibilitySettings.model_validate(data or {})
+    row = await db.fetchrow(
+        """
+        select high_contrast, reduced_motion, screen_reader_mode, preferred_language
+        from public.accessibility_settings
+        where uid = $1
+        """,
+        current_user.uid,
+    )
+    if row is None:
+        return AccessibilitySettings.model_validate({})
+    return AccessibilitySettings(
+        highContrast=row["high_contrast"],
+        reducedMotion=row["reduced_motion"],
+        screenReaderMode=row["screen_reader_mode"],
+        preferredLanguage=row["preferred_language"],
+    )
 
 
 @router.put("/settings", response_model=AccessibilitySettings)
@@ -27,7 +40,24 @@ async def put_settings(
     request: Request,
     body: AccessibilitySettings,
     current_user: AuthenticatedUser = Depends(get_current_user),
-    db: firestore.Client = Depends(get_firestore_client),
+    db: asyncpg.Pool = Depends(get_pool),
 ) -> AccessibilitySettings:
-    db.collection("accessibilitySettings").document(current_user.uid).set(body.model_dump(by_alias=True))
+    await db.execute(
+        """
+        insert into public.accessibility_settings (
+          uid, high_contrast, reduced_motion, screen_reader_mode, preferred_language
+        )
+        values ($1, $2, $3, $4, $5)
+        on conflict (uid) do update
+        set high_contrast = excluded.high_contrast,
+            reduced_motion = excluded.reduced_motion,
+            screen_reader_mode = excluded.screen_reader_mode,
+            preferred_language = excluded.preferred_language
+        """,
+        current_user.uid,
+        body.high_contrast,
+        body.reduced_motion,
+        body.screen_reader_mode,
+        body.preferred_language,
+    )
     return body

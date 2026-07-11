@@ -16,18 +16,20 @@ import services.travel_service as travel_service
 import services.wayfinding_service as wayfinding_service
 
 os.environ.setdefault("ENVIRONMENT", "test")
-os.environ.setdefault("GCP_PROJECT_ID", "stadiumpulse-wc26")
+os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
+os.environ.setdefault("SUPABASE_DB_URL", "postgresql://postgres:test@localhost:5432/postgres")
+os.environ.setdefault("SUPABASE_JWT_SECRET", "test-secret")
 os.environ.setdefault("ALLOWED_ORIGINS", "http://testserver")
-os.environ.setdefault("VERTEX_AI_LOCATION", "us-central1")
-os.environ.setdefault("GEMINI_MODEL_PRIMARY", "gemini-3.5-flash")
-os.environ.setdefault("GEMINI_MODEL_LITE", "gemini-3.1-flash-lite")
+os.environ.setdefault("GEMINI_API_KEY", "test-gemini-key")
+os.environ.setdefault("GEMINI_MODEL_PRIMARY", "gemini-2.5-flash")
+os.environ.setdefault("GEMINI_MODEL_LITE", "gemini-2.5-flash-lite")
 os.environ.setdefault("LOG_LEVEL", "INFO")
 
 from dependencies import AuthenticatedUser, extract_bearer_token, get_current_user
 from limiter import limiter
 from main import app
 from models.user import UserRole
-from services.firestore_client import get_firestore_client
+from services.db import get_pool
 
 
 class FakeSnapshot:
@@ -45,7 +47,7 @@ class FakeSnapshot:
 
 
 class FakeDocumentReference:
-    def __init__(self, db: "FakeFirestore", collection_path: str, doc_id: str) -> None:
+    def __init__(self, db: "FakeDb", collection_path: str, doc_id: str) -> None:
         self._db = db
         self._collection_path = collection_path
         self.id = doc_id
@@ -109,7 +111,7 @@ class FakeQuery:
 
 
 class FakeCollectionReference:
-    def __init__(self, db: "FakeFirestore", path: str) -> None:
+    def __init__(self, db: "FakeDb", path: str) -> None:
         self._db = db
         self._path = path
 
@@ -133,7 +135,7 @@ class FakeCollectionReference:
         return FakeQuery(self).stream()
 
 
-class FakeFirestore:
+class FakeDb:
     def __init__(self) -> None:
         self.store: dict[str, dict[str, dict[str, Any]]] = {}
         self._counters: dict[str, int] = {}
@@ -229,9 +231,251 @@ class FakeFirestore:
                 "generatedAt": now,
             }
         }
+        self.store["conciergeSessions"] = {}
         self.store["travelSuggestionsCache"] = {}
-        self.store["users"] = {}
+        self.store["profiles"] = {}
+        self.store["users"] = self.store["profiles"]
+        self.store["user_roles"] = {}
         self.store["accessibilitySettings"] = {}
+
+    def zone_row(self, zone_id: str, data: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "zone_id": zone_id,
+            "name": data["name"],
+            "type": data["type"],
+            "capacity": data["capacity"],
+            "current_density_pct": data["currentDensityPct"],
+            "last_updated": data["lastUpdated"],
+            "lat": data["coordinates"]["lat"],
+            "lng": data["coordinates"]["lng"],
+        }
+
+    def incident_row(self, incident_id: str, data: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "id": incident_id,
+            "zone_id": data["zoneId"],
+            "status": data["status"],
+            "raw_input": data["rawInput"],
+            "ai_draft_summary": data.get("aiDraftSummary"),
+            "severity": data.get("severity"),
+            "reported_by_uid": data.get("reportedByUid"),
+            "created_at": data["createdAt"],
+            "submitted_at": data.get("submittedAt"),
+            "resolved_at": data.get("resolvedAt"),
+        }
+
+    async def fetch(self, query: str, *args: Any) -> list[dict[str, Any]]:
+        normalized = " ".join(query.lower().split())
+        if "from public.zones" in normalized:
+            if "select zone_id, name, type from" in normalized:
+                return [
+                    {"zone_id": zone_id, "name": data["name"], "type": data["type"]}
+                    for zone_id, data in self.store["zones"].items()
+                    if data
+                ][:50]
+            return [self.zone_row(zone_id, data) for zone_id, data in self.store["zones"].items() if data][:50]
+        if "from public.concierge_messages" in normalized:
+            session_id = str(args[0])
+            rows = [
+                {"role": data["role"], "text": data["text"], "created_at": data["createdAt"]}
+                for data in self.store.get(f"conciergeSessions/{session_id}/messages", {}).values()
+                if data
+            ]
+            rows.sort(key=lambda row: row["created_at"], reverse=True)
+            return rows[:10]
+        if "from public.incidents" in normalized:
+            rows = [
+                self.incident_row(incident_id, data) for incident_id, data in self.store["incidents"].items() if data
+            ]
+            if "where zone_id = $" in normalized:
+                rows = [row for row in rows if row["zone_id"] == args[0]]
+                if "status = $" in normalized:
+                    rows = [row for row in rows if row["status"] == args[1]]
+            elif "where status = $" in normalized:
+                rows = [row for row in rows if row["status"] == args[0]]
+            if "status <> 'resolved'" in normalized:
+                rows = [row for row in rows if row["status"] != "resolved"]
+            rows.sort(key=lambda row: row["created_at"], reverse=True)
+            limit_arg = next((arg for arg in reversed(args) if isinstance(arg, int)), 20)
+            return rows[:limit_arg]
+        return []
+
+    async def fetchrow(self, query: str, *args: Any) -> dict[str, Any] | None:
+        normalized = " ".join(query.lower().split())
+        if "insert into public.profiles" in normalized:
+            existing = self.store["profiles"].get(str(args[0]))
+            if existing is None:
+                existing = {
+                    "displayName": args[1],
+                    "email": args[2],
+                    "role": "fan",
+                    "preferredLanguage": "en",
+                    "createdAt": args[3],
+                }
+                self.store["profiles"][str(args[0])] = existing
+            return {
+                "display_name": existing["displayName"],
+                "email": existing["email"],
+                "role": existing["role"],
+                "preferred_language": existing["preferredLanguage"],
+            }
+        if "from public.profiles" in normalized:
+            data = self.store["profiles"].get(str(args[0]))
+            if not data:
+                return None
+            return {
+                "display_name": data["displayName"],
+                "email": data["email"],
+                "role": data["role"],
+                "preferred_language": data["preferredLanguage"],
+            }
+        if "from public.zones" in normalized:
+            data = self.store["zones"].get(str(args[0]))
+            return self.zone_row(str(args[0]), data) if data else None
+        if "from public.travel_suggestions_cache" in normalized:
+            data = self.store["travelSuggestionsCache"].get(str(args[0]))
+            if not data:
+                return None
+            expire_at = data.get("expireAt")
+            if isinstance(expire_at, datetime) and expire_at <= datetime.now(tz=UTC):
+                return None
+            return {"suggestions": data.get("suggestions")}
+        if "from public.matches" in normalized:
+            data = self.store["matches"].get(str(args[0]))
+            if not data:
+                return None
+            return {
+                "id": args[0],
+                "venue_zone_ids": data["venueZoneIds"],
+                "kickoff_at": data.get("kickoffAt"),
+                "home_team": data.get("homeTeam", ""),
+                "away_team": data.get("awayTeam", ""),
+                "transit_load_estimate": data["transitLoadEstimate"],
+            }
+        if "update public.concierge_sessions" in normalized:
+            session_id = str(args[2])
+            data = self.store["conciergeSessions"].get(session_id)
+            if data and data.get("userId") == str(args[3]):
+                data.update({"lastActiveAt": args[0], "language": args[1]})
+                return {"id": session_id}
+            return None
+        if "from public.briefings" in normalized:
+            zone_id = str(args[0])
+            rows = [
+                (briefing_id, data)
+                for briefing_id, data in self.store["briefings"].items()
+                if data and data["zoneId"] == zone_id
+            ]
+            rows.sort(key=lambda item: item[1]["generatedAt"], reverse=True)
+            if not rows:
+                return None
+            briefing_id, data = rows[0]
+            return {
+                "id": briefing_id,
+                "zone_id": data["zoneId"],
+                "shift_label": data["shiftLabel"],
+                "content": data["content"],
+                "generated_by_uid": data["generatedByUid"],
+                "generated_at": data["generatedAt"],
+            }
+        if "from public.accessibility_settings" in normalized:
+            data = self.store["accessibilitySettings"].get(str(args[0]))
+            if not data:
+                return None
+            return {
+                "high_contrast": data["highContrast"],
+                "reduced_motion": data["reducedMotion"],
+                "screen_reader_mode": data["screenReaderMode"],
+                "preferred_language": data["preferredLanguage"],
+            }
+        if "update public.incidents" in normalized:
+            incident_id = str(args[0])
+            data = self.store["incidents"].get(incident_id)
+            if not data:
+                return None
+            data["status"] = args[1]
+            if args[2] is not None:
+                data["submittedAt"] = args[2]
+            if args[3] is not None:
+                data["resolvedAt"] = args[3]
+            return self.incident_row(incident_id, data)
+        return None
+
+    async def fetchval(self, query: str, *args: Any) -> Any:
+        normalized = " ".join(query.lower().split())
+        if "insert into public.concierge_sessions" in normalized:
+            session_id = self.next_id("conciergeSessions")
+            self.store["conciergeSessions"][session_id] = {
+                "userId": args[0],
+                "language": args[1],
+                "startedAt": args[2],
+                "lastActiveAt": args[2],
+            }
+            return session_id
+        if "insert into public.incidents" in normalized:
+            incident_id = self.next_id("incidents")
+            self.store["incidents"][incident_id] = {
+                "zoneId": args[0],
+                "status": "draft",
+                "rawInput": args[1],
+                "aiDraftSummary": args[2] if len(args) > 3 else None,
+                "severity": args[3] if len(args) > 4 else "critical",
+                "reportedByUid": args[4] if len(args) > 5 else None,
+                "createdAt": args[-1] if isinstance(args[-1], datetime) else datetime.now(tz=UTC),
+                "submittedAt": None,
+                "resolvedAt": None,
+            }
+            return incident_id
+        if "insert into public.briefings" in normalized:
+            briefing_id = self.next_id("briefings")
+            self.store["briefings"][briefing_id] = {
+                "zoneId": args[0],
+                "shiftLabel": args[1],
+                "content": args[2],
+                "generatedByUid": args[3],
+                "generatedAt": args[4],
+            }
+            return briefing_id
+        return None
+
+    async def execute(self, query: str, *args: Any) -> str:
+        normalized = " ".join(query.lower().split())
+        if "insert into public.profiles" in normalized:
+            existing = self.store["profiles"].get(str(args[0]))
+            if existing:
+                return "UPDATE 1"
+            self.store["profiles"][str(args[0])] = {
+                "displayName": args[1],
+                "email": args[2],
+                "role": "fan",
+                "preferredLanguage": "en",
+                "createdAt": args[3],
+            }
+            return "INSERT 1"
+        if "insert into public.user_roles" in normalized:
+            self.store["user_roles"].setdefault(str(args[0]), {"role": args[1] if len(args) > 1 else "fan"})
+            return "INSERT 1"
+        if "insert into public.concierge_messages" in normalized:
+            path = f"conciergeSessions/{args[0]}/messages"
+            message_id = self.next_id(path)
+            self.store.setdefault(path, {})[message_id] = {"role": args[1], "text": args[2], "createdAt": args[3]}
+            return "INSERT 1"
+        if "insert into public.travel_suggestions_cache" in normalized:
+            self.store["travelSuggestionsCache"][str(args[0])] = {
+                "generatedAt": args[1],
+                "suggestions": args[2],
+                "expireAt": args[3],
+            }
+            return "INSERT 1"
+        if "insert into public.accessibility_settings" in normalized:
+            self.store["accessibilitySettings"][str(args[0])] = {
+                "highContrast": args[1],
+                "reducedMotion": args[2],
+                "screenReaderMode": args[3],
+                "preferredLanguage": args[4],
+            }
+            return "INSERT 1"
+        return "OK"
 
 
 class FakeAIClient:
@@ -243,8 +487,8 @@ class FakeAIClient:
 
 
 @pytest.fixture
-def mock_firestore() -> FakeFirestore:
-    return FakeFirestore()
+def mock_db() -> FakeDb:
+    return FakeDb()
 
 
 @pytest.fixture
@@ -300,8 +544,8 @@ async def test_current_user_override(
 
 
 @pytest.fixture
-def client(mock_firestore: FakeFirestore) -> Iterator[TestClient]:
-    app.dependency_overrides[get_firestore_client] = lambda: mock_firestore
+def client(mock_db: FakeDb) -> Iterator[TestClient]:
+    app.dependency_overrides[get_pool] = lambda: mock_db
     app.dependency_overrides[get_current_user] = test_current_user_override
     reset_storage = getattr(limiter.limiter.storage, "reset", None)
     if callable(reset_storage):

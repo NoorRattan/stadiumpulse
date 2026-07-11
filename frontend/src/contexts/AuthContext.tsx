@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { User } from "firebase/auth";
+import type { Session, User } from "@supabase/supabase-js";
 
 import {
   bootstrapUserProfile,
@@ -26,35 +26,38 @@ export interface AuthContextValue {
   loading: boolean;
   signInGuest: () => Promise<void>;
   signOut: () => Promise<void>;
-  refreshRole: () => Promise<void>;
+  refreshRole: () => void;
 }
 
-/** React context for Firebase auth state and UX-only role claims. */
+/** React context for Supabase auth state and UX-only role claims. */
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Provides Firebase Auth state to the frontend route tree. */
+/** Provides Supabase Auth state to the frontend route tree. */
 export function AuthProvider({
   children,
 }: {
   children: ReactNode;
 }): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [role, setRole] = useState<UserRole>("fan");
   const [loading, setLoading] = useState(true);
   const bootstrappedUid = useRef<string | null>(null);
 
-  const refreshRole = useCallback(async (): Promise<void> => {
-    if (!user) {
+  const refreshRole = useCallback((): void => {
+    if (!session) {
       setRole("fan");
       return;
     }
-    setRole(await readRoleClaim(user));
-  }, [user]);
+    setRole(readRoleClaim(session));
+  }, [session]);
 
   useEffect(() => {
     let active = true;
-    const unsubscribe = subscribeToAuthState((nextUser) => {
+    const unsubscribe = subscribeToAuthState((nextSession) => {
+      const nextUser = nextSession?.user ?? null;
+      setSession(nextSession);
       setUser(nextUser);
       if (!nextUser) {
         bootstrappedUid.current = null;
@@ -67,12 +70,12 @@ export function AuthProvider({
       setLoading(true);
       void (async () => {
         try {
-          if (bootstrappedUid.current !== nextUser.uid) {
+          if (bootstrappedUid.current !== nextUser.id) {
             const nextProfile = await bootstrapUserProfile();
             if (!active) {
               return;
             }
-            bootstrappedUid.current = nextUser.uid;
+            bootstrappedUid.current = nextUser.id;
             setProfile(nextProfile);
             setRole(nextProfile.role);
           }

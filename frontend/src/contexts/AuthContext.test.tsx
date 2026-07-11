@@ -1,26 +1,49 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { useContext } from "react";
-import type { User } from "firebase/auth";
+import type { Session } from "@supabase/supabase-js";
 
 import { apiRequest } from "@/services/apiClient";
 import type { UserProfileResponse } from "@/types/api";
 
 import { AuthContext, AuthProvider } from "./AuthContext";
 
-type AuthStateCallback = (user: User | null) => void;
+type AuthStateCallback = (session: Session | null) => void;
 
 const authHarness = vi.hoisted(() => ({
   callback: null as AuthStateCallback | null,
+  unsubscribe: vi.fn(),
 }));
 
-vi.mock("firebase/auth", () => ({
-  onIdTokenChanged: vi.fn((_auth: unknown, callback: AuthStateCallback) => {
-    authHarness.callback = callback;
-    return vi.fn();
-  }),
-  signInAnonymously: vi.fn(),
-  signOut: vi.fn(),
+vi.mock("@/services/supabaseConfig", () => ({
+  supabase: {
+    auth: {
+      getSession: vi.fn(() => Promise.resolve({ data: { session: null } })),
+      onAuthStateChange: vi.fn(
+        (_callbackEvent: unknown, callback: AuthStateCallback) => {
+          authHarness.callback = callback;
+          return {
+            data: { subscription: { unsubscribe: authHarness.unsubscribe } },
+          };
+        },
+      ),
+      signInAnonymously: vi.fn(),
+      signOut: vi.fn(),
+    },
+  },
 }));
+
+vi.mock("@/services/authService", async () => {
+  const actual = await vi.importActual<typeof import("@/services/authService")>(
+    "@/services/authService",
+  );
+  return {
+    ...actual,
+    subscribeToAuthState: vi.fn((callback: AuthStateCallback) => {
+      authHarness.callback = callback;
+      return authHarness.unsubscribe;
+    }),
+  };
+});
 
 vi.mock("@/services/apiClient", () => ({
   apiRequest: vi.fn(),
@@ -47,14 +70,15 @@ const profile: UserProfileResponse = {
   preferredLanguage: "en",
 };
 
-const user = {
-  uid: "fan-1",
-  getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: "fan" } }),
-} as unknown as User;
+const session = {
+  access_token: "header.payload.signature",
+  user: { id: "fan-1" },
+} as Session;
 
 describe("AuthProvider", () => {
   beforeEach(() => {
     authHarness.callback = null;
+    authHarness.unsubscribe.mockClear();
     vi.mocked(apiRequest).mockReset();
     vi.mocked(apiRequest).mockResolvedValue(profile);
   });
@@ -66,7 +90,7 @@ describe("AuthProvider", () => {
       </AuthProvider>,
     );
 
-    authHarness.callback?.(user);
+    authHarness.callback?.(session);
 
     await waitFor(() =>
       expect(apiRequest).toHaveBeenCalledWith("/api/auth/bootstrap", {
@@ -78,7 +102,7 @@ describe("AuthProvider", () => {
     expect(screen.getByText("fan")).toBeInTheDocument();
     expect(screen.getByText("Maria Fan")).toBeInTheDocument();
 
-    authHarness.callback?.(user);
+    authHarness.callback?.(session);
 
     await waitFor(() => expect(apiRequest).toHaveBeenCalledOnce());
   });

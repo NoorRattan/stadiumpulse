@@ -1,19 +1,9 @@
-import {
-  collection,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  type DocumentData,
-  type QueryDocumentSnapshot,
-} from "firebase/firestore";
 import { useEffect, useState } from "react";
 
-import { firestoreDb } from "@/services/firebaseConfig";
+import { supabase } from "@/services/supabaseConfig";
 import type { Match } from "@/types/domain";
 
 let cachedMatches: Match[] | null = null;
-type TimestampLike = { toDate: () => Date };
 
 /** State returned by the cached public match-schedule hook. */
 export interface MatchesState {
@@ -22,38 +12,31 @@ export interface MatchesState {
   error: Error | null;
 }
 
-function timestampToIso(value: unknown): string {
-  const maybeTimestamp = value as Partial<TimestampLike> | null;
-  if (typeof maybeTimestamp?.toDate === "function") {
-    return maybeTimestamp.toDate().toISOString();
-  }
+function stringValue(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
-function matchFromSnapshot(
-  snapshot: QueryDocumentSnapshot<DocumentData>,
-): Match {
-  const data = snapshot.data() as Record<string, unknown>;
+function matchFromRow(data: Record<string, unknown>): Match {
   return {
-    matchId: snapshot.id,
-    venueZoneIds: Array.isArray(data.venueZoneIds)
-      ? data.venueZoneIds.filter(
+    matchId: stringValue(data.id),
+    venueZoneIds: Array.isArray(data.venue_zone_ids)
+      ? data.venue_zone_ids.filter(
           (zoneId): zoneId is string => typeof zoneId === "string",
         )
       : [],
-    kickoffAt: timestampToIso(data.kickoffAt),
-    homeTeam: typeof data.homeTeam === "string" ? data.homeTeam : "",
-    awayTeam: typeof data.awayTeam === "string" ? data.awayTeam : "",
+    kickoffAt: stringValue(data.kickoff_at),
+    homeTeam: stringValue(data.home_team),
+    awayTeam: stringValue(data.away_team),
     transitLoadEstimate:
-      data.transitLoadEstimate === "low" ||
-      data.transitLoadEstimate === "medium" ||
-      data.transitLoadEstimate === "high"
-        ? data.transitLoadEstimate
+      data.transit_load_estimate === "low" ||
+      data.transit_load_estimate === "medium" ||
+      data.transit_load_estimate === "high"
+        ? data.transit_load_estimate
         : "medium",
   };
 }
 
-/** Reads public match reference data once with an explicit limit. */
+/** Reads public match reference data from Supabase once with an explicit limit. */
 export function useMatches(maxMatches = 12): MatchesState {
   const [state, setState] = useState<MatchesState>({
     matches: cachedMatches ?? [],
@@ -67,21 +50,25 @@ export function useMatches(maxMatches = 12): MatchesState {
     }
 
     let active = true;
-    const matchesQuery = query(
-      collection(firestoreDb, "matches"),
-      orderBy("kickoffAt", "asc"),
-      limit(maxMatches),
-    );
 
-    void getDocs(matchesQuery)
-      .then((snapshot) => {
-        const matches = snapshot.docs.map(matchFromSnapshot);
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("matches")
+          .select(
+            "id,venue_zone_ids,kickoff_at,home_team,away_team,transit_load_estimate",
+          )
+          .order("kickoff_at", { ascending: true })
+          .limit(maxMatches);
+        if (error) {
+          throw error;
+        }
+        const matches = (data ?? []).map((row) => matchFromRow(row));
         cachedMatches = matches;
         if (active) {
           setState({ matches, loading: false, error: null });
         }
-      })
-      .catch((caught: unknown) => {
+      } catch (caught: unknown) {
         const error =
           caught instanceof Error
             ? caught
@@ -89,7 +76,8 @@ export function useMatches(maxMatches = 12): MatchesState {
         if (active) {
           setState({ matches: [], loading: false, error });
         }
-      });
+      }
+    })();
 
     return () => {
       active = false;

@@ -1,9 +1,4 @@
 import { useState, type FormEvent } from "react";
-import {
-  GoogleAuthProvider,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-} from "firebase/auth";
 import { LogIn, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -13,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
-import { firebaseAuth } from "@/services/firebaseConfig";
+import { supabase } from "@/services/supabaseConfig";
 
 /** Sign-in page with Google, email, and primary anonymous fan access. */
 export default function LoginPage(): JSX.Element {
@@ -31,7 +26,13 @@ export default function LoginPage(): JSX.Element {
     event.preventDefault();
     setSubmitting(true);
     try {
-      await signInWithEmailAndPassword(firebaseAuth, email, password);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        throw error;
+      }
       finishSignIn();
     } catch (caught) {
       toast.error(
@@ -60,8 +61,14 @@ export default function LoginPage(): JSX.Element {
             className="min-h-12 w-full"
             disabled={submitting}
             onClick={() =>
-              void signInWithPopup(firebaseAuth, new GoogleAuthProvider())
-                .then(finishSignIn)
+              void supabase.auth
+                .signInWithOAuth({ provider: "google" })
+                .then(({ error }) => {
+                  if (error) {
+                    throw error;
+                  }
+                  finishSignIn();
+                })
                 .catch((caught: unknown) =>
                   toast.error(
                     caught instanceof Error

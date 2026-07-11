@@ -1,11 +1,11 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from google.cloud import firestore
+import asyncpg
 
 from schemas.responses import ChatResponse
 from services.ai_core import StadiumPulseAIClient, get_ai_client
-from services.firestore_client import get_firestore_client
+from services.db import get_pool
 from services.genkit_flows import translateFlow
 
 SUPPORTED_LANGUAGES: tuple[str, ...] = ("en", "es", "pt", "fr", "ar", "de", "ja", "ko", "zh", "hi")
@@ -18,53 +18,68 @@ def normalize_language(language: str) -> tuple[str, bool]:
     return "en", True
 
 
-def get_or_create_session(
+async def get_or_create_session(
     user_id: str,
     requested_session_id: str | None,
     language: str,
-    db: firestore.Client,
+    db: asyncpg.Pool,
 ) -> tuple[str, bool]:
     now = datetime.now(tz=UTC)
     if requested_session_id:
-        snapshot = db.collection("conciergeSessions").document(requested_session_id).get()
-        data = snapshot.to_dict() if snapshot.exists else None
-        if data and data.get("userId") == user_id:
-            snapshot.reference.set({"lastActiveAt": now, "language": language}, merge=True)
-            return snapshot.id, False
+        row = await db.fetchrow(
+            """
+            update public.concierge_sessions
+            set last_active_at = $1, language = $2
+            where id = $3 and user_id = $4
+            returning id
+            """,
+            now,
+            language,
+            requested_session_id,
+            user_id,
+        )
+        if row:
+            return str(row["id"]), False
 
-    session_ref = db.collection("conciergeSessions").document()
-    session_ref.set(
-        {
-            "userId": user_id,
-            "language": language,
-            "startedAt": now,
-            "lastActiveAt": now,
-        }
+    session_id = await db.fetchval(
+        """
+        insert into public.concierge_sessions (user_id, language, started_at, last_active_at)
+        values ($1, $2, $3, $3)
+        returning id
+        """,
+        user_id,
+        language,
+        now,
     )
-    return session_ref.id, True
+    return str(session_id), True
 
 
-def load_recent_messages(db: firestore.Client, session_id: str) -> list[dict[str, Any]]:
-    snapshots = (
-        db.collection("conciergeSessions")
-        .document(session_id)
-        .collection("messages")
-        .order_by("createdAt", direction=firestore.Query.DESCENDING)
-        .limit(10)
-        .stream()
+async def load_recent_messages(db: asyncpg.Pool, session_id: str) -> list[dict[str, Any]]:
+    rows = await db.fetch(
+        """
+        select role, text, created_at
+        from public.concierge_messages
+        where session_id = $1
+        order by created_at desc
+        limit 10
+        """,
+        session_id,
     )
-    messages = [snapshot.to_dict() for snapshot in snapshots if snapshot.to_dict()]
+    messages = [{"role": row["role"], "text": row["text"], "createdAt": row["created_at"]} for row in rows if row]
     messages.reverse()
     return messages
 
 
-def append_message(db: firestore.Client, session_id: str, role: str, text: str) -> None:
-    db.collection("conciergeSessions").document(session_id).collection("messages").document().set(
-        {
-            "role": role,
-            "text": text,
-            "createdAt": datetime.now(tz=UTC),
-        }
+async def append_message(db: asyncpg.Pool, session_id: str, role: str, text: str) -> None:
+    await db.execute(
+        """
+        insert into public.concierge_messages (session_id, role, text, created_at)
+        values ($1, $2, $3, $4)
+        """,
+        session_id,
+        role,
+        text,
+        datetime.now(tz=UTC),
     )
 
 
@@ -85,21 +100,21 @@ def build_reply_prompt(
     )
 
 
-def handle_chat_message(
+async def handle_chat_message(
     user_id: str,
     message: str,
     language: str,
     session_id: str | None = None,
-    db: firestore.Client | None = None,
+    db: asyncpg.Pool | None = None,
     ai_client: StadiumPulseAIClient | None = None,
 ) -> ChatResponse:
-    firestore_client = db or get_firestore_client()
+    pool = db or await get_pool()
     client = ai_client or get_ai_client()
     normalized_language, used_fallback = normalize_language(language)
-    active_session_id, _created = get_or_create_session(user_id, session_id, normalized_language, firestore_client)
+    active_session_id, _created = await get_or_create_session(user_id, session_id, normalized_language, pool)
 
     translation = translateFlow(message, normalized_language, ai_client=client)
-    recent_messages = load_recent_messages(firestore_client, active_session_id)
+    recent_messages = await load_recent_messages(pool, active_session_id)
     reply = client.generate_text(
         build_reply_prompt(message, normalized_language, translation["detectedLanguage"], recent_messages),
         tier="primary",
@@ -107,8 +122,8 @@ def handle_chat_message(
     if used_fallback:
         reply = f"Language fallback: unsupported language '{language}' was handled in English. {reply}"
 
-    append_message(firestore_client, active_session_id, "user", message)
-    append_message(firestore_client, active_session_id, "assistant", reply)
+    await append_message(pool, active_session_id, "user", message)
+    await append_message(pool, active_session_id, "assistant", reply)
     return ChatResponse(
         sessionId=active_session_id,
         reply=reply,

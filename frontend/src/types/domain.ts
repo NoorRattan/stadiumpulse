@@ -1,4 +1,4 @@
-/** Firebase custom role claim mirrored for client-side UX routing. */
+/** Supabase custom access-token role claim mirrored for client-side UX routing. */
 export type UserRole = "fan" | "staff" | "volunteer";
 
 /** Supported concierge and preference language codes. */
@@ -14,7 +14,7 @@ export type SupportedLanguage =
   | "zh"
   | "hi";
 
-/** Stadium zone category from Firestore and the backend API. */
+/** Stadium zone category from Supabase and the backend API. */
 export type ZoneType = "concourse" | "gate" | "seating-block" | "transit-hub";
 
 /** Live density reading source. */
@@ -56,7 +56,7 @@ export interface UserProfile {
   createdAt?: string;
 }
 
-/** Firestore zone document hydrated with the document ID. */
+/** Supabase zone row hydrated with the row ID. */
 export interface Zone {
   zoneId: string;
   name: string;
@@ -74,7 +74,7 @@ export interface ZoneSummary {
   type: ZoneType;
 }
 
-/** Public tournament match schedule document hydrated with its document ID. */
+/** Public tournament match schedule row hydrated with its row ID. */
 export interface Match {
   matchId: string;
   venueZoneIds: string[];

@@ -10,6 +10,18 @@ def test_accessibility_get_defaults(client: TestClient) -> None:
     assert response.json()["preferredLanguage"] == "en"
 
 
+def test_accessibility_get_existing_settings(client: TestClient, mock_db: object) -> None:
+    mock_db.store["accessibilitySettings"]["fan-1"] = {
+        "highContrast": True,
+        "reducedMotion": False,
+        "screenReaderMode": True,
+        "preferredLanguage": "es",
+    }
+    response = client.get("/api/accessibility/settings", headers=auth_headers("fan-1", UserRole.fan))
+    assert response.status_code == 200
+    assert response.json()["preferredLanguage"] == "es"
+
+
 def test_accessibility_put_happy_path(client: TestClient) -> None:
     payload = {"highContrast": True, "reducedMotion": True, "screenReaderMode": False, "preferredLanguage": "en"}
     response = client.put("/api/accessibility/settings", json=payload, headers=auth_headers("fan-1", UserRole.fan))

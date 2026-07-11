@@ -1,7 +1,6 @@
-import { collection, limit, onSnapshot, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
-import { firestoreDb } from "../services/firebaseConfig";
+import { supabase } from "../services/supabaseConfig";
 import type { Zone, ZoneType } from "../types/domain";
 
 /** State returned by the live crowd-density listener. */
@@ -11,27 +10,26 @@ export interface CrowdDensityState {
   error: Error | null;
 }
 
-function zoneFromSnapshot(id: string, data: Record<string, unknown>): Zone {
-  const name = typeof data.name === "string" ? data.name : "";
-  const lastUpdated =
-    typeof data.lastUpdated === "object" &&
-    data.lastUpdated !== null &&
-    "toDate" in data.lastUpdated
-      ? (data.lastUpdated as { toDate: () => Date }).toDate().toISOString()
-      : "";
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
 
+function zoneFromRow(data: Record<string, unknown>): Zone {
   return {
-    zoneId: id,
-    name,
+    zoneId: stringValue(data.zone_id),
+    name: stringValue(data.name),
     type: data.type as ZoneType,
     capacity: Number(data.capacity ?? 0),
-    currentDensityPct: Number(data.currentDensityPct ?? 0),
-    lastUpdated,
-    coordinates: data.coordinates as Zone["coordinates"],
+    currentDensityPct: Number(data.current_density_pct ?? 0),
+    lastUpdated: stringValue(data.last_updated),
+    coordinates: {
+      lat: Number(data.lat ?? 0),
+      lng: Number(data.lng ?? 0),
+    },
   };
 }
 
-/** Listens to the staff/volunteer Firestore zone feed with cleanup on unmount. */
+/** Listens to the staff/volunteer Supabase zone feed with cleanup on unmount. */
 export function useCrowdDensity(maxZones = 50): CrowdDensityState {
   const [state, setState] = useState<CrowdDensityState>({
     zones: [],
@@ -40,20 +38,51 @@ export function useCrowdDensity(maxZones = 50): CrowdDensityState {
   });
 
   useEffect(() => {
-    const zonesQuery = query(collection(firestoreDb, "zones"), limit(maxZones));
-    return onSnapshot(
-      zonesQuery,
-      (snapshot) => {
+    let active = true;
+
+    void supabase
+      .from("zones")
+      .select(
+        "zone_id,name,type,capacity,current_density_pct,last_updated,lat,lng",
+      )
+      .order("zone_id", { ascending: true })
+      .limit(maxZones)
+      .then(({ data, error }) => {
+        if (!active) {
+          return;
+        }
+        if (error) {
+          setState({ zones: [], loading: false, error });
+          return;
+        }
         setState({
-          zones: snapshot.docs.map((doc) =>
-            zoneFromSnapshot(doc.id, doc.data()),
-          ),
+          zones: (data ?? []).map((row) => zoneFromRow(row)),
           loading: false,
           error: null,
         });
-      },
-      (error) => setState({ zones: [], loading: false, error }),
-    );
+      });
+
+    const channel = supabase
+      .channel("zones-density")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "zones" },
+        (payload) => {
+          const nextZone = zoneFromRow(payload.new);
+          setState((current) => ({
+            ...current,
+            zones: current.zones.map((zone) =>
+              zone.zoneId === nextZone.zoneId ? nextZone : zone,
+            ),
+          }));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
   }, [maxZones]);
 
   return state;

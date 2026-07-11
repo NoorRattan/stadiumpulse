@@ -1,13 +1,13 @@
-import asyncio
 from collections.abc import Callable
+from functools import lru_cache
 from http import HTTPStatus
 
-import firebase_admin
+import jwt
 from fastapi import Depends, Header, Request
-from firebase_admin import auth, credentials
+from jwt import InvalidTokenError, PyJWKClient
 from pydantic import BaseModel, ConfigDict, Field
 
-from config import get_settings
+from config import get_settings, get_supabase_jwks_url
 from models.user import UserRole
 from schemas.errors import ApiError, ErrorCode
 
@@ -21,17 +21,6 @@ class AuthenticatedUser(BaseModel):
     display_name: str | None = Field(default=None, alias="displayName")
 
 
-def ensure_firebase_app() -> firebase_admin.App:
-    if firebase_admin._apps:
-        return firebase_admin.get_app()
-
-    settings = get_settings()
-    if settings.firebase_service_account_path:
-        credential = credentials.Certificate(settings.firebase_service_account_path)
-        return firebase_admin.initialize_app(credential, {"projectId": settings.gcp_project_id})
-    return firebase_admin.initialize_app(options={"projectId": settings.gcp_project_id})
-
-
 def extract_bearer_token(authorization: str | None) -> str:
     if not authorization:
         raise ApiError(ErrorCode.unauthenticated, "Missing Authorization header.", HTTPStatus.UNAUTHORIZED)
@@ -42,11 +31,39 @@ def extract_bearer_token(authorization: str | None) -> str:
     return token
 
 
+@lru_cache
+def get_jwks_client(jwks_url: str) -> PyJWKClient:
+    return PyJWKClient(jwks_url)
+
+
+def _decode_options() -> dict[str, bool]:
+    return {"verify_aud": False}
+
+
 async def verify_token_async(token: str) -> dict[str, object]:
-    ensure_firebase_app()
-    loop = asyncio.get_running_loop()
-    decoded_token = await loop.run_in_executor(None, auth.verify_id_token, token)
-    return dict(decoded_token)
+    settings = get_settings()
+    issuer = f"{settings.supabase_url.rstrip('/')}/auth/v1"
+    try:
+        if settings.supabase_jwt_secret:
+            decoded = jwt.decode(
+                token,
+                settings.supabase_jwt_secret,
+                algorithms=["HS256"],
+                issuer=issuer,
+                options=_decode_options(),
+            )
+        else:
+            signing_key = get_jwks_client(get_supabase_jwks_url(settings)).get_signing_key_from_jwt(token)
+            decoded = jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=["ES256", "RS256"],
+                issuer=issuer,
+                options=_decode_options(),
+            )
+    except InvalidTokenError:
+        raise
+    return dict(decoded)
 
 
 async def get_current_user(
@@ -59,8 +76,8 @@ async def get_current_user(
     except Exception as exc:
         raise ApiError(ErrorCode.unauthenticated, "Missing or invalid ID token.", HTTPStatus.UNAUTHORIZED) from exc
 
-    uid = decoded.get("uid")
-    role = decoded.get("role", UserRole.fan.value)
+    uid = decoded.get("sub") or decoded.get("uid")
+    role = decoded.get("user_role", decoded.get("role", UserRole.fan.value))
     if not isinstance(uid, str):
         raise ApiError(ErrorCode.unauthenticated, "Token is missing uid.", HTTPStatus.UNAUTHORIZED)
 

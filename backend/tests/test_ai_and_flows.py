@@ -56,8 +56,7 @@ def test_ai_client_model_selection_and_generate_text(monkeypatch: pytest.MonkeyP
 
     monkeypatch.setattr(ai_core.genai, "Client", lambda **kwargs: SimpleNamespace(models=FakeModels()))
     settings = SimpleNamespace(
-        gcp_project_id="project-1",
-        vertex_ai_location="us-central1",
+        gemini_api_key="gemini-key",
         gemini_model_primary="primary-model",
         gemini_model_lite="lite-model",
     )
@@ -76,8 +75,7 @@ def test_ai_client_raises_on_upstream_and_empty_response(monkeypatch: pytest.Mon
 
     monkeypatch.setattr(ai_core.genai, "Client", lambda **kwargs: SimpleNamespace(models=FailingModels()))
     settings = SimpleNamespace(
-        gcp_project_id="project-1",
-        vertex_ai_location="us-central1",
+        gemini_api_key="gemini-key",
         gemini_model_primary="primary-model",
         gemini_model_lite="lite-model",
     )
@@ -101,8 +99,7 @@ def test_ai_client_generate_json_and_cached_factory(monkeypatch: pytest.MonkeyPa
             return SimpleNamespace(text='{"ok": true}')
 
     settings = SimpleNamespace(
-        gcp_project_id="project-1",
-        vertex_ai_location="us-central1",
+        gemini_api_key="gemini-key",
         gemini_model_primary="primary-model",
         gemini_model_lite="lite-model",
     )

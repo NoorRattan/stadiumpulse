@@ -55,14 +55,14 @@ npm run build
 
 ## Project Notes
 
-- Firebase Auth creates the browser identity; `/api/auth/bootstrap` creates the backend user profile after sign-in.
-- Staff and volunteer role claims are granted out of band with `backend/scripts/grant_role.py`.
-- The dashboard reads raw zone density through Firestore security rules; operations mutations still go through FastAPI and re-check roles server-side.
-- Seed data is synthetic demo data. It lives in `backend/seed/seed_data.py` and is labeled that way in the content guide.
+- Supabase Auth creates the browser identity; `/api/auth/bootstrap` creates the backend profile after sign-in.
+- Staff and volunteer roles live in `public.user_roles`; `backend/scripts/grant_role.py` updates them with the Supabase service role.
+- The dashboard reads public zone density from Supabase Realtime; operations mutations still go through FastAPI and re-check roles server-side.
+- Seed data is synthetic demo data. It lives in `supabase/seed.sql` and is applied by `backend/seed/seed_data.py`.
 
 ## Known Limitations and Dependency Notes
 
-**In-memory rate limiter**: The backend rate limiter uses `slowapi`'s in-memory storage. That works fine for a single Cloud Run instance, but under autoscaling each instance has its own counter. Production-scale deployments should move rate limit state to a shared store such as Redis or Memorystore.
+**In-memory rate limiter**: The backend rate limiter uses `slowapi`'s in-memory storage. That works fine for a single Render instance, but under multiple instances each instance has its own counter. Production-scale deployments should move rate limit state to a shared store such as Redis.
 
 **`pytest-asyncio` major-version pin**: `requirements.txt` pins `pytest-asyncio==1.4.0`. That version's `asyncio_mode = auto` setting (in `pytest.ini`) is what makes async tests run without per-test decorators. Upgrading to a different major version changes the config key name; don't bump this without verifying the existing tests still run correctly.
 

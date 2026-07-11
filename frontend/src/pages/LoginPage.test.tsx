@@ -6,10 +6,6 @@ import { AuthContext, type AuthContextValue } from "@/contexts/AuthContext";
 
 import LoginPage from "./LoginPage";
 
-vi.mock("@/services/firebaseConfig", () => ({
-  firebaseAuth: {},
-}));
-
 const authValue: AuthContextValue = {
   user: null,
   profile: null,

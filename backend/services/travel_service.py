@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
-from google.cloud import firestore
+import asyncpg
 
 from schemas.responses import TravelSuggestion, TravelSuggestionsResponse
+from services.db import get_pool
 from services.exceptions import ResourceNotFoundError
-from services.firestore_client import get_firestore_client
 from services.genkit_flows import describe_travel_options
 
 TransitLoad = Literal["low", "medium", "high"]
@@ -33,24 +33,40 @@ STATIC_TRANSIT_OPTIONS: tuple[TransitOption, ...] = (
 )
 
 
-def load_match(db: firestore.Client, match_id: str) -> dict[str, Any]:
-    snapshot = db.collection("matches").document(match_id).get()
-    data = snapshot.to_dict() if snapshot.exists else None
-    if not data:
+async def load_match(db: asyncpg.Pool, match_id: str) -> dict[str, Any]:
+    row = await db.fetchrow(
+        """
+        select id, venue_zone_ids, kickoff_at, home_team, away_team, transit_load_estimate
+        from public.matches
+        where id = $1
+        """,
+        match_id,
+    )
+    if row is None:
         raise ResourceNotFoundError(f"Match not found: {match_id}")
-    return {"matchId": snapshot.id, **data}
+    return {
+        "matchId": row["id"],
+        "venueZoneIds": list(row["venue_zone_ids"]),
+        "kickoffAt": row["kickoff_at"],
+        "homeTeam": row["home_team"],
+        "awayTeam": row["away_team"],
+        "transitLoadEstimate": row["transit_load_estimate"],
+    }
 
 
-def get_fresh_cache(db: firestore.Client, match_id: str) -> list[TravelSuggestion] | None:
-    snapshot = db.collection("travelSuggestionsCache").document(match_id).get()
-    data = snapshot.to_dict() if snapshot.exists else None
-    if not data:
+async def get_fresh_cache(db: asyncpg.Pool, match_id: str) -> list[TravelSuggestion] | None:
+    row = await db.fetchrow(
+        """
+        select suggestions
+        from public.travel_suggestions_cache
+        where match_id = $1 and expire_at > now()
+        """,
+        match_id,
+    )
+    if row is None:
         return None
 
-    expire_at = data.get("expireAt")
-    suggestions = data.get("suggestions")
-    if not isinstance(expire_at, datetime) or expire_at <= datetime.now(tz=UTC):
-        return None
+    suggestions = row["suggestions"]
     if not isinstance(suggestions, list):
         return None
     return [TravelSuggestion.model_validate(item) for item in suggestions]
@@ -72,27 +88,34 @@ def rank_by_load(options: list[TransitOption], transit_load_estimate: TransitLoa
     )
 
 
-def cache_suggestions(db: firestore.Client, match_id: str, suggestions: list[TravelSuggestion]) -> None:
+async def cache_suggestions(db: asyncpg.Pool, match_id: str, suggestions: list[TravelSuggestion]) -> None:
     generated_at = datetime.now(tz=UTC)
-    db.collection("travelSuggestionsCache").document(match_id).set(
-        {
-            "generatedAt": generated_at,
-            "suggestions": [suggestion.model_dump(by_alias=True) for suggestion in suggestions],
-            "expireAt": generated_at + timedelta(hours=1),
-        }
+    await db.execute(
+        """
+        insert into public.travel_suggestions_cache (match_id, generated_at, suggestions, expire_at)
+        values ($1, $2, $3, $4)
+        on conflict (match_id) do update
+        set generated_at = excluded.generated_at,
+            suggestions = excluded.suggestions,
+            expire_at = excluded.expire_at
+        """,
+        match_id,
+        generated_at,
+        [suggestion.model_dump(by_alias=True) for suggestion in suggestions],
+        generated_at + timedelta(hours=1),
     )
 
 
-def get_travel_suggestions(
+async def get_travel_suggestions(
     match_id: str,
-    db: firestore.Client | None = None,
+    db: asyncpg.Pool | None = None,
 ) -> TravelSuggestionsResponse:
-    firestore_client = db or get_firestore_client()
-    cached = get_fresh_cache(firestore_client, match_id)
+    pool = db or await get_pool()
+    cached = await get_fresh_cache(pool, match_id)
     if cached is not None:
         return TravelSuggestionsResponse(matchId=match_id, suggestions=cached)
 
-    match = load_match(firestore_client, match_id)
+    match = await load_match(pool, match_id)
     load_estimate = match.get("transitLoadEstimate")
     if load_estimate not in {"low", "medium", "high"}:
         raise ValueError(f"Unsupported transitLoadEstimate for match {match_id}.")
@@ -110,5 +133,5 @@ def get_travel_suggestions(
         TravelSuggestion(mode=option.mode, description=description)
         for option, description in zip(top_options, descriptions, strict=False)
     ]
-    cache_suggestions(firestore_client, match_id, suggestions)
+    await cache_suggestions(pool, match_id, suggestions)
     return TravelSuggestionsResponse(matchId=match_id, suggestions=suggestions)

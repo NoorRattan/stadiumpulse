@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal
 
-from google.cloud import firestore
+import asyncpg
 
 from models.incident import IncidentReport, IncidentSeverity, IncidentStatus
 from models.zone import Zone, ZoneType
 from services.ai_core import StadiumPulseAIClient, get_ai_client
-from services.firestore_client import get_firestore_client
+from services.db import get_pool
 
 CongestionBand = Literal["NORMAL", "MODERATE", "HIGH", "CRITICAL"]
 ActionType = Literal["MONITOR", "SUGGEST_OVERFLOW", "URGENT_REROUTE"]
@@ -36,14 +36,29 @@ def congestion_multiplier(density_pct: float) -> float:
     return 1.0 + (1.5 * (density_pct / 100))
 
 
-def load_zones(db: firestore.Client) -> list[Zone]:
-    snapshots = db.collection("zones").limit(50).stream()
-    zones: list[Zone] = []
-    for snapshot in snapshots:
-        data = snapshot.to_dict()
-        if data:
-            zones.append(Zone(zoneId=snapshot.id, **data))
-    return zones
+def zone_from_row(row: object) -> Zone:
+    data = dict(row)
+    return Zone(
+        zoneId=data["zone_id"],
+        name=data["name"],
+        type=data["type"],
+        capacity=data["capacity"],
+        currentDensityPct=float(data["current_density_pct"]),
+        lastUpdated=data["last_updated"],
+        coordinates={"lat": data["lat"], "lng": data["lng"]},
+    )
+
+
+async def load_zones(db: asyncpg.Pool) -> list[Zone]:
+    rows = await db.fetch(
+        """
+        select zone_id, name, type, capacity, current_density_pct, last_updated, lat, lng
+        from public.zones
+        order by zone_id
+        limit 50
+        """
+    )
+    return [zone_from_row(row) for row in rows if row]
 
 
 def nearest_zone_matching(
@@ -100,7 +115,7 @@ def phrase_alert(
 def build_alert(
     zone: Zone,
     zones: list[Zone],
-    db: firestore.Client | None = None,
+    db: asyncpg.Pool | None = None,
     ai_client: StadiumPulseAIClient | None = None,
 ) -> CrowdAlert | None:
     band = congestion_band(zone.current_density_pct)
@@ -110,8 +125,6 @@ def build_alert(
 
     overflow_zone = nearest_zone_matching(zone, zones) if band in {"HIGH", "CRITICAL"} else None
     message = phrase_alert(zone, band, action_type, overflow_zone, ai_client)
-    if band == "CRITICAL":
-        auto_flag_incident(zone, zone.current_density_pct, db=db)
     return CrowdAlert(
         zone_id=zone.zone_id,
         band=band,
@@ -121,20 +134,32 @@ def build_alert(
     )
 
 
-def auto_flag_incident(
+async def auto_flag_incident(
     zone: Zone,
     density_pct: float,
-    db: firestore.Client | None = None,
+    db: asyncpg.Pool | None = None,
 ) -> IncidentReport:
-    firestore_client = db or get_firestore_client()
-    incident_ref = firestore_client.collection("incidents").document()
+    pool = db or await get_pool()
     created_at = datetime.now(tz=UTC)
     raw_input = (
         f"Auto-flagged: {zone.name} crowd density reached {density_pct}% at "
         f"{created_at.isoformat()}. No human report filed yet."
     )
+    incident_id = await pool.fetchval(
+        """
+        insert into public.incidents (
+          zone_id, status, raw_input, ai_draft_summary, severity, reported_by_uid, created_at,
+          submitted_at, resolved_at
+        )
+        values ($1, 'draft', $2, null, 'critical', null, $3, null, null)
+        returning id
+        """,
+        zone.zone_id,
+        raw_input,
+        created_at,
+    )
     incident = IncidentReport(
-        incidentId=incident_ref.id,
+        incidentId=str(incident_id),
         zoneId=zone.zone_id,
         status=IncidentStatus.draft,
         rawInput=raw_input,
@@ -145,15 +170,21 @@ def auto_flag_incident(
         submittedAt=None,
         resolvedAt=None,
     )
-    incident_ref.set(incident.model_dump(by_alias=True, exclude={"incident_id"}))
     return incident
 
 
-def list_zone_alerts(
+async def list_zone_alerts(
     zone_type: ZoneType | None = None,
-    db: firestore.Client | None = None,
+    db: asyncpg.Pool | None = None,
 ) -> list[CrowdAlert]:
-    firestore_client = db or get_firestore_client()
-    zones = load_zones(firestore_client)
+    pool = db or await get_pool()
+    zones = await load_zones(pool)
     filtered = [zone for zone in zones if zone_type is None or zone.type == zone_type]
-    return [alert for zone in filtered if (alert := build_alert(zone, zones, firestore_client)) is not None]
+    alerts: list[CrowdAlert] = []
+    for zone in filtered:
+        alert = build_alert(zone, zones, pool)
+        if alert is not None:
+            if alert.band == "CRITICAL":
+                await auto_flag_incident(zone, zone.current_density_pct, db=pool)
+            alerts.append(alert)
+    return alerts

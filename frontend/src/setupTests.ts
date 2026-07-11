@@ -25,7 +25,29 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
-vi.mock("@/services/firebaseConfig", () => ({
-  firebaseAuth: { currentUser: null },
-  firestoreDb: {},
+const supabaseQuery = {
+  select: vi.fn(() => supabaseQuery),
+  order: vi.fn(() => supabaseQuery),
+  limit: vi.fn(() => Promise.resolve({ data: [], error: null })),
+};
+
+vi.mock("@/services/supabaseConfig", () => ({
+  supabase: {
+    auth: {
+      getSession: vi.fn(() => Promise.resolve({ data: { session: null } })),
+      onAuthStateChange: vi.fn(() => ({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      })),
+      signInAnonymously: vi.fn(),
+      signInWithOAuth: vi.fn(() => Promise.resolve({ error: null })),
+      signInWithPassword: vi.fn(() => Promise.resolve({ error: null })),
+      signOut: vi.fn(() => Promise.resolve({ error: null })),
+    },
+    channel: vi.fn(() => ({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockReturnThis(),
+    })),
+    from: vi.fn(() => supabaseQuery),
+    removeChannel: vi.fn(() => Promise.resolve({ error: null })),
+  },
 }));

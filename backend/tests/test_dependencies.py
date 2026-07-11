@@ -1,11 +1,11 @@
 from http import HTTPStatus
-from types import SimpleNamespace
-from typing import Any
 
+import jwt
 import pytest
 from fastapi import Request
 
 import dependencies
+from config import Settings, get_supabase_jwks_url
 from dependencies import AuthenticatedUser, extract_bearer_token, get_current_user, require_role, verify_token_async
 from models.user import UserRole
 from schemas.errors import ApiError, ErrorCode
@@ -26,22 +26,76 @@ def test_extract_bearer_token_rejects_missing_and_wrong_scheme() -> None:
     assert malformed.value.status == HTTPStatus.UNAUTHORIZED
 
 
+def test_supabase_jwks_url_defaults_to_auth_discovery_endpoint() -> None:
+    settings = Settings(
+        ENVIRONMENT="test",
+        SUPABASE_URL="https://abc.supabase.co/",
+        SUPABASE_DB_URL="postgresql://postgres:test@localhost:5432/postgres",
+        ALLOWED_ORIGINS=["http://testserver"],
+        GEMINI_API_KEY="gemini-key",
+        GEMINI_MODEL_PRIMARY="primary",
+        GEMINI_MODEL_LITE="lite",
+        LOG_LEVEL="info",
+    )
+    assert get_supabase_jwks_url(settings) == "https://abc.supabase.co/auth/v1/.well-known/jwks.json"
+
+
 @pytest.mark.asyncio
-async def test_verify_token_async_uses_firebase_verify_id_token(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls: list[str] = []
+async def test_verify_token_async_uses_supabase_jwt_secret(monkeypatch: pytest.MonkeyPatch) -> None:
+    token = jwt.encode(
+        {"sub": "fan-1", "user_role": "fan", "iss": "https://test.supabase.co/auth/v1"},
+        "test-secret",
+        algorithm="HS256",
+    )
 
-    monkeypatch.setattr(dependencies, "ensure_firebase_app", lambda: None)
+    decoded = await verify_token_async(token)
 
-    def verify_id_token(token: str) -> dict[str, object]:
-        calls.append(token)
-        return {"uid": "fan-1", "role": "fan"}
+    assert decoded["sub"] == "fan-1"
+    assert decoded["user_role"] == "fan"
 
-    monkeypatch.setattr(dependencies.auth, "verify_id_token", verify_id_token)
 
-    decoded = await verify_token_async("valid-token")
+@pytest.mark.asyncio
+async def test_verify_token_async_reraises_invalid_token() -> None:
+    with pytest.raises(jwt.InvalidTokenError):
+        await verify_token_async("invalid-token")
 
-    assert decoded == {"uid": "fan-1", "role": "fan"}
-    assert calls == ["valid-token"]
+
+@pytest.mark.asyncio
+async def test_verify_token_async_uses_supabase_jwks(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeSigningKey:
+        key = "public-key"
+
+    class FakeJwksClient:
+        def get_signing_key_from_jwt(self, token: str) -> FakeSigningKey:
+            assert token == "jwks-token"
+            return FakeSigningKey()
+
+    monkeypatch.setattr(
+        dependencies,
+        "get_settings",
+        lambda: type(
+            "SettingsStub",
+            (),
+            {
+                "supabase_url": "https://jwks.supabase.co",
+                "supabase_jwt_secret": None,
+                "supabase_jwks_url": "https://jwks.example.test",
+            },
+        )(),
+    )
+    monkeypatch.setattr(dependencies, "get_jwks_client", lambda jwks_url: FakeJwksClient())
+
+    def decode(token: str, key: object, **kwargs: object) -> dict[str, object]:
+        assert token == "jwks-token"
+        assert key == "public-key"
+        assert kwargs["algorithms"] == ["ES256", "RS256"]
+        return {"sub": "staff-1", "user_role": "staff"}
+
+    monkeypatch.setattr(dependencies.jwt, "decode", decode)
+
+    decoded = await verify_token_async("jwks-token")
+
+    assert decoded == {"sub": "staff-1", "user_role": "staff"}
 
 
 @pytest.mark.asyncio
@@ -64,7 +118,7 @@ async def test_get_current_user_sets_request_state_from_real_verification(monkey
 
 
 @pytest.mark.asyncio
-async def test_get_current_user_rejects_invalid_firebase_token(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_get_current_user_rejects_invalid_supabase_token(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fail_verification(token: str) -> dict[str, object]:
         raise ValueError("expired")
 
@@ -105,37 +159,8 @@ def test_require_role_allows_and_rejects_roles() -> None:
     assert exc_info.value.code == ErrorCode.forbidden
 
 
-def test_ensure_firebase_app_uses_existing_and_service_account(monkeypatch: pytest.MonkeyPatch) -> None:
-    existing = SimpleNamespace(name="existing")
-    monkeypatch.setattr(dependencies.firebase_admin, "_apps", {"[DEFAULT]": existing})
-    monkeypatch.setattr(dependencies.firebase_admin, "get_app", lambda: existing)
-    assert dependencies.ensure_firebase_app() == existing
-
-    initialized: dict[str, Any] = {}
-    monkeypatch.setattr(dependencies.firebase_admin, "_apps", {})
-    monkeypatch.setattr(
-        dependencies,
-        "get_settings",
-        lambda: SimpleNamespace(firebase_service_account_path="service-account.json", gcp_project_id="project-1"),
-    )
-    monkeypatch.setattr(dependencies.credentials, "Certificate", lambda path: f"cert:{path}")
-    monkeypatch.setattr(
-        dependencies.firebase_admin,
-        "initialize_app",
-        lambda credential=None, options=None: initialized.setdefault("app", (credential, options)),
-    )
-
-    assert dependencies.ensure_firebase_app() == ("cert:service-account.json", {"projectId": "project-1"})
-
-    monkeypatch.setattr(
-        dependencies,
-        "get_settings",
-        lambda: SimpleNamespace(firebase_service_account_path=None, gcp_project_id="project-2"),
-    )
-    monkeypatch.setattr(
-        dependencies.firebase_admin,
-        "initialize_app",
-        lambda credential=None, options=None: initialized.setdefault("default_app", (credential, options)),
-    )
-
-    assert dependencies.ensure_firebase_app() == (None, {"projectId": "project-2"})
+def test_jwks_client_is_cached() -> None:
+    dependencies.get_jwks_client.cache_clear()
+    first = dependencies.get_jwks_client("https://test.supabase.co/auth/v1/.well-known/jwks.json")
+    second = dependencies.get_jwks_client("https://test.supabase.co/auth/v1/.well-known/jwks.json")
+    assert first is second

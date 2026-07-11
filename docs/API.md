@@ -1,12 +1,12 @@
 # API Reference
 
-All routes use Firebase Auth ID tokens with `Authorization: Bearer <token>`. Role checks are enforced server-side.
+All protected routes use Supabase Auth access tokens with `Authorization: Bearer <token>`. Role checks are enforced server-side from the `user_role` custom access-token claim.
 
 | Method  | Path                                  | Auth               | Purpose                                                                 |
 | ------- | ------------------------------------- | ------------------ | ----------------------------------------------------------------------- |
 | `GET`   | `/api/health`                         | None               | Health check. Returns `{"status": "ok"}`.                               |
 | `GET`   | `/api/auth/me`                        | Any signed-in user | Return the current user's backend profile.                              |
-| `POST`  | `/api/auth/bootstrap`                 | Any signed-in user | Idempotently create or read the signed-in user's `users/{uid}` profile. |
+| `POST`  | `/api/auth/bootstrap`                 | Any signed-in user | Idempotently create or read the signed-in user's `profiles` row.        |
 | `POST`  | `/api/concierge/chat`                 | Any signed-in user | Send a multilingual concierge message and receive the assistant reply.  |
 | `GET`   | `/api/wayfinding/zones`               | Any signed-in user | Return identity-only zone options for selectors.                        |
 | `POST`  | `/api/wayfinding/route`               | Any signed-in user | Generate accessibility-aware route options around crowd density.        |
@@ -21,7 +21,7 @@ All routes use Firebase Auth ID tokens with `Authorization: Bearer <token>`. Rol
 | `POST`  | `/api/briefings/generate`             | Staff only         | Generate a per-zone volunteer briefing.                                 |
 | `GET`   | `/api/briefings/{zoneId}`             | Staff or volunteer | Read the latest briefing for a zone.                                    |
 
-> **Note**: The Cloud Run service exposes `/health` directly. Through Firebase Hosting's `/api/**` rewrite, it is reachable at `/api/health`. Use the Hosting domain path to verify the rewrite is working, not just the raw Cloud Run URL.
+> **Note**: Render exposes the backend health endpoint directly at `/health`. The frontend is hosted separately on Cloudflare Pages and calls the Render API through `VITE_API_BASE_URL`; there is no Firebase Hosting `/api/**` rewrite.
 
 Standard errors use:
 

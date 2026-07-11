@@ -1,26 +1,32 @@
-import {
-  onIdTokenChanged,
-  signInAnonymously,
-  signOut,
-  type User,
-} from "firebase/auth";
+import { jwtDecode } from "jwt-decode";
+import type { Session, User } from "@supabase/supabase-js";
 
-import { firebaseAuth } from "./firebaseConfig";
 import { apiRequest } from "./apiClient";
+import { supabase } from "./supabaseConfig";
 import type { UserProfileResponse } from "../types/api";
 import type { UserRole } from "../types/domain";
+
+interface RoleClaims {
+  user_role?: unknown;
+}
 
 function normalizeRole(value: unknown): UserRole {
   return value === "staff" || value === "volunteer" ? value : "fan";
 }
 
-/** Starts an anonymous Firebase Auth session for fan-facing API calls. */
+/** Starts an anonymous Supabase Auth session for fan-facing API calls. */
 export async function signInAsGuest(): Promise<User> {
-  const credential = await signInAnonymously(firebaseAuth);
-  return credential.user;
+  const { data, error } = await supabase.auth.signInAnonymously();
+  if (error) {
+    throw error;
+  }
+  if (!data.user) {
+    throw new Error("Anonymous sign-in did not return a user.");
+  }
+  return data.user;
 }
 
-/** Creates or reads the backend profile for the current Firebase user. */
+/** Creates or reads the backend profile for the current Supabase user. */
 export async function bootstrapUserProfile(): Promise<UserProfileResponse> {
   return apiRequest<UserProfileResponse, Record<string, never>>(
     "/api/auth/bootstrap",
@@ -31,20 +37,31 @@ export async function bootstrapUserProfile(): Promise<UserProfileResponse> {
   );
 }
 
-/** Signs out the current Firebase Auth user. */
+/** Signs out the current Supabase Auth user. */
 export async function signOutCurrentUser(): Promise<void> {
-  await signOut(firebaseAuth);
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    throw error;
+  }
 }
 
-/** Reads the current role claim from a Firebase user token. */
-export async function readRoleClaim(user: User): Promise<UserRole> {
-  const tokenResult = await user.getIdTokenResult();
-  return normalizeRole(tokenResult.claims.role);
+/** Reads the custom access-token hook's `user_role` claim from the JWT. */
+export function readRoleClaim(session: Session | null): UserRole {
+  if (!session?.access_token) {
+    return "fan";
+  }
+  return normalizeRole(jwtDecode<RoleClaims>(session.access_token).user_role);
 }
 
-/** Subscribes to Firebase Auth token changes. */
+/** Subscribes to Supabase Auth session changes. */
 export function subscribeToAuthState(
-  callback: (user: User | null) => void,
+  callback: (session: Session | null) => void,
 ): () => void {
-  return onIdTokenChanged(firebaseAuth, callback);
+  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    callback(session);
+  });
+  void supabase.auth.getSession().then(({ data: sessionData }) => {
+    callback(sessionData.session);
+  });
+  return () => data.subscription.unsubscribe();
 }

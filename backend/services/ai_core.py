@@ -12,11 +12,7 @@ ModelTier = Literal["primary", "lite"]
 class StadiumPulseAIClient:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._client = genai.Client(
-            vertexai=True,
-            project=settings.gcp_project_id,
-            location=settings.vertex_ai_location,
-        )
+        self._client = genai.Client(api_key=settings.gemini_api_key)
 
     def model_for(self, tier: ModelTier) -> str:
         if tier == "primary":

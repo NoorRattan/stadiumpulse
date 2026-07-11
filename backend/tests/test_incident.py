@@ -1,9 +1,9 @@
 import pytest
-from conftest import FakeFirestore, FakeSnapshot, auth_headers
+from conftest import FakeDb, FakeSnapshot, auth_headers
 from fastapi.testclient import TestClient
 
 from models.user import UserRole
-from routes.incident_routes import incident_from_snapshot
+from routes.incident_routes import incident_from_mapping, incident_from_snapshot
 from services.exceptions import ResourceNotFoundError
 
 
@@ -56,11 +56,22 @@ def test_incident_create_missing_zone_returns_404(client: TestClient) -> None:
     assert response.status_code == 404
 
 
-def test_incident_from_empty_snapshot_raises_not_found(mock_firestore: FakeFirestore) -> None:
-    snapshot = FakeSnapshot("empty", {}, mock_firestore.collection("incidents").document("empty"))
+def test_incident_from_empty_snapshot_raises_not_found(mock_db: FakeDb) -> None:
+    snapshot = FakeSnapshot("empty", {}, mock_db.collection("incidents").document("empty"))
 
     with pytest.raises(ResourceNotFoundError):
         incident_from_snapshot(snapshot)
+
+
+def test_incident_mapping_none_and_snapshot_happy_path(mock_db: FakeDb) -> None:
+    snapshot = FakeSnapshot(
+        "incident-old",
+        mock_db.store["incidents"]["incident-old"],
+        mock_db.collection("incidents").document("incident-old"),
+    )
+    with pytest.raises(ResourceNotFoundError):
+        incident_from_mapping(None)
+    assert incident_from_snapshot(snapshot).incident_id == "incident-old"
 
 
 def test_incident_volunteer_cannot_patch(client: TestClient) -> None:
@@ -84,11 +95,11 @@ def test_incident_staff_patch_sets_server_timestamp(client: TestClient) -> None:
     assert body["submittedAt"] != "2000-01-01T00:00:00Z"
 
 
-def test_incident_list_caps_limit(client: TestClient, mock_firestore: FakeFirestore) -> None:
+def test_incident_list_caps_limit(client: TestClient, mock_db: FakeDb) -> None:
     for index in range(60):
-        mock_firestore.store["incidents"][f"incident-{index}"] = {
-            **mock_firestore.store["incidents"]["incident-old"],
-            "createdAt": mock_firestore.store["incidents"]["incident-old"]["createdAt"],
+        mock_db.store["incidents"][f"incident-{index}"] = {
+            **mock_db.store["incidents"]["incident-old"],
+            "createdAt": mock_db.store["incidents"]["incident-old"]["createdAt"],
         }
     response = client.get("/api/incidents?limit=100", headers=auth_headers("staff-1", UserRole.staff))
     assert response.status_code == 200
@@ -103,9 +114,9 @@ def test_incident_rejects_missing_auth(client: TestClient) -> None:
 
 def test_incident_list_zone_filter_status_filter_and_empty_snapshot(
     client: TestClient,
-    mock_firestore: FakeFirestore,
+    mock_db: FakeDb,
 ) -> None:
-    mock_firestore.store["incidents"]["empty"] = {}
+    mock_db.store["incidents"]["empty"] = {}
 
     response = client.get(
         "/api/incidents?zoneId=gate-4&status=draft&limit=5",

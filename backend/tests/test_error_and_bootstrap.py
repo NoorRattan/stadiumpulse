@@ -24,8 +24,8 @@ from schemas.errors import (
     unhandled_error_handler,
     validation_error_handler,
 )
+from services.db import get_pool
 from services.exceptions import AIServiceError, ResourceNotFoundError
-from services.firestore_client import get_firestore_client
 
 
 def bare_request() -> Request:
@@ -71,9 +71,10 @@ def test_create_app_health_and_lifespan(monkeypatch: pytest.MonkeyPatch) -> None
     configured: list[str] = []
     settings = Settings(
         ENVIRONMENT="test",
-        GCP_PROJECT_ID="project-1",
+        SUPABASE_URL="https://test.supabase.co",
+        SUPABASE_DB_URL="postgresql://postgres:test@localhost:5432/postgres",
         ALLOWED_ORIGINS=["http://testserver"],
-        VERTEX_AI_LOCATION="us-central1",
+        GEMINI_API_KEY="gemini-key",
         GEMINI_MODEL_PRIMARY="primary",
         GEMINI_MODEL_LITE="lite",
         LOG_LEVEL="debug",
@@ -96,9 +97,10 @@ async def test_lifespan_configures_logging(monkeypatch: pytest.MonkeyPatch) -> N
     configured: list[str] = []
     settings = Settings(
         ENVIRONMENT="test",
-        GCP_PROJECT_ID="project-1",
+        SUPABASE_URL="https://test.supabase.co",
+        SUPABASE_DB_URL="postgresql://postgres:test@localhost:5432/postgres",
         ALLOWED_ORIGINS=["http://testserver"],
-        VERTEX_AI_LOCATION="us-central1",
+        GEMINI_API_KEY="gemini-key",
         GEMINI_MODEL_PRIMARY="primary",
         GEMINI_MODEL_LITE="lite",
         LOG_LEVEL="warning",
@@ -130,26 +132,32 @@ def test_logging_formatter_includes_exception_and_get_logger() -> None:
     assert get_logger("stadium-test").name == "stadium-test"
 
 
-def test_get_firestore_client_uses_configured_project(monkeypatch: pytest.MonkeyPatch) -> None:
-    seen: dict[str, str] = {}
+@pytest.mark.asyncio
+async def test_get_pool_uses_configured_supabase_db_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, object] = {}
     monkeypatch.setattr(
-        "services.firestore_client.get_settings",
+        "services.db.get_settings",
         lambda: Settings(
             ENVIRONMENT="test",
-            GCP_PROJECT_ID="project-1",
+            SUPABASE_URL="https://test.supabase.co",
+            SUPABASE_DB_URL="postgresql://postgres:test@localhost:5432/postgres",
             ALLOWED_ORIGINS=["http://testserver"],
-            VERTEX_AI_LOCATION="us-central1",
+            GEMINI_API_KEY="gemini-key",
             GEMINI_MODEL_PRIMARY="primary",
             GEMINI_MODEL_LITE="lite",
             LOG_LEVEL="info",
         ),
     )
 
-    def capture_project(project: str) -> str:
-        return seen.setdefault("project", project)
+    async def capture_pool(**kwargs: object) -> str:
+        seen.update(kwargs)
+        return "pool"
 
-    monkeypatch.setattr("services.firestore_client.firestore.Client", capture_project)
-    get_firestore_client.cache_clear()
+    monkeypatch.setattr("services.db.asyncpg.create_pool", capture_pool)
+    import services.db as db_module
 
-    assert get_firestore_client() == "project-1"
-    assert seen == {"project": "project-1"}
+    db_module._pool = None
+    assert await get_pool() == "pool"
+    assert seen["dsn"] == "postgresql://postgres:test@localhost:5432/postgres"
+    assert seen["max_size"] == 5
+    db_module._pool = None

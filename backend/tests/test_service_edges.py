@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from conftest import FakeFirestore
+from conftest import FakeDb
 
 import services.crowd_service as crowd_service
 from models.route import AccessibilityNeed, CongestionLevel
@@ -39,14 +39,14 @@ def zone(zone_id: str, density: float, zone_type: ZoneType = ZoneType.gate, lat:
     )
 
 
-def test_fake_firestore_helper_edges(mock_firestore: FakeFirestore) -> None:
-    doc = mock_firestore.collection("missing").document("nope")
+def test_fake_db_helper_edges(mock_db: FakeDb) -> None:
+    doc = mock_db.collection("missing").document("nope")
     with pytest.raises(KeyError):
         doc.update({"x": 1})
-    assert mock_firestore.collection("zones").stream()[0].id == "gate-2"
+    assert mock_db.collection("zones").stream()[0].id == "gate-2"
 
 
-def test_crowd_alert_bands_and_critical_auto_flag(mock_firestore: FakeFirestore) -> None:
+def test_crowd_alert_bands_and_critical_auto_flag(mock_db: FakeDb) -> None:
     normal = zone("normal", 20)
     moderate = zone("moderate", 60)
     high = zone("high", 80)
@@ -57,98 +57,101 @@ def test_crowd_alert_bands_and_critical_auto_flag(mock_firestore: FakeFirestore)
     assert crowd_service.congestion_band(60) == "MODERATE"
     assert crowd_service.congestion_multiplier(50) == 1.75
     assert crowd_service.action_for_band("NORMAL") is None
-    assert crowd_service.build_alert(normal, zones, db=mock_firestore) is None
-    assert crowd_service.build_alert(moderate, zones, db=mock_firestore).action_type == "MONITOR"
-    assert crowd_service.build_alert(high, zones, db=mock_firestore).overflow_zone_id == "normal"
+    assert crowd_service.build_alert(normal, zones, db=mock_db) is None
+    assert crowd_service.build_alert(moderate, zones, db=mock_db).action_type == "MONITOR"
+    assert crowd_service.build_alert(high, zones, db=mock_db).overflow_zone_id == "normal"
 
-    alert = crowd_service.build_alert(critical, zones, db=mock_firestore)
+    alert = crowd_service.build_alert(critical, zones, db=mock_db)
 
     assert alert.action_type == "URGENT_REROUTE"
-    assert len(mock_firestore.store["incidents"]) == 2
 
 
-def test_crowd_load_zones_skips_empty_snapshots_and_filter(
-    monkeypatch: pytest.MonkeyPatch, mock_firestore: FakeFirestore
+@pytest.mark.asyncio
+async def test_crowd_load_zones_skips_empty_snapshots_and_filter(
+    monkeypatch: pytest.MonkeyPatch, mock_db: FakeDb
 ) -> None:
-    mock_firestore.store["zones"]["empty"] = {}
-    alerts = crowd_service.list_zone_alerts(ZoneType.gate, db=mock_firestore)
+    mock_db.store["zones"]["empty"] = {}
+    mock_db.store["zones"]["gate-4"]["currentDensityPct"] = 95.0
+    alerts = await crowd_service.list_zone_alerts(ZoneType.gate, db=mock_db)
 
     assert all(alert.zone_id in {"gate-4"} for alert in alerts)
+    assert len(mock_db.store["incidents"]) == 2
 
-    monkeypatch.setattr(crowd_service, "get_firestore_client", lambda: mock_firestore)
-    assert crowd_service.auto_flag_incident(zone("critical", 99), 99).severity.value == "critical"
+    assert (await crowd_service.auto_flag_incident(zone("critical", 99), 99, db=mock_db)).severity.value == "critical"
 
 
-def test_concierge_language_fallback_existing_session_and_no_data(mock_firestore: FakeFirestore) -> None:
+@pytest.mark.asyncio
+async def test_concierge_language_fallback_existing_session_and_no_data(mock_db: FakeDb) -> None:
     assert normalize_language(" FR ") == ("fr", False)
     assert normalize_language("xx") == ("en", True)
 
-    mock_firestore.store["conciergeSessions"] = {
+    mock_db.store["conciergeSessions"] = {
         "existing": {"userId": "fan-1", "language": "en", "startedAt": datetime.now(tz=UTC)}
     }
-    mock_firestore.store["conciergeSessions/existing/messages"] = {"empty": {}}
+    mock_db.store["conciergeSessions/existing/messages"] = {"empty": {}}
 
-    response = handle_chat_message("fan-1", "bonjour", "xx", session_id="existing", db=mock_firestore)
+    response = await handle_chat_message("fan-1", "bonjour", "xx", session_id="existing", db=mock_db)
 
     assert response.session_id == "existing"
     assert response.reply.startswith("Language fallback:")
 
 
-def test_incident_service_rejects_invalid_ai_severity(
-    mock_firestore: FakeFirestore, monkeypatch: pytest.MonkeyPatch
-) -> None:
+@pytest.mark.asyncio
+async def test_incident_service_rejects_invalid_ai_severity(mock_db: FakeDb, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "services.incident_service.incidentTriageFlow",
         lambda zone_id, zone_name, raw_input: {"summary": "bad", "severity": "unsupported"},
     )
 
     with pytest.raises(AIServiceError, match="unsupported severity"):
-        draft_incident("gate-4", "issue", "staff-1", db=mock_firestore)
+        await draft_incident("gate-4", "issue", "staff-1", db=mock_db)
 
 
-def test_travel_cache_and_invalid_match_shapes(mock_firestore: FakeFirestore) -> None:
+@pytest.mark.asyncio
+async def test_travel_cache_and_invalid_match_shapes(mock_db: FakeDb) -> None:
     now = datetime.now(tz=UTC)
-    mock_firestore.store["travelSuggestionsCache"]["cached"] = {
+    mock_db.store["travelSuggestionsCache"]["cached"] = {
         "expireAt": now + timedelta(minutes=5),
         "suggestions": [{"mode": "rail", "description": "Use rail."}],
     }
-    assert get_fresh_cache(mock_firestore, "missing") is None
-    assert get_fresh_cache(mock_firestore, "cached")[0].mode == "rail"
+    assert await get_fresh_cache(mock_db, "missing") is None
+    assert (await get_fresh_cache(mock_db, "cached"))[0].mode == "rail"
 
-    mock_firestore.store["travelSuggestionsCache"]["expired"] = {
+    mock_db.store["travelSuggestionsCache"]["expired"] = {
         "expireAt": now - timedelta(minutes=5),
         "suggestions": [{"mode": "rail", "description": "Use rail."}],
     }
-    mock_firestore.store["travelSuggestionsCache"]["bad"] = {
+    mock_db.store["travelSuggestionsCache"]["bad"] = {
         "expireAt": now + timedelta(minutes=5),
         "suggestions": "rail",
     }
-    assert get_fresh_cache(mock_firestore, "expired") is None
-    assert get_fresh_cache(mock_firestore, "bad") is None
+    assert await get_fresh_cache(mock_db, "expired") is None
+    assert await get_fresh_cache(mock_db, "bad") is None
 
-    mock_firestore.store["matches"]["bad-load"] = {
+    mock_db.store["matches"]["bad-load"] = {
         "venueZoneIds": [],
         "transitLoadEstimate": "packed",
     }
-    mock_firestore.store["matches"]["bad-zones"] = {
+    mock_db.store["matches"]["bad-zones"] = {
         "venueZoneIds": [3],
         "transitLoadEstimate": "low",
     }
     with pytest.raises(ValueError, match="Unsupported transitLoadEstimate"):
-        get_travel_suggestions("bad-load", db=mock_firestore)
+        await get_travel_suggestions("bad-load", db=mock_db)
     with pytest.raises(ValueError, match="invalid venueZoneIds"):
-        get_travel_suggestions("bad-zones", db=mock_firestore)
+        await get_travel_suggestions("bad-zones", db=mock_db)
 
 
-def test_travel_ranking_and_missing_match(mock_firestore: FakeFirestore) -> None:
+@pytest.mark.asyncio
+async def test_travel_ranking_and_missing_match(mock_db: FakeDb) -> None:
     assert [option.mode for option in static_transit_options_for_venue([])] == ["rail", "rideshare-pool"]
     ranked = rank_by_load(static_transit_options_for_venue(["gate-2"]), "low")
     assert ranked[0].mode in {"rideshare-pool", "walk"}
     with pytest.raises(ResourceNotFoundError):
-        get_travel_suggestions("missing", db=mock_firestore)
+        await get_travel_suggestions("missing", db=mock_db)
 
 
-def test_wayfinding_alternatives_static_steps_and_missing_route(mock_firestore: FakeFirestore) -> None:
+def test_wayfinding_alternatives_static_steps_and_missing_route(mock_db: FakeDb) -> None:
     zones = {
         "a": zone("a", 10),
         "b": zone("b", 60),
@@ -196,9 +199,8 @@ def test_briefing_summary_handles_no_incidents() -> None:
     assert summarize_incidents([]) == "None reported"
 
 
-def test_wayfinding_value_error_returns_fallback(
-    monkeypatch: pytest.MonkeyPatch, mock_firestore: FakeFirestore
-) -> None:
+@pytest.mark.asyncio
+async def test_wayfinding_value_error_returns_fallback(monkeypatch: pytest.MonkeyPatch, mock_db: FakeDb) -> None:
     def raise_value_error(*args: object, **kwargs: object) -> None:
         raise ValueError("bad")
 
@@ -207,6 +209,6 @@ def test_wayfinding_value_error_returns_fallback(
         raise_value_error,
     )
 
-    response = get_route("gate-2", "seat-block-114", [AccessibilityNeed.wheelchair], db=mock_firestore)
+    response = await get_route("gate-2", "seat-block-114", [AccessibilityNeed.wheelchair], db=mock_db)
 
     assert response.generated_by == "fallback"

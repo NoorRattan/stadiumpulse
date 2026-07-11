@@ -11,13 +11,18 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     environment: Environment = Field(validation_alias="ENVIRONMENT")
-    gcp_project_id: str = Field(validation_alias="GCP_PROJECT_ID")
-    firebase_service_account_path: str | None = Field(
+    supabase_url: str = Field(validation_alias="SUPABASE_URL")
+    supabase_db_url: str = Field(validation_alias="SUPABASE_DB_URL")
+    supabase_jwt_secret: str | None = Field(
         default=None,
-        validation_alias="FIREBASE_SERVICE_ACCOUNT_PATH",
+        validation_alias="SUPABASE_JWT_SECRET",
+    )
+    supabase_jwks_url: str | None = Field(
+        default=None,
+        validation_alias="SUPABASE_JWKS_URL",
     )
     allowed_origins: Annotated[list[str], NoDecode] = Field(validation_alias="ALLOWED_ORIGINS")
-    vertex_ai_location: str = Field(validation_alias="VERTEX_AI_LOCATION")
+    gemini_api_key: str = Field(validation_alias="GEMINI_API_KEY")
     gemini_model_primary: str = Field(validation_alias="GEMINI_MODEL_PRIMARY")
     gemini_model_lite: str = Field(validation_alias="GEMINI_MODEL_LITE")
     log_level: str = Field(validation_alias="LOG_LEVEL")
@@ -53,3 +58,9 @@ def get_settings() -> Settings:
 
 def get_bootstrap_allowed_origins() -> list[str]:
     return CorsBootstrapSettings().allowed_origins
+
+
+def get_supabase_jwks_url(settings: Settings) -> str:
+    if settings.supabase_jwks_url:
+        return settings.supabase_jwks_url
+    return f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
