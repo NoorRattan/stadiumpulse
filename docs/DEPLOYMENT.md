@@ -19,6 +19,7 @@ supabase db seed
 ```
 
 If you are not using the Supabase CLI, run `supabase/migrations/0001_init.sql` and then `supabase/seed.sql` in the SQL editor.
+For an existing deployment, also run `supabase/migrations/0002_crowd_realtime.sql`. This adds `public.zones` to the Supabase Realtime publication used by the dashboard listener.
 
 Enable these Auth providers in Supabase:
 
@@ -54,16 +55,20 @@ GEMINI_API_KEY=<gemini-developer-api-key>
 GEMINI_MODEL_PRIMARY=gemini-2.5-flash
 GEMINI_MODEL_LITE=gemini-3.1-flash-lite
 LOG_LEVEL=INFO
+SIMULATE_CROWD_DATA=true
+CROWD_SIMULATION_INTERVAL_SECONDS=20
 ```
+
+`SIMULATE_CROWD_DATA` is demo-only. It runs a bounded random walk, records each value as an `estimated` reading, and occasionally creates a high-pressure scenario. Keep it `false` when real venue telemetry is connected. A single Render instance should run the simulator so multiple replicas do not write competing demo signals.
 
 Use `SUPABASE_JWKS_URL` or `SUPABASE_JWT_SECRET` for JWT verification. JWKS is preferred for asymmetric Supabase signing keys; the legacy shared JWT secret path remains supported for projects that still use HS256.
 
 After Render creates the service, copy the deploy hook URL and health URL into GitHub secrets:
 
-| Secret | Purpose |
-| ------ | ------- |
+| Secret                   | Purpose                                           |
+| ------------------------ | ------------------------------------------------- |
 | `RENDER_DEPLOY_HOOK_URL` | `deploy.yml` calls this after backend tests pass. |
-| `RENDER_HEALTH_URL` | `keep-alive.yml` pings this every three days. |
+| `RENDER_HEALTH_URL`      | `keep-alive.yml` pings this every three days.     |
 
 ## Frontend on Cloudflare Pages
 
@@ -71,13 +76,13 @@ Create a Cloudflare Pages project named `stadiumpulse`. The GitHub deploy workfl
 
 Set these GitHub secrets:
 
-| Secret | Purpose |
-| ------ | ------- |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account for Pages upload. |
-| `CLOUDFLARE_API_TOKEN` | Token with Cloudflare Pages edit permissions. |
-| `VITE_SUPABASE_URL` | Supabase project URL for the browser client. |
+| Secret                   | Purpose                                          |
+| ------------------------ | ------------------------------------------------ |
+| `CLOUDFLARE_ACCOUNT_ID`  | Cloudflare account for Pages upload.             |
+| `CLOUDFLARE_API_TOKEN`   | Token with Cloudflare Pages edit permissions.    |
+| `VITE_SUPABASE_URL`      | Supabase project URL for the browser client.     |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon key for browser auth and Realtime. |
-| `VITE_API_BASE_URL` | Public Render backend base URL. |
+| `VITE_API_BASE_URL`      | Public Render backend base URL.                  |
 
 Cloudflare Pages should serve the Vite app directly. API calls go to Render through `VITE_API_BASE_URL`; do not add a Firebase-style `/api/**` rewrite.
 
@@ -120,6 +125,9 @@ After deployment, verify:
 - Anonymous sign-in works.
 - Staff routes only work after `user_role` is present in the Supabase access token.
 - The ops dashboard receives zone updates from Supabase Realtime.
+- The dashboard visibly changes without a reload and labels the signal `Simulated demo signal`.
+- Selecting a 3D zone returns a real `/forecast` response with a deterministic projection and Gemini-written action.
+- Travel initially shows a guided selection state by design; selecting a match completes the authenticated Gemini suggestion flow.
 
 ## Known Limitation
 

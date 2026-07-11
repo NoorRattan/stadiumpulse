@@ -5,8 +5,16 @@ from dependencies import AuthenticatedUser, require_role
 from limiter import limiter
 from models.user import UserRole
 from models.zone import Zone
-from schemas.responses import CrowdZonesResponse, CrowdZoneSummary
-from services.crowd_service import auto_flag_incident, build_alert, congestion_band, load_zones
+from schemas.responses import CrowdForecastResponse, CrowdZonesResponse, CrowdZoneSummary
+from services.crowd_service import (
+    auto_flag_incident,
+    build_alert,
+    congestion_band,
+    forecast_density,
+    load_recent_density_readings,
+    load_zones,
+    phrase_forecast,
+)
 from services.db import get_pool
 from services.exceptions import ResourceNotFoundError
 
@@ -23,6 +31,7 @@ async def flatten_zone(zone: Zone, zones: list[Zone], db: asyncpg.Pool) -> Crowd
         currentDensityPct=zone.current_density_pct,
         band=congestion_band(zone.current_density_pct).lower(),
         alert=alert.message if alert else "",
+        lastUpdated=zone.last_updated.isoformat(),
     )
 
 
@@ -50,3 +59,29 @@ async def get_zone(
         if zone.zone_id == zone_id:
             return await flatten_zone(zone, zones, db)
     raise ResourceNotFoundError(f"Zone not found: {zone_id}")
+
+
+@router.get("/zones/{zone_id}/forecast", response_model=CrowdForecastResponse)
+@limiter.limit("60/minute")
+async def get_zone_forecast(
+    request: Request,
+    zone_id: str,
+    current_user: AuthenticatedUser = Depends(require_role(UserRole.staff, UserRole.volunteer)),
+    db: asyncpg.Pool = Depends(get_pool),
+) -> CrowdForecastResponse:
+    zones = await load_zones(db)
+    zone = next((candidate for candidate in zones if candidate.zone_id == zone_id), None)
+    if zone is None:
+        raise ResourceNotFoundError(f"Zone not found: {zone_id}")
+    readings = await load_recent_density_readings(db, zone_id)
+    forecast = forecast_density(zone.current_density_pct, readings)
+    return CrowdForecastResponse(
+        zoneId=zone.zone_id,
+        currentDensityPct=zone.current_density_pct,
+        projectedDensityPct=forecast.projected_density_pct,
+        minutesAhead=15,
+        projectedBand=forecast.projected_band.lower(),
+        direction=forecast.direction,
+        confidence=forecast.confidence,
+        narrative=phrase_forecast(zone, forecast),
+    )

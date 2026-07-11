@@ -1,7 +1,11 @@
-import { lazy, Suspense } from "react";
-import { Activity, AlertTriangle, RefreshCw, Users } from "lucide-react";
+import { lazy, Suspense, useState } from "react";
+import { Activity, AlertTriangle, Radio, RefreshCw, Users } from "lucide-react";
 
-import { ScoreboardMetric, ZoneCard } from "@/components/crowd";
+import {
+  CrowdForecastCard,
+  ScoreboardMetric,
+  ZoneCard,
+} from "@/components/crowd";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { useCrowdDensity } from "@/hooks/useCrowdDensity";
@@ -14,6 +18,9 @@ const CrowdField3D = lazy(() => import("@/components/visuals/CrowdField3D"));
 export default function DashboardPage(): JSX.Element {
   const { zones: summaries, loading, error, refresh } = useCrowdDensity();
   const reducedMotion = useReducedMotionSafe();
+  const [selectedZone, setSelectedZone] = useState<CrowdZoneSummary | null>(
+    null,
+  );
   const busiestZone = summaries.reduce<CrowdZoneSummary | null>(
     (current, zone) =>
       !current || zone.currentDensityPct > current.currentDensityPct
@@ -34,8 +41,12 @@ export default function DashboardPage(): JSX.Element {
               Crowd Overview
             </h1>
             <p className="max-w-3xl text-muted-foreground">
-              Live density signals for venue staff and volunteers, focused on
-              zones that need action.
+              A live venue digital twin for staff and volunteers, focused on
+              zones that need action before pressure becomes an incident.
+            </p>
+            <p className="inline-flex w-fit items-center gap-2 rounded-full border border-accent/35 bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
+              <Radio aria-hidden="true" className="size-3" /> Simulated demo
+              signal · live updates
             </p>
           </div>
           <Button
@@ -53,8 +64,39 @@ export default function DashboardPage(): JSX.Element {
               <div className="h-64 animate-pulse rounded-3xl bg-muted" />
             }
           >
-            <CrowdField3D zones={summaries} />
+            <CrowdField3D
+              onSelectZone={setSelectedZone}
+              selectedZoneId={selectedZone?.zoneId}
+              zones={summaries}
+            />
           </Suspense>
+        )}
+
+        {selectedZone && (
+          <section
+            aria-label={`Selected zone: ${selectedZone.name}`}
+            className="grid gap-3"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-display text-2xl font-bold">
+                Digital twin selection
+              </h2>
+              <Button
+                onClick={() => setSelectedZone(null)}
+                type="button"
+                variant="outline"
+              >
+                Clear selection
+              </Button>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ZoneCard zone={selectedZone} />
+              <CrowdForecastCard
+                key={selectedZone.zoneId}
+                zoneId={selectedZone.zoneId}
+              />
+            </div>
+          </section>
         )}
 
         <section

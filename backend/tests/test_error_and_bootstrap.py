@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from http import HTTPStatus
 
@@ -110,6 +111,33 @@ async def test_lifespan_configures_logging(monkeypatch: pytest.MonkeyPatch) -> N
 
     async with main.lifespan(main.app):
         assert configured == ["warning"]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_starts_and_stops_demo_simulation(monkeypatch: pytest.MonkeyPatch) -> None:
+    started = asyncio.Event()
+
+    async def simulation(_interval: int) -> None:
+        started.set()
+        await asyncio.Future()
+
+    settings = Settings(
+        ENVIRONMENT="test",
+        SUPABASE_URL="https://test.supabase.co",
+        SUPABASE_DB_URL="postgresql://postgres:test@localhost:5432/postgres",
+        ALLOWED_ORIGINS=["http://testserver"],
+        GEMINI_API_KEY="gemini-key",
+        GEMINI_MODEL_PRIMARY="primary",
+        GEMINI_MODEL_LITE="lite",
+        LOG_LEVEL="warning",
+        SIMULATE_CROWD_DATA=True,
+        CROWD_SIMULATION_INTERVAL_SECONDS=10,
+    )
+    monkeypatch.setattr(main, "get_settings", lambda: settings)
+    monkeypatch.setattr(main, "run_crowd_simulation", simulation)
+
+    async with main.lifespan(main.app):
+        await started.wait()
 
 
 def test_rate_limit_key_falls_back_to_remote_address() -> None:

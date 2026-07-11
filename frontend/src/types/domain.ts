@@ -100,6 +100,7 @@ export interface CrowdZoneSummary {
   currentDensityPct: number;
   band: CrowdBand;
   alert: string;
+  lastUpdated: string;
 }
 
 /** Wayfinding step returned inside a route option. */

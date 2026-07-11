@@ -113,6 +113,18 @@ export interface CrowdZonesResponse {
   zones: CrowdZoneSummary[];
 }
 
+/** Deterministic 15-minute projection with an AI-written action narrative. */
+export interface CrowdForecastResponse {
+  zoneId: string;
+  currentDensityPct: number;
+  projectedDensityPct: number;
+  minutesAhead: number;
+  projectedBand: CrowdZoneSummary["band"];
+  direction: "rising" | "stable" | "falling";
+  confidence: "low" | "medium" | "high";
+  narrative: string;
+}
+
 /** Auth profile response body. */
 export type UserProfileResponse = UserProfile;
 

@@ -25,6 +25,7 @@ os.environ.setdefault("GEMINI_API_KEY", "test-gemini-key")
 os.environ.setdefault("GEMINI_MODEL_PRIMARY", "gemini-2.5-flash")
 os.environ.setdefault("GEMINI_MODEL_LITE", "gemini-2.5-flash-lite")
 os.environ.setdefault("LOG_LEVEL", "INFO")
+os.environ.setdefault("SIMULATE_CROWD_DATA", "false")
 
 from dependencies import AuthenticatedUser, extract_bearer_token, get_current_user
 from limiter import limiter
@@ -238,6 +239,9 @@ class FakeDb:
         self.store["users"] = self.store["profiles"]
         self.store["user_roles"] = {}
         self.store["accessibilitySettings"] = {}
+        self.store["zoneReadings"] = {
+            "gate-4": [70.0, 74.0, 77.0, 80.0, 82.0],
+        }
 
     def zone_row(self, zone_id: str, data: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -267,6 +271,8 @@ class FakeDb:
 
     async def fetch(self, query: str, *args: Any) -> list[dict[str, Any]]:
         normalized = " ".join(query.lower().split())
+        if "from public.zone_readings" in normalized:
+            return [{"density_pct": value} for value in reversed(self.store["zoneReadings"].get(str(args[0]), []))][:8]
         if "from public.zones" in normalized:
             if "select zone_id, name, type from" in normalized:
                 return [
@@ -414,6 +420,16 @@ class FakeDb:
             }
             return session_id
         if "insert into public.incidents" in normalized:
+            if "where not exists" in normalized:
+                duplicate = any(
+                    data
+                    and data["zoneId"] == args[0]
+                    and data["status"] != "resolved"
+                    and data["rawInput"].startswith("Auto-flagged:")
+                    for data in self.store["incidents"].values()
+                )
+                if duplicate:
+                    return None
             incident_id = self.next_id("incidents")
             self.store["incidents"][incident_id] = {
                 "zoneId": args[0],
@@ -441,6 +457,8 @@ class FakeDb:
 
     async def execute(self, query: str, *args: Any) -> str:
         normalized = " ".join(query.lower().split())
+        if "insert into public.zone_readings" in normalized:
+            return "INSERT 0 6"
         if "insert into public.profiles" in normalized:
             existing = self.store["profiles"].get(str(args[0]))
             if existing:

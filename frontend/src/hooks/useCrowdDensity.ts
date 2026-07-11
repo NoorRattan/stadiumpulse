@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { apiRequest } from "@/services/apiClient";
+import { supabase } from "@/services/supabaseConfig";
 import type { CrowdZonesResponse } from "@/types/api";
 import type { CrowdZoneSummary } from "@/types/domain";
 
@@ -11,7 +12,7 @@ export interface CrowdDensityState {
   refresh: () => Promise<void>;
 }
 
-/** Reads the backend-computed crowd bands and refreshes them on a bounded interval. */
+/** Reads backend-computed bands and refreshes instantly from the Supabase change signal. */
 export function useCrowdDensity(): CrowdDensityState {
   const [zones, setZones] = useState<CrowdZoneSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +36,19 @@ export function useCrowdDensity(): CrowdDensityState {
 
   useEffect(() => {
     void refresh();
-    const interval = window.setInterval(() => void refresh(), 15_000);
-    return () => window.clearInterval(interval);
+    const channel = supabase
+      .channel("crowd-zone-live-updates")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "zones" },
+        () => void refresh(),
+      )
+      .subscribe();
+    const fallbackInterval = window.setInterval(() => void refresh(), 30_000);
+    return () => {
+      window.clearInterval(fallbackInterval);
+      void supabase.removeChannel(channel);
+    };
   }, [refresh]);
 
   return { zones, loading, error, refresh };

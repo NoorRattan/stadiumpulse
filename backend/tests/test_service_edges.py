@@ -1,13 +1,16 @@
+import asyncio
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from conftest import FakeDb
 
 import services.crowd_service as crowd_service
+import services.crowd_simulator as crowd_simulator
 from models.route import AccessibilityNeed, CongestionLevel
 from models.zone import Zone, ZoneType
 from services.briefing_service import summarize_incidents
 from services.concierge_service import handle_chat_message, normalize_language
+from services.crowd_simulator import nudge_crowd_data
 from services.exceptions import AIServiceError, ResourceNotFoundError
 from services.incident_service import draft_incident
 from services.travel_service import (
@@ -66,6 +69,50 @@ def test_crowd_alert_bands_and_critical_auto_flag(mock_db: FakeDb) -> None:
     assert alert.action_type == "URGENT_REROUTE"
 
 
+def test_density_forecast_covers_confidence_direction_and_bounds() -> None:
+    assert crowd_service.forecast_density(60, []).confidence == "low"
+    assert crowd_service.forecast_density(60, [40, 50, 60]).direction == "falling"
+    assert crowd_service.forecast_density(60, [60, 60]).direction == "stable"
+    rising = crowd_service.forecast_density(98, [80, 70, 60, 50, 40, 30])
+    assert rising.direction == "rising"
+    assert rising.confidence == "high"
+    assert rising.projected_density_pct == 100
+
+
+@pytest.mark.asyncio
+async def test_simulated_crowd_nudge_records_estimated_readings(mock_db: FakeDb) -> None:
+    assert await nudge_crowd_data(mock_db) == "INSERT 0 6"
+
+
+@pytest.mark.asyncio
+async def test_simulation_loop_recovers_then_cancels(monkeypatch: pytest.MonkeyPatch, mock_db: FakeDb) -> None:
+    iterations = 0
+    logged: list[str] = []
+
+    async def no_wait(_seconds: int) -> None:
+        nonlocal iterations
+        iterations += 1
+        if iterations == 3:
+            raise asyncio.CancelledError
+
+    async def pool() -> FakeDb:
+        return mock_db
+
+    async def nudge(_db: FakeDb) -> str:
+        if iterations == 1:
+            raise RuntimeError("temporary")
+        return "INSERT 0 6"
+
+    monkeypatch.setattr(crowd_simulator.asyncio, "sleep", no_wait)
+    monkeypatch.setattr(crowd_simulator, "get_pool", pool)
+    monkeypatch.setattr(crowd_simulator, "nudge_crowd_data", nudge)
+    monkeypatch.setattr(crowd_simulator.logger, "exception", logged.append)
+
+    with pytest.raises(asyncio.CancelledError):
+        await crowd_simulator.run_crowd_simulation(10)
+    assert logged == ["Simulated crowd-data update failed"]
+
+
 @pytest.mark.asyncio
 async def test_crowd_load_zones_skips_empty_snapshots_and_filter(
     monkeypatch: pytest.MonkeyPatch, mock_db: FakeDb
@@ -77,7 +124,10 @@ async def test_crowd_load_zones_skips_empty_snapshots_and_filter(
     assert all(alert.zone_id in {"gate-4"} for alert in alerts)
     assert len(mock_db.store["incidents"]) == 2
 
-    assert (await crowd_service.auto_flag_incident(zone("critical", 99), 99, db=mock_db)).severity.value == "critical"
+    incident = await crowd_service.auto_flag_incident(zone("critical", 99), 99, db=mock_db)
+    assert incident is not None
+    assert incident.severity.value == "critical"
+    assert await crowd_service.auto_flag_incident(zone("critical", 99), 99, db=mock_db) is None
 
 
 @pytest.mark.asyncio

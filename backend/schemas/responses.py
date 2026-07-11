@@ -93,12 +93,26 @@ class CrowdZoneSummary(BaseModel):
     current_density_pct: float = Field(alias="currentDensityPct", ge=0, le=100)
     band: Literal["normal", "moderate", "high", "critical"] = Field(alias="band")
     alert: str = Field(alias="alert")
+    last_updated: str = Field(alias="lastUpdated")
 
 
 class CrowdZonesResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     zones: list[CrowdZoneSummary] = Field(alias="zones")
+
+
+class CrowdForecastResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    zone_id: str = Field(alias="zoneId")
+    current_density_pct: float = Field(alias="currentDensityPct", ge=0, le=100)
+    projected_density_pct: float = Field(alias="projectedDensityPct", ge=0, le=100)
+    minutes_ahead: int = Field(alias="minutesAhead", ge=1)
+    projected_band: Literal["normal", "moderate", "high", "critical"] = Field(alias="projectedBand")
+    direction: Literal["rising", "stable", "falling"] = Field(alias="direction")
+    confidence: Literal["low", "medium", "high"] = Field(alias="confidence")
+    narrative: str = Field(alias="narrative")
 
 
 class IncidentListResponse(PaginatedResponse[IncidentReport]):

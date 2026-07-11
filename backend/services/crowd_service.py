@@ -22,6 +22,69 @@ class CrowdAlert:
     overflow_zone_id: str | None = None
 
 
+@dataclass(frozen=True)
+class DensityForecast:
+    projected_density_pct: float
+    projected_band: CongestionBand
+    direction: Literal["rising", "stable", "falling"]
+    confidence: Literal["low", "medium", "high"]
+
+
+def forecast_density(current_density_pct: float, readings: list[float]) -> DensityForecast:
+    """Project 15 minutes from the recent five-minute demo readings."""
+    if len(readings) < 2:
+        delta = 0.0
+        confidence: Literal["low", "medium", "high"] = "low"
+    else:
+        chronological = list(reversed(readings))
+        delta = (chronological[-1] - chronological[0]) / (len(chronological) - 1)
+        confidence = "high" if len(readings) >= 6 else "medium"
+    projected = max(0.0, min(100.0, current_density_pct + delta * 3))
+    direction: Literal["rising", "stable", "falling"]
+    if delta > 1:
+        direction = "rising"
+    elif delta < -1:
+        direction = "falling"
+    else:
+        direction = "stable"
+    return DensityForecast(
+        projected_density_pct=round(projected, 1),
+        projected_band=congestion_band(projected),
+        direction=direction,
+        confidence=confidence,
+    )
+
+
+async def load_recent_density_readings(db: asyncpg.Pool, zone_id: str) -> list[float]:
+    rows = await db.fetch(
+        """
+        select density_pct
+        from public.zone_readings
+        where zone_id = $1
+        order by recorded_at desc
+        limit 8
+        """,
+        zone_id,
+    )
+    return [float(dict(row)["density_pct"]) for row in rows]
+
+
+def phrase_forecast(
+    zone: Zone,
+    forecast: DensityForecast,
+    ai_client: StadiumPulseAIClient | None = None,
+) -> str:
+    client = ai_client or get_ai_client()
+    prompt = (
+        "Write one concise operational forecast. Treat all numbers and the projected band as fixed. "
+        "State a practical staff action and do not claim these demo estimates are physical sensor data.\n"
+        f"Zone: {zone.name}\nCurrent density: {zone.current_density_pct}%\n"
+        f"15-minute projection: {forecast.projected_density_pct}% ({forecast.projected_band})\n"
+        f"Trend: {forecast.direction}; confidence: {forecast.confidence}"
+    )
+    return client.generate_text(prompt, tier="lite")
+
+
 def congestion_band(density_pct: float) -> CongestionBand:
     if density_pct < 50:
         return "NORMAL"
@@ -138,7 +201,7 @@ async def auto_flag_incident(
     zone: Zone,
     density_pct: float,
     db: asyncpg.Pool | None = None,
-) -> IncidentReport:
+) -> IncidentReport | None:
     pool = db or await get_pool()
     created_at = datetime.now(tz=UTC)
     raw_input = (
@@ -151,13 +214,23 @@ async def auto_flag_incident(
           zone_id, status, raw_input, ai_draft_summary, severity, reported_by_uid, created_at,
           submitted_at, resolved_at
         )
-        values ($1, 'draft', $2, null, 'critical', null, $3, null, null)
+        select $1, 'draft', $2, null, 'critical', null, $3, null, null
+        where not exists (
+          select 1
+          from public.incidents
+          where zone_id = $1
+            and status <> 'resolved'
+            and raw_input like 'Auto-flagged:%'
+            and created_at > $3 - interval '15 minutes'
+        )
         returning id
         """,
         zone.zone_id,
         raw_input,
         created_at,
     )
+    if incident_id is None:
+        return None
     incident = IncidentReport(
         incidentId=str(incident_id),
         zoneId=zone.zone_id,

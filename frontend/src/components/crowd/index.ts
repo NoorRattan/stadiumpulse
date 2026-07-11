@@ -3,3 +3,4 @@ export {
   type ScoreboardMetricProps,
 } from "./ScoreboardMetric";
 export { ZoneCard, type ZoneCardProps } from "./ZoneCard";
+export { CrowdForecastCard } from "./CrowdForecastCard";

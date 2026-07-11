@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     gemini_model_primary: str = Field(validation_alias="GEMINI_MODEL_PRIMARY")
     gemini_model_lite: str = Field(validation_alias="GEMINI_MODEL_LITE")
     log_level: str = Field(validation_alias="LOG_LEVEL")
+    # StadiumPulse ships as an explicitly labeled tournament demo. Real venue
+    # deployments must opt out when physical telemetry is connected.
+    simulate_crowd_data: bool = Field(default=True, validation_alias="SIMULATE_CROWD_DATA")
+    crowd_simulation_interval_seconds: int = Field(
+        default=20,
+        ge=10,
+        validation_alias="CROWD_SIMULATION_INTERVAL_SECONDS",
+    )
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

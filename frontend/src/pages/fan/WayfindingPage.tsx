@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { lazy, Suspense, useMemo, useState, type FormEvent } from "react";
 import { Navigation } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,6 +17,10 @@ import { RouteLine, StepList } from "@/components/wayfinding";
 import { useWayfinding } from "@/hooks/useWayfinding";
 import { useZoneOptions } from "@/hooks/useZoneOptions";
 import type { AccessibilityNeed } from "@/types/domain";
+
+const SeatViewPreview = lazy(
+  () => import("@/components/visuals/SeatViewPreview"),
+);
 
 const accessibilityNeeds: readonly {
   value: AccessibilityNeed;
@@ -37,6 +41,7 @@ export default function WayfindingPage(): JSX.Element {
   const [selectedNeeds, setSelectedNeeds] = useState<AccessibilityNeed[]>([]);
 
   const firstRoute = route?.routeOptions[0] ?? null;
+  const destination = zones.find((zone) => zone.zoneId === toZoneId);
   const fallback = route?.generatedBy === "fallback";
   const zoneItems = useMemo(
     () =>
@@ -178,6 +183,15 @@ export default function WayfindingPage(): JSX.Element {
           <RouteLine generatedBy={route?.generatedBy} route={firstRoute} />
           <StepList route={firstRoute} />
         </div>
+        {firstRoute && destination?.type === "seating-block" && (
+          <Suspense
+            fallback={
+              <div className="h-72 animate-pulse rounded-3xl bg-muted" />
+            }
+          >
+            <SeatViewPreview sectionName={destination.name} />
+          </Suspense>
+        )}
       </div>
     </AppShell>
   );

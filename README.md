@@ -4,10 +4,12 @@ GenAI-powered wayfinding and ops intelligence for stadium match days.
 
 I built this to explore what a stadium's crowd and incident data looks like when an LLM is doing real reasoning over it — not just answering FAQs, but actually re-ranking routes around live congestion and triaging incident reports before a human opens the form.
 
+StadiumPulse is designed as a **venue nervous system**: one crowd signal powers fan routing, a selectable 3D operations twin, predictive staff decisions, and incident automation instead of feeding unrelated AI widgets.
+
 The app has two surfaces in one React build:
 
-- **Fan Experience PWA**: multilingual concierge, accessibility-aware wayfinding, and sustainable travel suggestions.
-- **Ops Console**: live crowd intelligence, incident drafts, and volunteer briefings for staff and volunteers.
+- **Fan Experience PWA**: multilingual voice concierge, accessibility-aware wayfinding, seat-view confidence previews, and sustainable travel suggestions.
+- **Ops Console**: live selectable 3D crowd twin, 15-minute density forecasts, incident drafts, and volunteer briefings for staff and volunteers.
 
 ## Running Locally
 
@@ -57,8 +59,9 @@ npm run build
 
 - Supabase Auth creates the browser identity; `/api/auth/bootstrap` creates the backend profile after sign-in.
 - Staff and volunteer roles live in `public.user_roles`; `backend/scripts/grant_role.py` updates them with the Supabase service role.
-- The dashboard reads public zone density from Supabase Realtime; operations mutations still go through FastAPI and re-check roles server-side.
-- Seed data is synthetic demo data. It lives in `supabase/seed.sql` and is applied by `backend/seed/seed_data.py`.
+- The dashboard refreshes backend-computed bands from a Supabase Realtime change signal; operations mutations still go through FastAPI and re-check roles server-side.
+- Seed and animated crowd data are synthetic demo data. The UI labels them as simulated; no screen represents them as physical venue sensors.
+- Forecast bands are deterministic from recent readings. Gemini explains the fixed projection and recommends an action but cannot change the computed number or band.
 
 ## Known Limitations and Dependency Notes
 

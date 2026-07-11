@@ -41,3 +41,22 @@ def test_crowd_zones_rejects_missing_auth(client: TestClient) -> None:
 def test_crowd_zone_not_found(client: TestClient) -> None:
     response = client.get("/api/crowd/zones/missing", headers=auth_headers("staff-1", UserRole.staff))
     assert response.status_code == 404
+
+
+def test_crowd_forecast_uses_recent_readings(client: TestClient) -> None:
+    response = client.get(
+        "/api/crowd/zones/gate-4/forecast",
+        headers=auth_headers("staff-1", UserRole.staff),
+    )
+    assert response.status_code == 200
+    assert response.json()["direction"] == "rising"
+    assert response.json()["minutesAhead"] == 15
+    assert response.json()["narrative"]
+
+
+def test_crowd_forecast_zone_not_found(client: TestClient) -> None:
+    response = client.get(
+        "/api/crowd/zones/missing/forecast",
+        headers=auth_headers("staff-1", UserRole.staff),
+    )
+    assert response.status_code == 404

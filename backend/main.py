@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from http import HTTPStatus
@@ -31,6 +32,7 @@ from schemas.errors import (
     unhandled_error_handler,
     validation_error_handler,
 )
+from services.crowd_simulator import run_crowd_simulation
 from services.exceptions import AIServiceError, ResourceNotFoundError
 
 
@@ -38,7 +40,21 @@ from services.exceptions import AIServiceError, ResourceNotFoundError
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     configure_logging(settings.log_level)
-    yield
+    simulation_task: asyncio.Task[None] | None = None
+    if settings.simulate_crowd_data:
+        simulation_task = asyncio.create_task(
+            run_crowd_simulation(settings.crowd_simulation_interval_seconds),
+            name="stadiumpulse-demo-crowd-simulation",
+        )
+    try:
+        yield
+    finally:
+        if simulation_task is not None:
+            simulation_task.cancel()
+            try:
+                await simulation_task
+            except asyncio.CancelledError:
+                pass
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:

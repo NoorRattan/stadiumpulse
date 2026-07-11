@@ -15,6 +15,7 @@ vi.mock("@/hooks/useCrowdDensity", () => ({
         currentDensityPct: 82,
         band: "high",
         alert: "Gate 4 is busy.",
+        lastUpdated: "2026-06-15T18:42:00Z",
       },
     ],
     loading: false,

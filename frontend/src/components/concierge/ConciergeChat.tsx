@@ -1,8 +1,17 @@
-import { memo, useId, useState, type FormEvent } from "react";
-import { Send } from "lucide-react";
+import {
+  memo,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
+import { Mic, Send, Volume2, VolumeX } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { LanguageContext } from "@/contexts/LanguageContext";
 
 import {
   ConciergeMessage,
@@ -31,6 +40,22 @@ const defaultMessages: ConciergeThreadMessage[] = [
   },
 ];
 
+interface SpeechRecognitionResultEventLike {
+  results: { 0: { 0: { transcript: string } } };
+}
+
+interface SpeechRecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: SpeechRecognitionResultEventLike) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
 /** Concierge chat thread with visible language-change system notes. */
 export const ConciergeChat = memo(function ConciergeChat({
   initialMessages = defaultMessages,
@@ -40,7 +65,44 @@ export const ConciergeChat = memo(function ConciergeChat({
     useState<ConciergeThreadMessage[]>(initialMessages);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [speakReplies, setSpeakReplies] = useState(false);
   const messageId = useId();
+  const recognition = useRef<SpeechRecognitionLike | null>(null);
+  const language = useContext(LanguageContext)?.language ?? "en";
+  const Recognition =
+    (
+      window as typeof window & {
+        SpeechRecognition?: SpeechRecognitionConstructor;
+        webkitSpeechRecognition?: SpeechRecognitionConstructor;
+      }
+    ).SpeechRecognition ??
+    (
+      window as typeof window & {
+        webkitSpeechRecognition?: SpeechRecognitionConstructor;
+      }
+    ).webkitSpeechRecognition;
+
+  useEffect(
+    () => () => {
+      recognition.current?.stop();
+      window.speechSynthesis?.cancel();
+    },
+    [],
+  );
+
+  const startListening = () => {
+    if (!Recognition) return;
+    const listener = new Recognition();
+    listener.lang = language;
+    listener.continuous = false;
+    listener.interimResults = false;
+    listener.onresult = (event) => setDraft(event.results[0][0].transcript);
+    listener.onend = () => setListening(false);
+    recognition.current = listener;
+    setListening(true);
+    listener.start();
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -64,6 +126,12 @@ export const ConciergeChat = memo(function ConciergeChat({
         ...current,
         { id: `assistant-${Date.now()}`, role: "assistant", text: reply },
       ]);
+      if (speakReplies && "speechSynthesis" in window) {
+        const utterance = new SpeechSynthesisUtterance(reply);
+        utterance.lang = language;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      }
     } finally {
       setSending(false);
     }
@@ -116,10 +184,39 @@ export const ConciergeChat = memo(function ConciergeChat({
             placeholder="Ask for the least-congested route to your seat."
           />
         </label>
-        <Button className="min-h-11 justify-self-start" disabled={sending}>
-          <Send aria-hidden="true" className="size-4" />
-          Send message
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button className="min-h-11" disabled={sending}>
+            <Send aria-hidden="true" className="size-4" />
+            Send message
+          </Button>
+          <Button
+            aria-label={
+              Recognition
+                ? "Start voice input"
+                : "Voice input unavailable in this browser"
+            }
+            disabled={!Recognition || listening || sending}
+            onClick={startListening}
+            type="button"
+            variant="outline"
+          >
+            <Mic aria-hidden="true" className="size-4" />
+            {listening ? "Listening…" : "Speak"}
+          </Button>
+          <Button
+            aria-pressed={speakReplies}
+            onClick={() => setSpeakReplies((current) => !current)}
+            type="button"
+            variant="outline"
+          >
+            {speakReplies ? (
+              <Volume2 aria-hidden="true" />
+            ) : (
+              <VolumeX aria-hidden="true" />
+            )}
+            Read replies aloud
+          </Button>
+        </div>
       </form>
     </section>
   );
