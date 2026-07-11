@@ -2,14 +2,12 @@
 
 GenAI-powered wayfinding and ops intelligence for stadium match days.
 
-I built this to explore what a stadium's crowd and incident data looks like when an LLM is doing real reasoning over it - not just answering FAQs, but actually re-ranking routes around live congestion and triaging incident reports before a human opens the form.
+I built this to explore what a stadium's crowd and incident data looks like when an LLM is doing real reasoning over it — not just answering FAQs, but actually re-ranking routes around live congestion and triaging incident reports before a human opens the form.
 
 The app has two surfaces in one React build:
 
-- Fan Experience PWA: multilingual concierge, accessibility-aware wayfinding, and sustainable travel suggestions.
-- Ops Console: live crowd intelligence, incident drafts, and volunteer briefings for staff and volunteers.
-
-Fair warning: the backend rate limiter is in-memory, which is fine for a single Cloud Run instance and not fine at real scale. That limitation is documented in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), not hidden.
+- **Fan Experience PWA**: multilingual concierge, accessibility-aware wayfinding, and sustainable travel suggestions.
+- **Ops Console**: live crowd intelligence, incident drafts, and volunteer briefings for staff and volunteers.
 
 ## Running Locally
 
@@ -61,5 +59,13 @@ npm run build
 - Staff and volunteer role claims are granted out of band with `backend/scripts/grant_role.py`.
 - The dashboard reads raw zone density through Firestore security rules; operations mutations still go through FastAPI and re-check roles server-side.
 - Seed data is synthetic demo data. It lives in `backend/seed/seed_data.py` and is labeled that way in the content guide.
+
+## Known Limitations and Dependency Notes
+
+**In-memory rate limiter**: The backend rate limiter uses `slowapi`'s in-memory storage. That works fine for a single Cloud Run instance, but under autoscaling each instance has its own counter. Production-scale deployments should move rate limit state to a shared store such as Redis or Memorystore.
+
+**`pytest-asyncio` major-version pin**: `requirements.txt` pins `pytest-asyncio==1.4.0`. That version's `asyncio_mode = auto` setting (in `pytest.ini`) is what makes async tests run without per-test decorators. Upgrading to a different major version changes the config key name; don't bump this without verifying the existing tests still run correctly.
+
+**TypeScript / typescript-eslint peer range**: `frontend/.npmrc` sets `legacy-peer-deps=true`. This project uses `typescript@6.0.3`; the current `typescript-eslint` peer range still expects TypeScript below 6. This is a dependency resolver compatibility issue — the linting and type checking both work correctly at runtime — but `npm ci` will fail without `legacy-peer-deps=true` until `typescript-eslint` formally widens its peer declaration.
 
 Deployment setup is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). API routes are summarized in [docs/API.md](docs/API.md).

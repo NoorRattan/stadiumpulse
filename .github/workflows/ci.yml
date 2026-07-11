@@ -14,13 +14,31 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
       - run: pip install -r requirements.txt
-      - run: ruff check .
-      - run: ruff format --check .
-      - run: pytest --cov=. --cov-fail-under=80
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (ruff)
+        run: ruff format --check .
+
+      - name: Tests with coverage
+        run: pytest --cov=. --cov-fail-under=100
+        env:
+          ENVIRONMENT: test
+          GCP_PROJECT_ID: test-project
+          ALLOWED_ORIGINS: http://localhost:5173
+          VERTEX_AI_LOCATION: us-central1
+          GEMINI_MODEL_PRIMARY: gemini-2.5-flash
+          GEMINI_MODEL_LITE: gemini-2.5-flash-lite
+          LOG_LEVEL: WARNING
 
   frontend:
     runs-on: ubuntu-latest
@@ -29,12 +47,27 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: npm ci
-      - run: npx eslint .
-      - run: npx prettier --check .
-      - run: npx vitest run
-      - run: npx tsc --noEmit
-      - run: npm run build
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (eslint)
+        run: npx eslint .
+
+      - name: Format check (prettier)
+        run: npx prettier --check .
+
+      - name: Tests (vitest)
+        run: npx vitest run
+
+      - name: Type check (tsc)
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build

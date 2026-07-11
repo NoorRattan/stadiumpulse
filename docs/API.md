@@ -4,6 +4,7 @@ All routes use Firebase Auth ID tokens with `Authorization: Bearer <token>`. Rol
 
 | Method  | Path                                  | Auth               | Purpose                                                                 |
 | ------- | ------------------------------------- | ------------------ | ----------------------------------------------------------------------- |
+| `GET`   | `/api/health`                         | None               | Health check. Returns `{"status": "ok"}`.                               |
 | `GET`   | `/api/auth/me`                        | Any signed-in user | Return the current user's backend profile.                              |
 | `POST`  | `/api/auth/bootstrap`                 | Any signed-in user | Idempotently create or read the signed-in user's `users/{uid}` profile. |
 | `POST`  | `/api/concierge/chat`                 | Any signed-in user | Send a multilingual concierge message and receive the assistant reply.  |
@@ -19,6 +20,8 @@ All routes use Firebase Auth ID tokens with `Authorization: Bearer <token>`. Rol
 | `PATCH` | `/api/incidents/{incidentId}`         | Staff only         | Transition an incident status to submitted or resolved.                 |
 | `POST`  | `/api/briefings/generate`             | Staff only         | Generate a per-zone volunteer briefing.                                 |
 | `GET`   | `/api/briefings/{zoneId}`             | Staff or volunteer | Read the latest briefing for a zone.                                    |
+
+> **Note**: The Cloud Run service exposes `/health` directly. Through Firebase Hosting's `/api/**` rewrite, it is reachable at `/api/health`. Use the Hosting domain path to verify the rewrite is working, not just the raw Cloud Run URL.
 
 Standard errors use:
 
