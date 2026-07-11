@@ -232,7 +232,7 @@ async def auto_flag_incident(
           where zone_id = $1
             and status <> 'resolved'
             and raw_input like 'Auto-flagged:%'
-            and created_at > $3 - interval '15 minutes'
+            and created_at > $3::timestamptz - interval '15 minutes'
         )
         returning id
         """,
