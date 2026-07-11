@@ -1,5 +1,7 @@
 import { Component, type ReactNode } from "react";
 
+import { BrandLogo } from "@/components/brand/BrandLogo";
+
 interface ErrorBoundaryProps {
   children: ReactNode;
 }
@@ -23,9 +25,7 @@ export class ErrorBoundary extends Component<
     if (this.state.hasError) {
       return (
         <main className="mx-auto max-w-3xl px-6 py-12" id="main-content">
-          <h1 className="font-display text-3xl text-text-primary">
-            StadiumPulse
-          </h1>
+          <BrandLogo tagline />
           <p className="mt-3 text-error-text">
             This route could not be rendered.
           </p>

@@ -1,6 +1,7 @@
 import { memo, type ReactNode } from "react";
 
 import { AccessibilityToggle } from "@/components/accessibility";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
@@ -21,12 +22,7 @@ export const AppShell = memo(function AppShell({ children }: AppShellProps) {
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 lg:px-8">
           <div className="min-w-0 shrink-0">
-            <p className="font-display text-xl font-black tracking-tight text-foreground md:text-2xl">
-              StadiumPulse
-            </p>
-            <p className="hidden text-xs text-muted-foreground sm:block">
-              Know the venue. Move with confidence.
-            </p>
+            <BrandLogo tagline />
           </div>
           <div className="flex min-w-0 items-center gap-2">
             <Navbar />
@@ -43,7 +39,7 @@ export const AppShell = memo(function AppShell({ children }: AppShellProps) {
       <footer className="relative border-t border-border/70 bg-card/55 pb-24 md:pb-0">
         <div className="mx-auto grid max-w-7xl gap-5 px-4 py-7 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8">
           <div>
-            <p className="font-display text-lg font-bold">StadiumPulse</p>
+            <BrandLogo />
             <p className="text-sm text-muted-foreground">
               Accessible match-day intelligence for every fan and operator.
             </p>
