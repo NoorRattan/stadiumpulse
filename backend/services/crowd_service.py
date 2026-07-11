@@ -8,6 +8,7 @@ from models.incident import IncidentReport, IncidentSeverity, IncidentStatus
 from models.zone import Zone, ZoneType
 from services.ai_core import StadiumPulseAIClient, get_ai_client
 from services.db import get_pool
+from services.exceptions import AIServiceError
 
 CongestionBand = Literal["NORMAL", "MODERATE", "HIGH", "CRITICAL"]
 ActionType = Literal["MONITOR", "SUGGEST_OVERFLOW", "URGENT_REROUTE"]
@@ -82,7 +83,13 @@ def phrase_forecast(
         f"15-minute projection: {forecast.projected_density_pct}% ({forecast.projected_band})\n"
         f"Trend: {forecast.direction}; confidence: {forecast.confidence}"
     )
-    return client.generate_text(prompt, tier="lite")
+    try:
+        return client.generate_text(prompt, tier="lite")
+    except AIServiceError:
+        return (
+            f"{zone.name} is {forecast.direction}; plan for approximately "
+            f"{forecast.projected_density_pct}% density in 15 minutes and continue staff monitoring."
+        )
 
 
 def congestion_band(density_pct: float) -> CongestionBand:
@@ -172,7 +179,11 @@ def phrase_alert(
         f"Action: {action_type}\n"
         f"Candidate overflow zone: {overflow_zone.model_dump(by_alias=True) if overflow_zone else None}"
     )
-    return client.generate_text(prompt, tier="lite")
+    try:
+        return client.generate_text(prompt, tier="lite")
+    except AIServiceError:
+        overflow = f" Redirect toward {overflow_zone.name}." if overflow_zone else ""
+        return f"{zone.name} is {band.lower()}. Required action: {action_type.lower()}.{overflow}"
 
 
 def build_alert(

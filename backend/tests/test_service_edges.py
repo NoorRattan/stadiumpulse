@@ -79,6 +79,25 @@ def test_density_forecast_covers_confidence_direction_and_bounds() -> None:
     assert rising.projected_density_pct == 100
 
 
+def test_crowd_narration_falls_back_when_gemini_is_unavailable() -> None:
+    class FailingAI:
+        def generate_text(self, prompt: str, *, tier: str) -> str:
+            raise AIServiceError("offline")
+
+    target = zone("gate-4", 82)
+    overflow = zone("gate-2", 20)
+    forecast = crowd_service.forecast_density(82, [82, 80, 78])
+
+    assert "Required action" in crowd_service.phrase_alert(
+        target,
+        "HIGH",
+        "SUGGEST_OVERFLOW",
+        overflow,
+        FailingAI(),
+    )
+    assert "15 minutes" in crowd_service.phrase_forecast(target, forecast, FailingAI())
+
+
 @pytest.mark.asyncio
 async def test_simulated_crowd_nudge_records_estimated_readings(mock_db: FakeDb) -> None:
     assert await nudge_crowd_data(mock_db) == "INSERT 0 6"
