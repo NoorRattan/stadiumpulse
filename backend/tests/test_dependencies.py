@@ -28,6 +28,7 @@ def test_extract_bearer_token_rejects_missing_and_wrong_scheme() -> None:
 
 def test_supabase_jwks_url_defaults_to_auth_discovery_endpoint() -> None:
     settings = Settings(
+        _env_file=None,
         ENVIRONMENT="test",
         SUPABASE_URL="https://abc.supabase.co/",
         SUPABASE_DB_URL="postgresql://postgres:test@localhost:5432/postgres",
@@ -42,6 +43,19 @@ def test_supabase_jwks_url_defaults_to_auth_discovery_endpoint() -> None:
 
 @pytest.mark.asyncio
 async def test_verify_token_async_uses_supabase_jwt_secret(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        dependencies,
+        "get_settings",
+        lambda: type(
+            "SettingsStub",
+            (),
+            {
+                "supabase_url": "https://test.supabase.co",
+                "supabase_jwt_secret": "test-secret",
+                "supabase_jwks_url": None,
+            },
+        )(),
+    )
     token = jwt.encode(
         {"sub": "fan-1", "user_role": "fan", "iss": "https://test.supabase.co/auth/v1"},
         "test-secret",
