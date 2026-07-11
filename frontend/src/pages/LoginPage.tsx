@@ -7,12 +7,10 @@ import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/services/supabaseConfig";
 
 /** Sign-in page with Google, email, and primary anonymous fan access. */
 export default function LoginPage(): JSX.Element {
-  const { signInGuest } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,8 +49,7 @@ export default function LoginPage(): JSX.Element {
             Sign In
           </h1>
           <p className="text-muted-foreground">
-            Use staff credentials for ops tools, or continue anonymously for the
-            fan PWA.
+            Sign in with your fan or operations account to use live venue tools.
           </p>
         </section>
 
@@ -118,24 +115,10 @@ export default function LoginPage(): JSX.Element {
             </Button>
           </form>
 
-          <Button
-            className="min-h-12 w-full"
-            disabled={submitting}
-            onClick={() =>
-              void signInGuest()
-                .then(finishSignIn)
-                .catch((caught: unknown) =>
-                  toast.error(
-                    caught instanceof Error
-                      ? caught.message
-                      : "Anonymous sign-in failed.",
-                  ),
-                )
-            }
-            type="button"
-          >
-            Continue without an account
-          </Button>
+          <p className="text-center text-sm text-muted-foreground">
+            Guest access is currently unavailable. Use a verified account so
+            your accessibility settings and conversations can be saved safely.
+          </p>
         </div>
       </div>
     </AppShell>

@@ -52,7 +52,7 @@ SUPABASE_JWT_SECRET=
 ALLOWED_ORIGINS=https://<cloudflare-pages-domain>
 GEMINI_API_KEY=<gemini-developer-api-key>
 GEMINI_MODEL_PRIMARY=gemini-2.5-flash
-GEMINI_MODEL_LITE=gemini-2.5-flash-lite
+GEMINI_MODEL_LITE=gemini-3.1-flash-lite
 LOG_LEVEL=INFO
 ```
 

@@ -11,6 +11,7 @@ export default tseslint.config(
       ".eslintrc.cjs",
       "eslint.config.js",
       "public/sw.js",
+      "scripts/**",
     ],
   },
   js.configs.recommended,

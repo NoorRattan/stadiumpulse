@@ -1,41 +1,19 @@
-import { Activity, AlertTriangle, Users } from "lucide-react";
+import { lazy, Suspense } from "react";
+import { Activity, AlertTriangle, RefreshCw, Users } from "lucide-react";
 
 import { ScoreboardMetric, ZoneCard } from "@/components/crowd";
 import { AppShell } from "@/components/layout";
+import { Button } from "@/components/ui/button";
 import { useCrowdDensity } from "@/hooks/useCrowdDensity";
-import type { CrowdBand, CrowdZoneSummary, Zone } from "@/types/domain";
+import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
+import type { CrowdZoneSummary } from "@/types/domain";
 
-function bandForZone(zone: Zone): CrowdBand {
-  if (zone.currentDensityPct >= 90) {
-    return "critical";
-  }
-  if (zone.currentDensityPct >= 75) {
-    return "high";
-  }
-  if (zone.currentDensityPct >= 50) {
-    return "moderate";
-  }
-  return "normal";
-}
-
-function toCrowdSummary(zone: Zone): CrowdZoneSummary {
-  const roundedDensity = Math.round(zone.currentDensityPct);
-  return {
-    zoneId: zone.zoneId,
-    name: zone.name,
-    currentDensityPct: zone.currentDensityPct,
-    band: bandForZone(zone),
-    alert:
-      zone.currentDensityPct >= 75
-        ? `${zone.name} is at ${roundedDensity}% density. Review nearby routing.`
-        : `${zone.name} is at ${roundedDensity}% density.`,
-  };
-}
+const CrowdField3D = lazy(() => import("@/components/visuals/CrowdField3D"));
 
 /** Ops dashboard page with live crowd density cards and summary metrics. */
 export default function DashboardPage(): JSX.Element {
-  const { zones, loading, error } = useCrowdDensity();
-  const summaries = zones.map(toCrowdSummary);
+  const { zones: summaries, loading, error, refresh } = useCrowdDensity();
+  const reducedMotion = useReducedMotionSafe();
   const busiestZone = summaries.reduce<CrowdZoneSummary | null>(
     (current, zone) =>
       !current || zone.currentDensityPct > current.currentDensityPct
@@ -50,15 +28,34 @@ export default function DashboardPage(): JSX.Element {
   return (
     <AppShell>
       <div className="grid gap-6">
-        <section className="grid gap-2">
-          <h1 className="font-display text-4xl font-bold text-foreground">
-            Crowd Overview
-          </h1>
-          <p className="max-w-3xl text-muted-foreground">
-            Live density signals for venue staff and volunteers, focused on
-            zones that need action.
-          </p>
+        <section className="flex flex-wrap items-end justify-between gap-4">
+          <div className="grid gap-2">
+            <h1 className="font-display text-4xl font-bold text-foreground">
+              Crowd Overview
+            </h1>
+            <p className="max-w-3xl text-muted-foreground">
+              Live density signals for venue staff and volunteers, focused on
+              zones that need action.
+            </p>
+          </div>
+          <Button
+            onClick={() => void refresh()}
+            type="button"
+            variant="outline"
+          >
+            <RefreshCw aria-hidden="true" /> Refresh live data
+          </Button>
         </section>
+
+        {!reducedMotion && summaries.length > 0 && (
+          <Suspense
+            fallback={
+              <div className="h-64 animate-pulse rounded-3xl bg-muted" />
+            }
+          >
+            <CrowdField3D zones={summaries} />
+          </Suspense>
+        )}
 
         <section
           aria-label="Crowd metrics"

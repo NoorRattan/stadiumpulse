@@ -125,8 +125,13 @@ async def test_travel_cache_and_invalid_match_shapes(mock_db: FakeDb) -> None:
         "expireAt": now + timedelta(minutes=5),
         "suggestions": "rail",
     }
+    mock_db.store["travelSuggestionsCache"]["wrong-type"] = {
+        "expireAt": now + timedelta(minutes=5),
+        "suggestions": 42,
+    }
     assert await get_fresh_cache(mock_db, "expired") is None
     assert await get_fresh_cache(mock_db, "bad") is None
+    assert await get_fresh_cache(mock_db, "wrong-type") is None
 
     mock_db.store["matches"]["bad-load"] = {
         "venueZoneIds": [],

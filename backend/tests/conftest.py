@@ -1,3 +1,4 @@
+import json
 import os
 from collections.abc import Iterator
 from copy import deepcopy
@@ -461,9 +462,12 @@ class FakeDb:
             self.store.setdefault(path, {})[message_id] = {"role": args[1], "text": args[2], "createdAt": args[3]}
             return "INSERT 1"
         if "insert into public.travel_suggestions_cache" in normalized:
+            suggestions = args[2]
+            if isinstance(suggestions, str):
+                suggestions = json.loads(suggestions)
             self.store["travelSuggestionsCache"][str(args[0])] = {
                 "generatedAt": args[1],
-                "suggestions": args[2],
+                "suggestions": suggestions,
                 "expireAt": args[3],
             }
             return "INSERT 1"

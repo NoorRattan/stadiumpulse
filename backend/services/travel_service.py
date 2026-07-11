@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
@@ -67,6 +68,11 @@ async def get_fresh_cache(db: asyncpg.Pool, match_id: str) -> list[TravelSuggest
         return None
 
     suggestions = row["suggestions"]
+    if isinstance(suggestions, str):
+        try:
+            suggestions = json.loads(suggestions)
+        except json.JSONDecodeError:
+            return None
     if not isinstance(suggestions, list):
         return None
     return [TravelSuggestion.model_validate(item) for item in suggestions]
@@ -101,7 +107,7 @@ async def cache_suggestions(db: asyncpg.Pool, match_id: str, suggestions: list[T
         """,
         match_id,
         generated_at,
-        [suggestion.model_dump(by_alias=True) for suggestion in suggestions],
+        json.dumps([suggestion.model_dump(by_alias=True) for suggestion in suggestions]),
         generated_at + timedelta(hours=1),
     )
 

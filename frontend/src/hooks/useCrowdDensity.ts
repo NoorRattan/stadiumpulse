@@ -1,89 +1,43 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { supabase } from "../services/supabaseConfig";
-import type { Zone, ZoneType } from "../types/domain";
+import { apiRequest } from "@/services/apiClient";
+import type { CrowdZonesResponse } from "@/types/api";
+import type { CrowdZoneSummary } from "@/types/domain";
 
-/** State returned by the live crowd-density listener. */
 export interface CrowdDensityState {
-  zones: Zone[];
+  zones: CrowdZoneSummary[];
   loading: boolean;
   error: Error | null;
+  refresh: () => Promise<void>;
 }
 
-function stringValue(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
+/** Reads the backend-computed crowd bands and refreshes them on a bounded interval. */
+export function useCrowdDensity(): CrowdDensityState {
+  const [zones, setZones] = useState<CrowdZoneSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-function zoneFromRow(data: Record<string, unknown>): Zone {
-  return {
-    zoneId: stringValue(data.zone_id),
-    name: stringValue(data.name),
-    type: data.type as ZoneType,
-    capacity: Number(data.capacity ?? 0),
-    currentDensityPct: Number(data.current_density_pct ?? 0),
-    lastUpdated: stringValue(data.last_updated),
-    coordinates: {
-      lat: Number(data.lat ?? 0),
-      lng: Number(data.lng ?? 0),
-    },
-  };
-}
-
-/** Listens to the staff/volunteer Supabase zone feed with cleanup on unmount. */
-export function useCrowdDensity(maxZones = 50): CrowdDensityState {
-  const [state, setState] = useState<CrowdDensityState>({
-    zones: [],
-    loading: true,
-    error: null,
-  });
+  const refresh = useCallback(async () => {
+    try {
+      const response = await apiRequest<CrowdZonesResponse>("/api/crowd/zones");
+      setZones(response.zones);
+      setError(null);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught
+          : new Error("Crowd zones could not be loaded."),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let active = true;
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 15_000);
+    return () => window.clearInterval(interval);
+  }, [refresh]);
 
-    void supabase
-      .from("zones")
-      .select(
-        "zone_id,name,type,capacity,current_density_pct,last_updated,lat,lng",
-      )
-      .order("zone_id", { ascending: true })
-      .limit(maxZones)
-      .then(({ data, error }) => {
-        if (!active) {
-          return;
-        }
-        if (error) {
-          setState({ zones: [], loading: false, error });
-          return;
-        }
-        setState({
-          zones: (data ?? []).map((row) => zoneFromRow(row)),
-          loading: false,
-          error: null,
-        });
-      });
-
-    const channel = supabase
-      .channel("zones-density")
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "zones" },
-        (payload) => {
-          const nextZone = zoneFromRow(payload.new);
-          setState((current) => ({
-            ...current,
-            zones: current.zones.map((zone) =>
-              zone.zoneId === nextZone.zoneId ? nextZone : zone,
-            ),
-          }));
-        },
-      )
-      .subscribe();
-
-    return () => {
-      active = false;
-      void supabase.removeChannel(channel);
-    };
-  }, [maxZones]);
-
-  return state;
+  return { zones, loading, error, refresh };
 }

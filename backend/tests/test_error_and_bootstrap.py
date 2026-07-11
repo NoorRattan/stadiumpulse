@@ -160,4 +160,5 @@ async def test_get_pool_uses_configured_supabase_db_url(monkeypatch: pytest.Monk
     assert await get_pool() == "pool"
     assert seen["dsn"] == "postgresql://postgres:test@localhost:5432/postgres"
     assert seen["max_size"] == 5
+    assert seen["statement_cache_size"] == 0
     db_module._pool = None

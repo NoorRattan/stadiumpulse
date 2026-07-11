@@ -132,6 +132,32 @@ async def test_get_current_user_sets_request_state_from_real_verification(monkey
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("payload", "expected_role"),
+    [
+        ({"sub": "fan-1", "role": "authenticated"}, UserRole.fan),
+        (
+            {"sub": "staff-1", "role": "authenticated", "app_metadata": {"user_role": "staff"}},
+            UserRole.staff,
+        ),
+    ],
+)
+async def test_get_current_user_supports_real_supabase_role_claims(
+    monkeypatch: pytest.MonkeyPatch,
+    payload: dict[str, object],
+    expected_role: UserRole,
+) -> None:
+    async def verify_token(token: str) -> dict[str, object]:
+        return payload
+
+    monkeypatch.setattr(dependencies, "verify_token_async", verify_token)
+
+    current_user = await get_current_user(request_with_headers({}), authorization="Bearer real-supabase-token")
+
+    assert current_user.role == expected_role
+
+
+@pytest.mark.asyncio
 async def test_get_current_user_rejects_invalid_supabase_token(monkeypatch: pytest.MonkeyPatch) -> None:
     async def fail_verification(token: str) -> dict[str, object]:
         raise ValueError("expired")

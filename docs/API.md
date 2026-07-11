@@ -4,7 +4,7 @@ All protected routes use Supabase Auth access tokens with `Authorization: Bearer
 
 | Method  | Path                                  | Auth               | Purpose                                                                 |
 | ------- | ------------------------------------- | ------------------ | ----------------------------------------------------------------------- |
-| `GET`   | `/api/health`                         | None               | Health check. Returns `{"status": "ok"}`.                               |
+| `GET`   | `/health`                             | None               | Health check. Returns service status without authentication.              |
 | `GET`   | `/api/auth/me`                        | Any signed-in user | Return the current user's backend profile.                              |
 | `POST`  | `/api/auth/bootstrap`                 | Any signed-in user | Idempotently create or read the signed-in user's `profiles` row.        |
 | `POST`  | `/api/concierge/chat`                 | Any signed-in user | Send a multilingual concierge message and receive the assistant reply.  |

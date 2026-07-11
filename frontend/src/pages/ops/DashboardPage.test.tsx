@@ -12,16 +12,19 @@ vi.mock("@/hooks/useCrowdDensity", () => ({
       {
         zoneId: "gate-4",
         name: "Gate 4",
-        type: "gate",
-        capacity: 1200,
         currentDensityPct: 82,
-        lastUpdated: "2026-06-15T18:42:00Z",
-        coordinates: { lat: 1, lng: 1 },
+        band: "high",
+        alert: "Gate 4 is busy.",
       },
     ],
     loading: false,
     error: null,
+    refresh: vi.fn(),
   }),
+}));
+
+vi.mock("@/hooks/useReducedMotionSafe", () => ({
+  useReducedMotionSafe: () => true,
 }));
 
 const authValue: AuthContextValue = {

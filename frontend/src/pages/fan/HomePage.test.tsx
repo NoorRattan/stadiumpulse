@@ -23,6 +23,10 @@ vi.mock("@/hooks/useMatches", () => ({
   }),
 }));
 
+vi.mock("@/hooks/useReducedMotionSafe", () => ({
+  useReducedMotionSafe: () => true,
+}));
+
 const authValue: AuthContextValue = {
   user: null,
   profile: null,
@@ -45,7 +49,7 @@ describe("HomePage", () => {
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "StadiumPulse",
+      "Your match day, without the guesswork.",
     );
     const results = await axe(container);
     expect(results.violations).toHaveLength(0);
