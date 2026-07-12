@@ -90,8 +90,7 @@ export default function DemoPage(): JSX.Element {
               delay: 0.05,
             }}
           >
-            One connected
-            <br />
+            One connected <br />
             <span className="text-gradient">match-day story.</span>
           </motion.h1>
           <motion.p
