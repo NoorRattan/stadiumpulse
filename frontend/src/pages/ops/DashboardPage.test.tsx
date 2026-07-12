@@ -6,6 +6,17 @@ import { AuthContext, type AuthContextValue } from "@/contexts/AuthContext";
 
 import DashboardPage from "./DashboardPage";
 
+vi.mock("@/services/apiClient", () => ({
+  apiRequest: vi.fn().mockResolvedValue({
+    generatedAt: "2026-07-12T12:00:00Z",
+    minutesAhead: 15,
+    headline: "No elevated zones projected",
+    narrative: "Maintain routine monitoring.",
+    dataStatus: "simulated",
+    items: [],
+  }),
+}));
+
 vi.mock("@/hooks/useCrowdDensity", () => ({
   useCrowdDensity: () => ({
     zones: [

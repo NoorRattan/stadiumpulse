@@ -60,3 +60,42 @@ def test_crowd_forecast_zone_not_found(client: TestClient) -> None:
         headers=auth_headers("staff-1", UserRole.staff),
     )
     assert response.status_code == 404
+
+
+def test_operational_digest_ranks_pressure_and_requires_approval(client: TestClient) -> None:
+    response = client.get(
+        "/api/crowd/digest",
+        headers=auth_headers("staff-1", UserRole.staff),
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["minutesAhead"] == 15
+    assert payload["dataStatus"] == "simulated"
+    assert payload["items"][0]["zoneId"] == "gate-4"
+    assert payload["items"][0]["priority"] == "urgent"
+    assert all(item["requiresSupervisorApproval"] for item in payload["items"])
+
+
+def test_operational_digest_rejects_fan(client: TestClient) -> None:
+    response = client.get(
+        "/api/crowd/digest",
+        headers=auth_headers("fan-1", UserRole.fan),
+    )
+
+    assert response.status_code == 403
+
+
+def test_operational_digest_handles_no_elevated_zones(client: TestClient, mock_db: object) -> None:
+    for zone_data in mock_db.store["zones"].values():
+        zone_data["currentDensityPct"] = 10.0
+    mock_db.store["zoneReadings"] = {}
+
+    response = client.get(
+        "/api/crowd/digest",
+        headers=auth_headers("vol-1", UserRole.volunteer),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["headline"] == "No elevated zones projected"
+    assert response.json()["items"] == []

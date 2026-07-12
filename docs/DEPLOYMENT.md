@@ -27,7 +27,7 @@ Enable these Auth providers in Supabase:
 - Email/password
 - Google OAuth
 
-The migration installs `public.custom_access_token_hook`. Configure it as the Supabase custom access token hook so JWTs include `user_role`. The frontend reads that claim for UX gating; FastAPI verifies the same claim server-side for staff and volunteer authorization.
+The migration installs `public.custom_access_token_hook`, but Supabase does not call it until you enable it in the dashboard. In Supabase, open **Authentication -> Hooks -> Customize Access Token**, enable the hook, and select `public.custom_access_token_hook`. This is required for staff and volunteer access. The app intentionally ignores `app_metadata.user_role`; both frontend route gating and FastAPI authorization use only the `user_role` access-token claim generated from `public.user_roles`.
 
 ## Backend on Render
 
@@ -95,7 +95,7 @@ cd backend
 python scripts/grant_role.py <supabase-user-uuid> staff
 ```
 
-The script updates `public.user_roles` and `public.profiles.role` inside a `service_role` transaction. Sign out and back in after changing a role so the access token receives the new `user_role` claim.
+The script updates `public.user_roles` and `public.profiles.role` inside a `service_role` transaction. Sign out and back in after changing a role so the access token receives the new `user_role` claim. If the Supabase custom access-token hook is not enabled, the refreshed token will not contain `user_role`, and the user will remain a fan even though the database role row changed.
 
 ## Verification
 
@@ -124,6 +124,8 @@ After deployment, verify:
 - Cloudflare Pages loads the app.
 - Anonymous sign-in works.
 - Staff routes only work after `user_role` is present in the Supabase access token.
+- A database-only role grant produces a refreshed access token whose decoded payload contains `user_role: "staff"` or `user_role: "volunteer"`.
+- `supabase_realtime` publishes `public.zones` only; do not add `public.incidents`, `public.profiles`, `public.user_roles`, or briefing tables to the Realtime publication.
 - The ops dashboard receives zone updates from Supabase Realtime.
 - The dashboard visibly changes without a reload and labels the signal `Simulated demo signal`.
 - Selecting a 3D zone returns a real `/forecast` response with a deterministic projection and Gemini-written action.

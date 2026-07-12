@@ -70,9 +70,27 @@ const profile: UserProfileResponse = {
   preferredLanguage: "en",
 };
 
+function tokenWithClaims(claims: Record<string, unknown>): string {
+  return [
+    btoa(JSON.stringify({ alg: "none" })),
+    btoa(JSON.stringify(claims)),
+    "signature",
+  ].join(".");
+}
+
 const session = {
-  access_token: "header.payload.signature",
+  access_token: tokenWithClaims({ user_role: "fan" }),
   user: { id: "fan-1" },
+} as Session;
+
+const staffProfile: UserProfileResponse = {
+  ...profile,
+  role: "staff",
+};
+
+const sessionWithoutRoleClaim = {
+  access_token: tokenWithClaims({ role: "authenticated" }),
+  user: { id: "staff-1" },
 } as Session;
 
 describe("AuthProvider", () => {
@@ -105,5 +123,20 @@ describe("AuthProvider", () => {
     authHarness.callback?.(session);
 
     await waitFor(() => expect(apiRequest).toHaveBeenCalledOnce());
+  });
+
+  it("does not use the profile row as an ops role fallback", async () => {
+    vi.mocked(apiRequest).mockResolvedValue(staffProfile);
+    render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>,
+    );
+
+    authHarness.callback?.(sessionWithoutRoleClaim);
+
+    await waitFor(() => expect(screen.getByText("ready")).toBeInTheDocument());
+    expect(screen.getByText("fan")).toBeInTheDocument();
+    expect(screen.getByText("Maria Fan")).toBeInTheDocument();
   });
 });

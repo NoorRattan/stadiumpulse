@@ -120,16 +120,28 @@ export function ThemeToggle(): JSX.Element {
   return (
     <Button
       aria-label={`Switch to ${next} theme`}
-      className="rounded-full"
+      className="relative overflow-hidden rounded-full border-accent/55 bg-[linear-gradient(145deg,var(--background)_0%,var(--muted)_48%,var(--accent)_160%)] text-foreground shadow-[inset_0_0_0_1px_rgb(255_255_255/0.22),0_0_0_3px_rgb(0_104_128/0.16)] hover:bg-[linear-gradient(145deg,var(--muted)_0%,var(--background)_44%,var(--accent)_150%)]"
       onClick={handleThemeChange}
       size="icon"
       type="button"
       variant="outline"
     >
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-1 bottom-1 h-3 rounded-full bg-accent/16"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute bottom-2 left-1 h-2 w-8 rounded-[999px_999px_0_0] border-t-2 border-accent/70"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute bottom-1.5 right-1 h-2 w-7 rounded-[999px_999px_0_0] border-t-2 border-primary/70"
+      />
       {theme === "dark" ? (
-        <Sun aria-hidden="true" />
+        <Sun aria-hidden="true" className="relative z-10" />
       ) : (
-        <Moon aria-hidden="true" />
+        <Moon aria-hidden="true" className="relative z-10" />
       )}
     </Button>
   );

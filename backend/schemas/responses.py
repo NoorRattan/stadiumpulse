@@ -115,6 +115,32 @@ class CrowdForecastResponse(BaseModel):
     narrative: str = Field(alias="narrative")
 
 
+class OperationalDigestItem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    zone_id: str = Field(alias="zoneId")
+    zone_name: str = Field(alias="zoneName")
+    current_density_pct: float = Field(alias="currentDensityPct", ge=0, le=100)
+    projected_density_pct: float = Field(alias="projectedDensityPct", ge=0, le=100)
+    projected_band: Literal["moderate", "high", "critical"] = Field(alias="projectedBand")
+    direction: Literal["rising", "stable", "falling"] = Field(alias="direction")
+    confidence: Literal["low", "medium", "high"] = Field(alias="confidence")
+    priority: Literal["watch", "prepare", "urgent"] = Field(alias="priority")
+    recommended_action: str = Field(alias="recommendedAction")
+    requires_supervisor_approval: bool = Field(alias="requiresSupervisorApproval")
+
+
+class OperationalDigestResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    generated_at: str = Field(alias="generatedAt")
+    minutes_ahead: int = Field(alias="minutesAhead", ge=1)
+    headline: str = Field(alias="headline")
+    narrative: str = Field(alias="narrative")
+    data_status: Literal["simulated"] = Field(alias="dataStatus")
+    items: list[OperationalDigestItem] = Field(alias="items")
+
+
 class IncidentListResponse(PaginatedResponse[IncidentReport]):
     pass
 

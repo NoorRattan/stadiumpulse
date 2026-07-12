@@ -115,7 +115,7 @@ async def test_verify_token_async_uses_supabase_jwks(monkeypatch: pytest.MonkeyP
 @pytest.mark.asyncio
 async def test_get_current_user_sets_request_state_from_real_verification(monkeypatch: pytest.MonkeyPatch) -> None:
     async def verify_token(token: str) -> dict[str, object]:
-        return {"uid": token, "role": "staff", "email": "staff@example.com", "name": "Staff User"}
+        return {"uid": token, "user_role": "staff", "email": "staff@example.com", "name": "Staff User"}
 
     monkeypatch.setattr(
         dependencies,
@@ -136,10 +136,7 @@ async def test_get_current_user_sets_request_state_from_real_verification(monkey
     ("payload", "expected_role"),
     [
         ({"sub": "fan-1", "role": "authenticated"}, UserRole.fan),
-        (
-            {"sub": "staff-1", "role": "authenticated", "app_metadata": {"user_role": "staff"}},
-            UserRole.staff,
-        ),
+        ({"sub": "staff-1", "role": "authenticated", "user_role": "staff"}, UserRole.staff),
     ],
 )
 async def test_get_current_user_supports_real_supabase_role_claims(
@@ -155,6 +152,18 @@ async def test_get_current_user_supports_real_supabase_role_claims(
     current_user = await get_current_user(request_with_headers({}), authorization="Bearer real-supabase-token")
 
     assert current_user.role == expected_role
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_ignores_app_metadata_role_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def verify_token(token: str) -> dict[str, object]:
+        return {"sub": "staff-1", "role": "authenticated", "app_metadata": {"user_role": "staff"}}
+
+    monkeypatch.setattr(dependencies, "verify_token_async", verify_token)
+
+    current_user = await get_current_user(request_with_headers({}), authorization="Bearer app-metadata-only")
+
+    assert current_user.role == UserRole.fan
 
 
 @pytest.mark.asyncio
@@ -177,7 +186,7 @@ async def test_get_current_user_rejects_missing_uid_and_invalid_role(monkeypatch
         return {"role": "fan"}
 
     async def invalid_role(token: str) -> dict[str, object]:
-        return {"uid": "fan-1", "role": "owner"}
+        return {"uid": "fan-1", "user_role": "owner"}
 
     monkeypatch.setattr(dependencies, "verify_token_async", missing_uid)
     with pytest.raises(ApiError, match="missing uid"):

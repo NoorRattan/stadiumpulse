@@ -3,6 +3,7 @@ import { Activity, AlertTriangle, Radio, RefreshCw, Users } from "lucide-react";
 
 import {
   CrowdForecastCard,
+  OperationalDigest,
   ScoreboardMetric,
   ZoneCard,
 } from "@/components/crowd";
@@ -21,6 +22,7 @@ export default function DashboardPage(): JSX.Element {
   const [selectedZone, setSelectedZone] = useState<CrowdZoneSummary | null>(
     null,
   );
+  const [digestRefreshToken, setDigestRefreshToken] = useState(0);
   const busiestZone = summaries.reduce<CrowdZoneSummary | null>(
     (current, zone) =>
       !current || zone.currentDensityPct > current.currentDensityPct
@@ -50,13 +52,18 @@ export default function DashboardPage(): JSX.Element {
             </p>
           </div>
           <Button
-            onClick={() => void refresh()}
+            onClick={() => {
+              void refresh();
+              setDigestRefreshToken((current) => current + 1);
+            }}
             type="button"
             variant="outline"
           >
             <RefreshCw aria-hidden="true" /> Refresh live data
           </Button>
         </section>
+
+        <OperationalDigest refreshToken={digestRefreshToken} />
 
         {!reducedMotion && summaries.length > 0 && (
           <Suspense

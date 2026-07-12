@@ -31,6 +31,14 @@ class DensityForecast:
     confidence: Literal["low", "medium", "high"]
 
 
+@dataclass(frozen=True)
+class OperationalRisk:
+    zone: Zone
+    forecast: DensityForecast
+    priority: Literal["watch", "prepare", "urgent"]
+    recommended_action: str
+
+
 def forecast_density(current_density_pct: float, readings: list[float]) -> DensityForecast:
     """Project 15 minutes from the recent five-minute demo readings."""
     if len(readings) < 2:
@@ -89,6 +97,77 @@ def phrase_forecast(
         return (
             f"{zone.name} is {forecast.direction}; plan for approximately "
             f"{forecast.projected_density_pct}% density in 15 minutes and continue staff monitoring."
+        )
+
+
+def priority_for_band(band: CongestionBand) -> Literal["watch", "prepare", "urgent"] | None:
+    if band == "MODERATE":
+        return "watch"
+    if band == "HIGH":
+        return "prepare"
+    if band == "CRITICAL":
+        return "urgent"
+    return None
+
+
+def recommendation_for_risk(zone: Zone, forecast: DensityForecast) -> str:
+    if forecast.projected_band == "CRITICAL":
+        return f"Hold new inflow toward {zone.name} and prepare a supervised reroute."
+    if forecast.projected_band == "HIGH":
+        return f"Position staff at {zone.name} approaches and prepare overflow routing."
+    return f"Increase observation at {zone.name} and verify the next density reading."
+
+
+def build_operational_risks(zones: list[Zone], readings_by_zone: dict[str, list[float]]) -> list[OperationalRisk]:
+    risks: list[OperationalRisk] = []
+    priority_rank = {"watch": 1, "prepare": 2, "urgent": 3}
+    for zone in zones:
+        forecast = forecast_density(zone.current_density_pct, readings_by_zone.get(zone.zone_id, []))
+        priority = priority_for_band(forecast.projected_band)
+        if priority is None:
+            continue
+        risks.append(
+            OperationalRisk(
+                zone=zone,
+                forecast=forecast,
+                priority=priority,
+                recommended_action=recommendation_for_risk(zone, forecast),
+            )
+        )
+    risks.sort(
+        key=lambda risk: (
+            priority_rank[risk.priority],
+            risk.forecast.direction == "rising",
+            risk.forecast.projected_density_pct,
+        ),
+        reverse=True,
+    )
+    return risks[:3]
+
+
+def phrase_operational_digest(risks: list[OperationalRisk], ai_client: StadiumPulseAIClient | None = None) -> str:
+    if not risks:
+        return "No zone is projected above normal density. Maintain routine monitoring."
+    facts = "\n".join(
+        f"- {risk.zone.name}: {risk.forecast.projected_density_pct}% "
+        f"{risk.forecast.projected_band}, {risk.forecast.direction}; action: {risk.recommended_action}"
+        for risk in risks
+    )
+    prompt = (
+        "Write a two-sentence stadium operations digest using only the fixed facts below. "
+        "Do not invent incidents, sensor sources, or actions already taken. State that a supervisor "
+        "must approve operational changes. The readings are simulated demo data.\n"
+        f"{facts}"
+    )
+    client = ai_client or get_ai_client()
+    try:
+        return client.generate_text(prompt, tier="lite")
+    except AIServiceError:
+        lead = risks[0]
+        return (
+            f"{lead.zone.name} is the highest projected pressure point at "
+            f"{lead.forecast.projected_density_pct}%. Review the ranked actions and obtain supervisor "
+            "approval before making operational changes."
         )
 
 

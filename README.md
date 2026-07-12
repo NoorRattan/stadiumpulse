@@ -9,7 +9,7 @@ StadiumPulse is designed as a **venue nervous system**: one crowd signal powers 
 The app has two surfaces in one React build:
 
 - **Fan Experience PWA**: multilingual voice concierge, accessibility-aware wayfinding, seat-view confidence previews, and sustainable travel suggestions.
-- **Ops Console**: live selectable 3D crowd twin, 15-minute density forecasts, incident drafts, and volunteer briefings for staff and volunteers.
+- **Ops Console**: live selectable 3D crowd twin, ranked 15-minute command digest, density forecasts, incident drafts, and volunteer briefings for staff and volunteers.
 
 ## Running Locally
 
@@ -58,10 +58,11 @@ npm run build
 ## Project Notes
 
 - Supabase Auth creates the browser identity; `/api/auth/bootstrap` creates the backend profile after sign-in.
-- Staff and volunteer roles live in `public.user_roles`; `backend/scripts/grant_role.py` updates them with the Supabase service role.
+- Staff and volunteer roles live in `public.user_roles`; `backend/scripts/grant_role.py` updates them with the Supabase service role. Supabase's custom access-token hook must be enabled so those rows become the `user_role` JWT claim used by the app.
 - The dashboard refreshes backend-computed bands from a Supabase Realtime change signal; operations mutations still go through FastAPI and re-check roles server-side.
 - Seed and animated crowd data are synthetic demo data. The UI labels them as simulated; no screen represents them as physical venue sensors.
 - Forecast bands are deterministic from recent readings. Gemini explains the fixed projection and recommends an action but cannot change the computed number or band.
+- Command-center recommendations are decision support only. The app never executes crowd-control actions, and the dashboard marks every ranked action as requiring supervisor approval.
 
 ## Known Limitations and Dependency Notes
 

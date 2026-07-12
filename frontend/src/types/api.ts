@@ -125,6 +125,30 @@ export interface CrowdForecastResponse {
   narrative: string;
 }
 
+/** Ranked operational risk in the command-center digest. */
+export interface OperationalDigestItem {
+  zoneId: string;
+  zoneName: string;
+  currentDensityPct: number;
+  projectedDensityPct: number;
+  projectedBand: "moderate" | "high" | "critical";
+  direction: "rising" | "stable" | "falling";
+  confidence: "low" | "medium" | "high";
+  priority: "watch" | "prepare" | "urgent";
+  recommendedAction: string;
+  requiresSupervisorApproval: boolean;
+}
+
+/** Unified 15-minute decision-support digest for venue operators. */
+export interface OperationalDigestResponse {
+  generatedAt: string;
+  minutesAhead: number;
+  headline: string;
+  narrative: string;
+  dataStatus: "simulated";
+  items: OperationalDigestItem[];
+}
+
 /** Auth profile response body. */
 export type UserProfileResponse = UserProfile;
 

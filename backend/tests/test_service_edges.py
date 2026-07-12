@@ -97,6 +97,28 @@ def test_crowd_narration_falls_back_when_gemini_is_unavailable() -> None:
     )
     assert "15 minutes" in crowd_service.phrase_forecast(target, forecast, FailingAI())
 
+    risk = crowd_service.build_operational_risks([target], {target.zone_id: [82, 80, 78]})[0]
+    assert "supervisor approval" in crowd_service.phrase_operational_digest([risk], FailingAI())
+
+
+def test_operational_digest_ranking_actions_and_empty_state() -> None:
+    normal = zone("normal", 20)
+    moderate = zone("moderate", 60)
+    high = zone("high", 80)
+    critical = zone("critical", 95)
+
+    risks = crowd_service.build_operational_risks(
+        [normal, moderate, high, critical],
+        {critical.zone_id: [95, 90, 85], high.zone_id: [80, 78, 76]},
+    )
+
+    assert [risk.priority for risk in risks] == ["urgent", "prepare", "watch"]
+    assert "Hold new inflow" in risks[0].recommended_action
+    assert "Position staff" in risks[1].recommended_action
+    assert "Increase observation" in risks[2].recommended_action
+    assert crowd_service.priority_for_band("NORMAL") is None
+    assert "routine monitoring" in crowd_service.phrase_operational_digest([])
+
 
 @pytest.mark.asyncio
 async def test_simulated_crowd_nudge_records_estimated_readings(mock_db: FakeDb) -> None:

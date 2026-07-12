@@ -77,14 +77,7 @@ async def get_current_user(
         raise ApiError(ErrorCode.unauthenticated, "Missing or invalid ID token.", HTTPStatus.UNAUTHORIZED) from exc
 
     uid = decoded.get("sub") or decoded.get("uid")
-    app_metadata = decoded.get("app_metadata")
-    metadata_role = app_metadata.get("user_role") if isinstance(app_metadata, dict) else None
-    role = decoded.get("user_role") or metadata_role or decoded.get("role", UserRole.fan.value)
-    # Supabase reserves the top-level `role` claim for `authenticated`/`anon`.
-    # Until the custom access-token hook adds `user_role`, a normal signed-in
-    # user must remain a fan rather than being rejected as an invalid app role.
-    if role in {"authenticated", "anon"}:
-        role = UserRole.fan.value
+    role = decoded.get("user_role", UserRole.fan.value)
     if not isinstance(uid, str):
         raise ApiError(ErrorCode.unauthenticated, "Token is missing uid.", HTTPStatus.UNAUTHORIZED)
 

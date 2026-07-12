@@ -77,7 +77,9 @@ export function AuthProvider({
             }
             bootstrappedUid.current = nextUser.id;
             setProfile(nextProfile);
-            setRole(nextProfile.role);
+            setRole(readRoleClaim(nextSession));
+          } else {
+            setRole(readRoleClaim(nextSession));
           }
         } catch {
           if (active) {
