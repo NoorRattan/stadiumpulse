@@ -104,6 +104,15 @@ def test_create_app_health_and_lifespan(monkeypatch: pytest.MonkeyPatch) -> None
 
 def test_health_endpoint(client: TestClient) -> None:
     assert client.get("/health").json() == {"status": "ok", "service": "stadiumpulse-backend"}
+    preflight = client.options(
+        "/api/demo",
+        headers={
+            "Origin": "https://stadiumpulse.pages.dev",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert preflight.status_code == 200
+    assert preflight.headers["access-control-allow-origin"] == "https://stadiumpulse.pages.dev"
 
 
 @pytest.mark.asyncio

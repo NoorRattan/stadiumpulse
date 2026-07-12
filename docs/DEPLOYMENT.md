@@ -60,6 +60,8 @@ SIMULATE_CROWD_DATA=true
 CROWD_SIMULATION_INTERVAL_SECONDS=20
 ```
 
+The canonical `https://stadiumpulse.pages.dev` origin is pinned in the backend as a safe deployment fallback. Add preview or custom domains explicitly to `ALLOWED_ORIGINS`; wildcard origins remain rejected.
+
 `SIMULATE_CROWD_DATA` is demo-only. It runs a bounded random walk, records each value as an `estimated` reading, and occasionally creates a high-pressure scenario. Keep it `false` when real venue telemetry is connected. A single Render instance should run the simulator so multiple replicas do not write competing demo signals.
 
 Use `SUPABASE_JWKS_URL` or `SUPABASE_JWT_SECRET` for JWT verification. JWKS is preferred for asymmetric Supabase signing keys; the legacy shared JWT secret path remains supported for projects that still use HS256.

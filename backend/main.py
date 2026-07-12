@@ -62,6 +62,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     allowed_origins = settings.allowed_origins if settings else get_bootstrap_allowed_origins()
+    # Keep the canonical Cloudflare origin connected even if a Render env edit
+    # accidentally omits it. Preview/custom domains still belong in ALLOWED_ORIGINS.
+    allowed_origins = list(dict.fromkeys([*allowed_origins, "https://stadiumpulse.pages.dev"]))
     environment = settings.environment if settings else os.getenv("ENVIRONMENT", "development")
     is_production = environment == "production"
     app = FastAPI(
