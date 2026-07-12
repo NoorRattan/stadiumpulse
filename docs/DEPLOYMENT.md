@@ -50,6 +50,7 @@ SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_DB_URL=postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres
 SUPABASE_JWKS_URL=
 SUPABASE_JWT_SECRET=
+SUPABASE_JWT_AUDIENCE=authenticated
 ALLOWED_ORIGINS=https://<cloudflare-pages-domain>
 GEMINI_API_KEY=<gemini-developer-api-key>
 GEMINI_MODEL_PRIMARY=gemini-2.5-flash

@@ -1,4 +1,5 @@
 import asyncio
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from http import HTTPStatus
@@ -18,6 +19,7 @@ from routes import (
     briefing_routes,
     concierge_routes,
     crowd_routes,
+    demo_routes,
     incident_routes,
     travel_routes,
     wayfinding_routes,
@@ -32,6 +34,7 @@ from schemas.errors import (
     unhandled_error_handler,
     validation_error_handler,
 )
+from security import SecurityHeadersMiddleware
 from services.crowd_simulator import run_crowd_simulation
 from services.exceptions import AIServiceError, ResourceNotFoundError
 
@@ -59,8 +62,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     allowed_origins = settings.allowed_origins if settings else get_bootstrap_allowed_origins()
-    app = FastAPI(title="StadiumPulse API", version="0.1.0", lifespan=lifespan)
+    environment = settings.environment if settings else os.getenv("ENVIRONMENT", "development")
+    is_production = environment == "production"
+    app = FastAPI(
+        title="StadiumPulse API",
+        version="0.2.0",
+        lifespan=lifespan,
+        docs_url=None if is_production else "/docs",
+        redoc_url=None if is_production else "/redoc",
+        openapi_url=None if is_production else "/openapi.json",
+    )
     app.state.limiter = limiter
+
+    app.add_middleware(SecurityHeadersMiddleware)
 
     app.add_middleware(
         CORSMiddleware,
@@ -84,6 +98,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(accessibility_routes.router)
     app.include_router(travel_routes.router)
     app.include_router(crowd_routes.router)
+    app.include_router(demo_routes.router)
     app.include_router(incident_routes.router)
     app.include_router(briefing_routes.router)
 

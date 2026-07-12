@@ -66,6 +66,10 @@ def test_config_parses_list_and_comma_delimited_origins(monkeypatch: pytest.Monk
 
     monkeypatch.setenv("ALLOWED_ORIGINS", "http://a, http://b")
     assert config.get_bootstrap_allowed_origins() == ["http://a", "http://b"]
+    with pytest.raises(ValueError, match="Wildcard CORS"):
+        Settings.split_allowed_origins("*")
+    with pytest.raises(ValueError, match="Wildcard CORS"):
+        CorsBootstrapSettings.split_allowed_origins("*")
 
 
 def test_create_app_health_and_lifespan(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -87,6 +91,15 @@ def test_create_app_health_and_lifespan(monkeypatch: pytest.MonkeyPatch) -> None
 
     assert isinstance(app, FastAPI)
     assert app.title == "StadiumPulse API"
+
+    production = settings.model_copy(update={"environment": "production"})
+    production_app = main.create_app(production)
+    assert production_app.docs_url is None
+    assert production_app.openapi_url is None
+
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    env_production_app = main.create_app()
+    assert env_production_app.redoc_url is None
 
 
 def test_health_endpoint(client: TestClient) -> None:

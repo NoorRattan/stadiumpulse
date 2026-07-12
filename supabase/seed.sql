@@ -27,6 +27,21 @@ set venue_zone_ids = excluded.venue_zone_ids,
     away_team = excluded.away_team,
     transit_load_estimate = excluded.transit_load_estimate;
 
+-- Deterministic recent history makes the connected demo forecast meaningful
+-- immediately after seeding, before the simulator's first interval runs.
+insert into public.zone_readings (id, zone_id, density_pct, source, recorded_at)
+values
+  ('00000000-0000-0000-0000-000000000201', 'north-concourse', 65.0, 'estimated', now() - interval '10 minutes'),
+  ('00000000-0000-0000-0000-000000000202', 'north-concourse', 72.0, 'estimated', now() - interval '5 minutes'),
+  ('00000000-0000-0000-0000-000000000203', 'north-concourse', 78.5, 'estimated', now()),
+  ('00000000-0000-0000-0000-000000000204', 'gate-4', 54.0, 'estimated', now() - interval '10 minutes'),
+  ('00000000-0000-0000-0000-000000000205', 'gate-4', 60.0, 'estimated', now() - interval '5 minutes'),
+  ('00000000-0000-0000-0000-000000000206', 'gate-4', 66.0, 'estimated', now())
+on conflict (id) do update
+set density_pct = excluded.density_pct,
+    source = excluded.source,
+    recorded_at = excluded.recorded_at;
+
 insert into public.incidents (id, zone_id, status, raw_input, ai_draft_summary, severity, reported_by_uid, created_at, submitted_at, resolved_at)
 values (
   '00000000-0000-0000-0000-000000000101',

@@ -19,7 +19,7 @@ export const AppShell = memo(function AppShell({ children }: AppShellProps) {
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_0%,var(--glow-primary),transparent_36%),radial-gradient(circle_at_90%_20%,var(--glow-accent),transparent_30%)]" />
       <SkipLink />
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/88 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/96 md:bg-background/88 md:backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 lg:px-8">
           <div className="min-w-0 shrink-0">
             <BrandLogo tagline />

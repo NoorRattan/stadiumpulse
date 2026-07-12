@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Map,
   Train,
+  Sparkles,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +20,7 @@ interface NavigationItem {
 
 const fanItems: readonly NavigationItem[] = [
   { href: "/", label: "Home", icon: Activity },
+  { href: "/demo", label: "Demo", icon: Sparkles },
   { href: "/concierge", label: "Concierge", icon: BotMessageSquare },
   { href: "/wayfinding", label: "Wayfinding", icon: Map },
   { href: "/travel", label: "Travel", icon: Train },

@@ -141,6 +141,51 @@ class OperationalDigestResponse(BaseModel):
     items: list[OperationalDigestItem] = Field(alias="items")
 
 
+class DemoMatchResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    match_id: str = Field(alias="matchId")
+    home_team: str = Field(alias="homeTeam")
+    away_team: str = Field(alias="awayTeam")
+    kickoff_at: str = Field(alias="kickoffAt")
+    transit_load_estimate: Literal["low", "medium", "high"] = Field(alias="transitLoadEstimate")
+
+
+class DemoConciergeExample(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    language: str = Field(alias="language")
+    question: str = Field(alias="question")
+    answer: str = Field(alias="answer")
+
+
+class DemoCapability(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    label: str = Field(alias="label")
+    description: str = Field(alias="description")
+    live_endpoint: str = Field(alias="liveEndpoint")
+
+
+class DemoExperienceResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    scenario_id: str = Field(alias="scenarioId")
+    title: str = Field(alias="title")
+    tournament: str = Field(alias="tournament")
+    generated_at: str = Field(alias="generatedAt")
+    data_status: Literal["simulated"] = Field(alias="dataStatus")
+    database_status: Literal["connected"] = Field(alias="databaseStatus")
+    output_source: Literal["curated-demo-preview"] = Field(alias="outputSource")
+    match: DemoMatchResponse = Field(alias="match")
+    zones: list[CrowdZoneSummary] = Field(alias="zones")
+    accessible_route: RouteOption = Field(alias="accessibleRoute")
+    concierge_examples: list[DemoConciergeExample] = Field(alias="conciergeExamples")
+    travel_suggestions: list[TravelSuggestion] = Field(alias="travelSuggestions")
+    operations_digest: OperationalDigestResponse = Field(alias="operationsDigest")
+    capabilities: list[DemoCapability] = Field(alias="capabilities")
+
+
 class IncidentListResponse(PaginatedResponse[IncidentReport]):
     pass
 

@@ -28,7 +28,11 @@ export default function SeatViewPreview({
         role="img"
         aria-label={`Interactive demo seat view from ${sectionName}`}
       >
-        <Canvas camera={{ position: [0, 1.45, 4.5], fov: 52 }} dpr={[1, 1.5]}>
+        <Canvas
+          camera={{ position: [0, 1.45, 4.5], fov: 52 }}
+          dpr={[1, 1.25]}
+          gl={{ antialias: false, powerPreference: "high-performance" }}
+        >
           <ambientLight intensity={2} />
           <directionalLight intensity={2.4} position={[3, 5, 4]} />
           <mesh position={[0, -0.75, -2.5]}>

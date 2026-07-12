@@ -11,6 +11,12 @@ The app has two surfaces in one React build:
 - **Fan Experience PWA**: multilingual voice concierge, accessibility-aware wayfinding, seat-view confidence previews, and sustainable travel suggestions.
 - **Ops Console**: live selectable 3D crowd twin, ranked 15-minute command digest, density forecasts, incident drafts, and volunteer briefings for staff and volunteers.
 
+## Connected Demo
+
+Open `/demo` locally or visit [https://stadiumpulse.pages.dev/demo](https://stadiumpulse.pages.dev/demo) for the read-only FIFA World Cup 2026 walkthrough. It connects the browser to `GET /api/demo`, reads the seeded Supabase scenario, and presents an animated crowd twin, an accessible route, multilingual concierge examples, sustainable transport guidance, and staff decision support without requiring an account or consuming Gemini quota.
+
+The demo preview is intentionally curated and labeled synthetic. Authenticated routes remain the proof path for live Gemini generation and role-protected staff actions.
+
 ## Running Locally
 
 Backend:
@@ -67,6 +73,7 @@ npm run build
 - Staff and volunteer roles live in `public.user_roles`; `backend/scripts/grant_role.py` updates them with the Supabase service role. Supabase's custom access-token hook must be enabled so those rows become the `user_role` JWT claim used by the app.
 - The dashboard refreshes backend-computed bands from a Supabase Realtime change signal; operations mutations still go through FastAPI and re-check roles server-side.
 - Seed and animated crowd data are synthetic demo data. The UI labels them as simulated; no screen represents them as physical venue sensors.
+- The public demo endpoint is read-only and rate-limited. It exposes only the synthetic scenario; staff mutations and Gemini calls stay authenticated.
 - Forecast bands are deterministic from recent readings. Gemini explains the fixed projection and recommends an action but cannot change the computed number or band.
 - Command-center recommendations are decision support only. The app never executes crowd-control actions, and the dashboard marks every ranked action as requiring supervisor approval.
 

@@ -19,7 +19,7 @@ import services.wayfinding_service as wayfinding_service
 os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
 os.environ.setdefault("SUPABASE_DB_URL", "postgresql://postgres:test@localhost:5432/postgres")
-os.environ.setdefault("SUPABASE_JWT_SECRET", "test-secret")
+os.environ.setdefault("SUPABASE_JWT_SECRET", "test-secret-at-least-32-bytes-long")
 os.environ.setdefault("ALLOWED_ORIGINS", "http://testserver")
 os.environ.setdefault("GEMINI_API_KEY", "test-gemini-key")
 os.environ.setdefault("GEMINI_MODEL_PRIMARY", "gemini-2.5-flash")

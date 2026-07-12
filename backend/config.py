@@ -21,6 +21,10 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="SUPABASE_JWKS_URL",
     )
+    supabase_jwt_audience: str = Field(
+        default="authenticated",
+        validation_alias="SUPABASE_JWT_AUDIENCE",
+    )
     allowed_origins: Annotated[list[str], NoDecode] = Field(validation_alias="ALLOWED_ORIGINS")
     gemini_api_key: str = Field(validation_alias="GEMINI_API_KEY")
     gemini_model_primary: str = Field(validation_alias="GEMINI_MODEL_PRIMARY")
@@ -38,9 +42,11 @@ class Settings(BaseSettings):
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def split_allowed_origins(cls, value: str | list[str]) -> list[str]:
-        if isinstance(value, list):
-            return value
-        return [origin.strip() for origin in value.split(",") if origin.strip()]
+        origins = value if isinstance(value, list) else [origin.strip() for origin in value.split(",")]
+        origins = [origin.strip().rstrip("/") for origin in origins if origin.strip()]
+        if "*" in origins:
+            raise ValueError("Wildcard CORS origins are not allowed with authenticated requests.")
+        return origins
 
 
 class CorsBootstrapSettings(BaseSettings):
@@ -54,9 +60,11 @@ class CorsBootstrapSettings(BaseSettings):
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def split_allowed_origins(cls, value: str | list[str]) -> list[str]:
-        if isinstance(value, list):
-            return value
-        return [origin.strip() for origin in value.split(",") if origin.strip()]
+        origins = value if isinstance(value, list) else [origin.strip() for origin in value.split(",")]
+        origins = [origin.strip().rstrip("/") for origin in origins if origin.strip()]
+        if "*" in origins:
+            raise ValueError("Wildcard CORS origins are not allowed with authenticated requests.")
+        return origins
 
 
 @lru_cache

@@ -17,6 +17,7 @@ const IncidentsPage = lazy(() => import("./pages/ops/IncidentsPage"));
 const BriefingsPage = lazy(() => import("./pages/ops/BriefingsPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const DemoPage = lazy(() => import("./pages/DemoPage"));
 
 function RouteFrame({ children }: { children: ReactNode }): JSX.Element {
   return (
@@ -105,6 +106,14 @@ const router = createBrowserRouter([
           <BriefingsPage />
         </RouteFrame>
       </OpsGuard>
+    ),
+  },
+  {
+    path: "/demo",
+    element: (
+      <RouteFrame>
+        <DemoPage />
+      </RouteFrame>
     ),
   },
   {

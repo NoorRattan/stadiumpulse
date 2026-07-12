@@ -49,7 +49,8 @@ export async function apiRequest<TResponse, TBody = unknown>(
   const init: RequestInit = {
     method: options.method ?? "GET",
     headers,
-    signal: options.signal,
+    signal: options.signal ?? AbortSignal.timeout(15_000),
+    cache: "no-store",
   };
 
   if (options.body !== undefined) {
@@ -58,7 +59,7 @@ export async function apiRequest<TResponse, TBody = unknown>(
   }
 
   const response = await fetch(buildUrl(path), init);
-  const payload: unknown = await response.json();
+  const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     if (isErrorResponse(payload)) {
       throw new ApiClientError(payload.error);

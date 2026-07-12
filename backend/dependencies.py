@@ -36,10 +36,6 @@ def get_jwks_client(jwks_url: str) -> PyJWKClient:
     return PyJWKClient(jwks_url)
 
 
-def _decode_options() -> dict[str, bool]:
-    return {"verify_aud": False}
-
-
 async def verify_token_async(token: str) -> dict[str, object]:
     settings = get_settings()
     issuer = f"{settings.supabase_url.rstrip('/')}/auth/v1"
@@ -50,7 +46,7 @@ async def verify_token_async(token: str) -> dict[str, object]:
                 settings.supabase_jwt_secret,
                 algorithms=["HS256"],
                 issuer=issuer,
-                options=_decode_options(),
+                audience=settings.supabase_jwt_audience,
             )
         else:
             signing_key = get_jwks_client(get_supabase_jwks_url(settings)).get_signing_key_from_jwt(token)
@@ -59,7 +55,7 @@ async def verify_token_async(token: str) -> dict[str, object]:
                 signing_key.key,
                 algorithms=["ES256", "RS256"],
                 issuer=issuer,
-                options=_decode_options(),
+                audience=settings.supabase_jwt_audience,
             )
     except InvalidTokenError:
         raise

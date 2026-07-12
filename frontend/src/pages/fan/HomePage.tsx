@@ -93,6 +93,12 @@ export default function HomePage(): JSX.Element {
               >
                 Ask the concierge
               </Link>
+              <Link
+                className="inline-flex min-h-12 items-center gap-2 rounded-full border border-accent/45 bg-accent/10 px-5 font-bold text-accent"
+                to="/demo"
+              >
+                Explore the FIFA 2026 demo
+              </Link>
             </div>
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-2">

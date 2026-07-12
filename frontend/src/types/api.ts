@@ -149,6 +149,38 @@ export interface OperationalDigestResponse {
   items: OperationalDigestItem[];
 }
 
+/** Read-only judge-friendly scenario proving the public frontend/backend/data path. */
+export interface DemoExperienceResponse {
+  scenarioId: string;
+  title: string;
+  tournament: string;
+  generatedAt: string;
+  dataStatus: "simulated";
+  databaseStatus: "connected";
+  outputSource: "curated-demo-preview";
+  match: {
+    matchId: string;
+    homeTeam: string;
+    awayTeam: string;
+    kickoffAt: string;
+    transitLoadEstimate: "low" | "medium" | "high";
+  };
+  zones: CrowdZoneSummary[];
+  accessibleRoute: RouteOption;
+  conciergeExamples: Array<{
+    language: string;
+    question: string;
+    answer: string;
+  }>;
+  travelSuggestions: TravelSuggestion[];
+  operationsDigest: OperationalDigestResponse;
+  capabilities: Array<{
+    label: string;
+    description: string;
+    liveEndpoint: string;
+  }>;
+}
+
 /** Auth profile response body. */
 export type UserProfileResponse = UserProfile;
 

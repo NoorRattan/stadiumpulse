@@ -2,9 +2,12 @@
 
 All protected routes use Supabase Auth access tokens with `Authorization: Bearer <token>`. Role checks are enforced server-side from the `user_role` custom access-token claim.
 
+`GET /api/demo` deliberately avoids Gemini calls and mutations. Its curated synthetic preview proves frontend → FastAPI → Supabase connectivity; the authenticated routes exercise live GenAI features and staff role checks.
+
 | Method  | Path                                  | Auth               | Purpose                                                                                      |
 | ------- | ------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------- |
 | `GET`   | `/health`                             | None               | Health check. Returns service status without authentication.                                 |
+| `GET`   | `/api/demo`                           | None               | Read-only, rate-limited FIFA 2026 scenario backed by seeded Supabase demo data.               |
 | `GET`   | `/api/auth/me`                        | Any signed-in user | Return the current user's backend profile.                                                   |
 | `POST`  | `/api/auth/bootstrap`                 | Any signed-in user | Idempotently create or read the signed-in user's `profiles` row.                             |
 | `POST`  | `/api/concierge/chat`                 | Any signed-in user | Send a multilingual concierge message and receive the assistant reply.                       |

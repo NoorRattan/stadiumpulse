@@ -51,14 +51,20 @@ async def test_verify_token_async_uses_supabase_jwt_secret(monkeypatch: pytest.M
             (),
             {
                 "supabase_url": "https://test.supabase.co",
-                "supabase_jwt_secret": "test-secret",
+                "supabase_jwt_secret": "test-secret-at-least-32-bytes-long",
                 "supabase_jwks_url": None,
+                "supabase_jwt_audience": "authenticated",
             },
         )(),
     )
     token = jwt.encode(
-        {"sub": "fan-1", "user_role": "fan", "iss": "https://test.supabase.co/auth/v1"},
-        "test-secret",
+        {
+            "sub": "fan-1",
+            "user_role": "fan",
+            "iss": "https://test.supabase.co/auth/v1",
+            "aud": "authenticated",
+        },
+        "test-secret-at-least-32-bytes-long",
         algorithm="HS256",
     )
 
@@ -94,6 +100,7 @@ async def test_verify_token_async_uses_supabase_jwks(monkeypatch: pytest.MonkeyP
                 "supabase_url": "https://jwks.supabase.co",
                 "supabase_jwt_secret": None,
                 "supabase_jwks_url": "https://jwks.example.test",
+                "supabase_jwt_audience": "authenticated",
             },
         )(),
     )
@@ -103,6 +110,7 @@ async def test_verify_token_async_uses_supabase_jwks(monkeypatch: pytest.MonkeyP
         assert token == "jwks-token"
         assert key == "public-key"
         assert kwargs["algorithms"] == ["ES256", "RS256"]
+        assert kwargs["audience"] == "authenticated"
         return {"sub": "staff-1", "user_role": "staff"}
 
     monkeypatch.setattr(dependencies.jwt, "decode", decode)

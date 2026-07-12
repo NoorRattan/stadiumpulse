@@ -1,7 +1,25 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, RoundedBox } from "@react-three/drei";
 import { useRef } from "react";
-import type { Group } from "three";
+import type { Group, Mesh } from "three";
+
+function SignalRing({ delay = 0 }: { delay?: number }): JSX.Element {
+  const ring = useRef<Mesh>(null);
+  useFrame((state) => {
+    if (!ring.current) return;
+    const phase = (state.clock.elapsedTime * 0.42 + delay) % 1;
+    const scale = 1 + phase * 1.8;
+    ring.current.scale.set(scale, scale, scale);
+    const material = ring.current.material;
+    if (!Array.isArray(material)) material.opacity = 0.48 * (1 - phase);
+  });
+  return (
+    <mesh ref={ring} position={[0, 0.16, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <torusGeometry args={[1.65, 0.018, 8, 72]} />
+      <meshBasicMaterial color="#22d3ee" transparent opacity={0.45} />
+    </mesh>
+  );
+}
 
 function Stadium(): JSX.Element {
   const group = useRef<Group>(null);
@@ -40,6 +58,8 @@ function Stadium(): JSX.Element {
         </mesh>
       ))}
       <pointLight color="#22d3ee" intensity={14} position={[0, 2, 0]} />
+      <SignalRing />
+      <SignalRing delay={0.5} />
     </group>
   );
 }
@@ -47,7 +67,11 @@ function Stadium(): JSX.Element {
 export default function StadiumScene(): JSX.Element {
   return (
     <div className="h-full min-h-72 w-full" aria-hidden="true">
-      <Canvas camera={{ position: [4.6, 3.7, 5.5], fov: 42 }} dpr={[1, 1.5]}>
+      <Canvas
+        camera={{ position: [4.6, 3.7, 5.5], fov: 42 }}
+        dpr={[1, 1.25]}
+        gl={{ antialias: false, powerPreference: "high-performance" }}
+      >
         <ambientLight intensity={1.8} />
         <directionalLight intensity={2.5} position={[4, 6, 3]} />
         <Float floatIntensity={0.25} rotationIntensity={0.08} speed={1.2}>
