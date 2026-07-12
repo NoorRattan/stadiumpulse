@@ -32,6 +32,12 @@ npm run dev
 
 Use `backend/.env.example` and `frontend/.env.example` as the placeholder list for local environment variables. Do not commit real `.env` files.
 
+## Live Deployment
+
+- Frontend: [https://stadiumpulse.pages.dev](https://stadiumpulse.pages.dev)
+- Backend: [https://stadiumpulse-d7js.onrender.com](https://stadiumpulse-d7js.onrender.com)
+- Backend health: [https://stadiumpulse-d7js.onrender.com/health](https://stadiumpulse-d7js.onrender.com/health)
+
 ## Verification
 
 Backend:
