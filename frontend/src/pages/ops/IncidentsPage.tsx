@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ClipboardList } from "lucide-react";
 
 import { IncidentCopilotForm, IncidentList } from "@/components/incidents";
 import { AppShell } from "@/components/layout";
+import { FadeInView } from "@/components/motion/FadeInView";
 import { useZoneOptions } from "@/hooks/useZoneOptions";
 import { apiRequest } from "@/services/apiClient";
 import type {
@@ -57,62 +59,69 @@ export default function IncidentsPage(): JSX.Element {
   }, [loadIncidents]);
 
   return (
-    <AppShell>
-      <div className="grid gap-6">
-        <section className="grid gap-3">
-          <p className="w-fit rounded-md border border-border bg-card px-3 py-1 text-xs font-black uppercase text-primary">
+    <AppShell shader="subtle">
+      <div className="grid gap-10">
+        {/* Header */}
+        <div className="border-b border-white/[0.06] pb-8">
+          <span className="inline-flex items-center gap-2 border border-accent/25 bg-accent/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
+            <ClipboardList aria-hidden="true" className="size-3" />
             Human-reviewed AI
-          </p>
-          <h1 className="font-display text-5xl font-black uppercase leading-none text-foreground">
-            Incidents
+          </span>
+          <h1 className="mt-4 font-display text-4xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
+            Incidents.
           </h1>
-          <p className="max-w-3xl text-muted-foreground">
+          <p className="mt-3 max-w-lg text-sm text-muted-foreground">
             Generate structured drafts from staff notes, then submit only after
             human review.
           </p>
-        </section>
-
-        {zonesLoading && (
-          <p className="text-sm text-accent" role="status">
-            Loading zone options...
-          </p>
-        )}
-
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
-          <IncidentCopilotForm
-            zones={zones}
-            onGenerateDraft={async (input) => {
-              const draft = await apiRequest<
-                IncidentReport,
-                IncidentCreateRequest
-              >("/api/incidents", {
-                method: "POST",
-                body: input,
-              });
-              toast.success("Incident draft generated.");
-              setIncidents((current) => [draft, ...current]);
-              return draft;
-            }}
-            onSubmitReport={async (draft) => {
-              const updated = await apiRequest<
-                IncidentReport,
-                IncidentUpdateRequest
-              >(`/api/incidents/${draft.incidentId}`, {
-                method: "PATCH",
-                body: { status: "submitted" },
-              });
-              setIncidents((current) =>
-                current.map((incident) =>
-                  incident.incidentId === updated.incidentId
-                    ? updated
-                    : incident,
-                ),
-              );
-              toast.success("Incident submitted.");
-            }}
-          />
-          <IncidentList incidents={incidents} loading={loading} zones={zones} />
+          {zonesLoading && (
+            <p className="mt-2 text-xs text-accent" role="status">
+              Loading zone options...
+            </p>
+          )}
         </div>
+
+        <FadeInView>
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
+            <IncidentCopilotForm
+              zones={zones}
+              onGenerateDraft={async (input) => {
+                const draft = await apiRequest<
+                  IncidentReport,
+                  IncidentCreateRequest
+                >("/api/incidents", {
+                  method: "POST",
+                  body: input,
+                });
+                toast.success("Incident draft generated.");
+                setIncidents((current) => [draft, ...current]);
+                return draft;
+              }}
+              onSubmitReport={async (draft) => {
+                const updated = await apiRequest<
+                  IncidentReport,
+                  IncidentUpdateRequest
+                >(`/api/incidents/${draft.incidentId}`, {
+                  method: "PATCH",
+                  body: { status: "submitted" },
+                });
+                setIncidents((current) =>
+                  current.map((incident) =>
+                    incident.incidentId === updated.incidentId
+                      ? updated
+                      : incident,
+                  ),
+                );
+                toast.success("Incident submitted.");
+              }}
+            />
+            <IncidentList
+              incidents={incidents}
+              loading={loading}
+              zones={zones}
+            />
+          </div>
+        </FadeInView>
       </div>
     </AppShell>
   );

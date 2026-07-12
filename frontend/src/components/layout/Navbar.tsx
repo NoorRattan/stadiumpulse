@@ -1,12 +1,13 @@
 import { memo } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import {
   Activity,
   BotMessageSquare,
   ClipboardList,
+  LogIn,
   Map,
-  Train,
   Sparkles,
+  Train,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -32,36 +33,98 @@ const opsItems: readonly NavigationItem[] = [
   { href: "/ops/briefings", label: "Briefings", icon: BotMessageSquare },
 ];
 
-/** Role-aware navigation that omits ops links entirely for fan users. */
+/** Role-aware navigation - ghost links on desktop, icon bar on mobile. */
 export const Navbar = memo(function Navbar() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const items = role === "fan" ? fanItems : opsItems;
 
   return (
-    <nav
-      aria-label="Primary navigation"
-      className="no-scrollbar fixed inset-x-3 bottom-3 z-50 flex max-w-none justify-around gap-1 overflow-x-auto rounded-lg border border-border bg-background/94 p-1.5 shadow-[8px_8px_0_rgb(0_0_0/0.2)] backdrop-blur-xl md:static md:max-w-[66vw] md:justify-start md:border-0 md:bg-transparent md:p-0 md:shadow-none"
-    >
-      {items.map((item) => {
-        const Icon = item.icon;
-        return (
-          <NavLink
-            className={({ isActive }) =>
-              cn(
-                "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2.5 text-xs font-black uppercase text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground sm:text-sm md:gap-2 md:px-3",
-                isActive &&
-                  "border-border bg-foreground text-background shadow-[3px_3px_0_var(--secondary)] hover:bg-foreground hover:text-background",
-              )
-            }
-            end={item.href === "/" || item.href === "/ops"}
-            key={item.href}
-            to={item.href}
+    <>
+      {/* Desktop: ghost text nav */}
+      <nav
+        aria-label="Primary navigation"
+        className="hidden items-center gap-1 md:flex"
+      >
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              className={({ isActive }) =>
+                cn(
+                  "relative inline-flex min-h-9 items-center gap-1.5 px-3 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground",
+                  isActive && "text-foreground",
+                  // Active underline
+                  isActive &&
+                    "after:absolute after:bottom-0 after:left-3 after:right-3 after:h-px after:bg-primary after:content-['']",
+                )
+              }
+              end={item.href === "/" || item.href === "/ops"}
+              key={item.href}
+              to={item.href}
+            >
+              <Icon aria-hidden="true" className="size-3.5" />
+              {item.label}
+            </NavLink>
+          );
+        })}
+        {!user && (
+          <Link
+            className="ml-2 inline-flex min-h-9 items-center gap-1.5 rounded-sm border border-primary/40 bg-primary/5 px-4 text-sm font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
+            to="/login"
           >
-            <Icon aria-hidden="true" className="size-4" />
-            {item.label}
+            <LogIn aria-hidden="true" className="size-3.5" />
+            Sign in
+          </Link>
+        )}
+      </nav>
+
+      {/* Mobile: bottom icon bar */}
+      <nav
+        aria-label="Mobile navigation"
+        className="no-scrollbar fixed inset-x-3 bottom-3 z-50 flex items-center justify-around gap-0 overflow-x-auto rounded-2xl border border-white/[0.08] bg-black/80 p-2 shadow-[0_8px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl md:hidden"
+      >
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              className={({ isActive }) =>
+                cn(
+                  "flex min-h-10 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-xl px-2 text-[10px] font-medium text-muted-foreground transition-colors duration-200",
+                  isActive && "text-primary",
+                )
+              }
+              end={item.href === "/" || item.href === "/ops"}
+              key={item.href}
+              to={item.href}
+            >
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={cn(
+                      "grid size-8 place-content-center rounded-lg transition-colors",
+                      isActive && "bg-primary/10",
+                    )}
+                  >
+                    <Icon aria-hidden="true" className="size-4" />
+                  </span>
+                  <span className="hidden sm:block">{item.label}</span>
+                </>
+              )}
+            </NavLink>
+          );
+        })}
+        {!user && (
+          <NavLink
+            aria-label="Sign in"
+            className="flex min-h-10 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-xl px-2 text-[10px] font-medium text-muted-foreground transition-colors"
+            to="/login"
+          >
+            <span className="grid size-8 place-content-center rounded-lg">
+              <LogIn aria-hidden="true" className="size-4" />
+            </span>
           </NavLink>
-        );
-      })}
-    </nav>
+        )}
+      </nav>
+    </>
   );
 });

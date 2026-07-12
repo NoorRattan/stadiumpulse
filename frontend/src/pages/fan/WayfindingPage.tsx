@@ -1,10 +1,11 @@
 import { lazy, Suspense, useMemo, useState, type FormEvent } from "react";
 import { Navigation } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "motion/react";
 
 import { AppShell } from "@/components/layout";
+import { FadeInView } from "@/components/motion/FadeInView";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -12,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { RouteLine, StepList } from "@/components/wayfinding";
 import { useWayfinding } from "@/hooks/useWayfinding";
 import { useZoneOptions } from "@/hooks/useZoneOptions";
@@ -32,7 +32,7 @@ const accessibilityNeeds: readonly {
   { value: "cognitive", label: "Simple directions" },
 ];
 
-/** Fan wayfinding page with zone selectors and accessible route steps. */
+/** Fan wayfinding page - brutalist form with zone selectors and accessible route steps. */
 export default function WayfindingPage(): JSX.Element {
   const { zones, loading, error } = useZoneOptions();
   const { route, loading: routeLoading, getRoute } = useWayfinding();
@@ -75,122 +75,145 @@ export default function WayfindingPage(): JSX.Element {
   };
 
   return (
-    <AppShell>
-      <div className="grid gap-6">
-        <section className="grid gap-3">
-          <p className="w-fit rounded-md border border-border bg-card px-3 py-1 text-xs font-black uppercase text-primary">
+    <AppShell shader="subtle">
+      <div className="grid gap-10">
+        {/* Header */}
+        <div className="border-b border-white/[0.06] pb-8">
+          <span className="inline-flex items-center gap-2 border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
             Crowd-aware routing
-          </p>
-          <h1 className="font-display text-5xl font-black uppercase leading-none text-foreground">
-            Find Your Way
+          </span>
+          <h1 className="mt-5 font-display text-4xl font-bold leading-none tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+            Find Your Way.
           </h1>
-          <p className="max-w-3xl text-muted-foreground">
+          <p className="mt-4 max-w-lg text-sm text-muted-foreground">
             Choose where you are and where you need to go. StadiumPulse keeps
             the full route available as steps, not only as a visual line.
           </p>
-        </section>
+        </div>
 
         {error && (
-          <p className="rounded-lg border border-error-text bg-card p-4 text-sm text-error-text">
+          <p className="border border-error-text/30 bg-error-text/[0.04] p-4 text-sm text-error-text">
             Zone options could not be loaded. Check the connection and try
             again.
           </p>
         )}
 
-        <form
-          className="grid gap-4 rounded-lg border border-border bg-card/92 p-5 shadow-[8px_8px_0_rgb(0_0_0/0.16)] dark:shadow-[8px_8px_0_rgb(247_243_232/0.08)]"
-          onSubmit={(event) => void handleSubmit(event)}
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="grid gap-2">
-              <Label id="from-zone-label">From zone</Label>
-              <Select value={fromZoneId} onValueChange={setFromZoneId}>
-                <SelectTrigger
-                  aria-labelledby="from-zone-label"
-                  className="min-h-11 w-full"
-                >
-                  <SelectValue
-                    placeholder={
-                      loading ? "Loading zones..." : "Choose a start zone"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>{zoneItems}</SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label id="to-zone-label">To zone</Label>
-              <Select value={toZoneId} onValueChange={setToZoneId}>
-                <SelectTrigger
-                  aria-labelledby="to-zone-label"
-                  className="min-h-11 w-full"
-                >
-                  <SelectValue
-                    placeholder={
-                      loading ? "Loading zones..." : "Choose a destination"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>{zoneItems}</SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <fieldset className="grid gap-3">
-            <legend className="text-sm font-medium text-foreground">
-              Accessibility needs
-            </legend>
-            <div className="grid gap-3 md:grid-cols-2">
-              {accessibilityNeeds.map((need) => (
-                <label
-                  className="flex min-h-11 items-center gap-3 rounded-md border border-border bg-background/70 p-3 text-sm font-semibold text-foreground"
-                  key={need.value}
-                >
-                  <Checkbox
-                    checked={selectedNeeds.includes(need.value)}
-                    onCheckedChange={(checked) =>
-                      setSelectedNeeds((current) =>
-                        checked
-                          ? [...current, need.value]
-                          : current.filter((value) => value !== need.value),
-                      )
-                    }
-                  />
-                  {need.label}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <Button
-            className="min-h-11 justify-self-start"
-            disabled={routeLoading || loading}
-            type="submit"
+        <FadeInView>
+          <form
+            className="grid gap-8 border border-white/[0.08] p-6 md:p-8"
+            onSubmit={(event) => void handleSubmit(event)}
           >
-            <Navigation aria-hidden="true" className="size-4" />
-            Generate route
-          </Button>
-        </form>
+            <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground">
+              Route planner
+            </h2>
 
-        {routeLoading && (
-          <p className="text-sm text-accent" role="status">
-            Finding the least-congested route...
-          </p>
-        )}
+            {/* From / To */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-1">
+                <span
+                  className="text-xs uppercase tracking-widest text-muted-foreground"
+                  id="from-zone-label"
+                >
+                  From zone
+                </span>
+                <Select value={fromZoneId} onValueChange={setFromZoneId}>
+                  <SelectTrigger
+                    aria-labelledby="from-zone-label"
+                    className="min-h-12 w-full rounded-none border-0 border-b border-white/20 bg-transparent focus:border-primary"
+                  >
+                    <SelectValue
+                      placeholder={
+                        loading ? "Loading zones..." : "Choose a start zone"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>{zoneItems}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1">
+                <span
+                  className="text-xs uppercase tracking-widest text-muted-foreground"
+                  id="to-zone-label"
+                >
+                  To zone
+                </span>
+                <Select value={toZoneId} onValueChange={setToZoneId}>
+                  <SelectTrigger
+                    aria-labelledby="to-zone-label"
+                    className="min-h-12 w-full rounded-none border-0 border-b border-white/20 bg-transparent focus:border-primary"
+                  >
+                    <SelectValue
+                      placeholder={
+                        loading ? "Loading zones..." : "Choose a destination"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>{zoneItems}</SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Accessibility needs */}
+            <fieldset className="grid gap-3">
+              <legend className="text-xs uppercase tracking-widest text-muted-foreground">
+                Accessibility needs
+              </legend>
+              <div className="grid gap-2 md:grid-cols-2">
+                {accessibilityNeeds.map((need) => (
+                  <label
+                    className="flex min-h-11 cursor-pointer items-center gap-3 border border-white/[0.08] px-4 text-sm font-medium text-foreground transition hover:border-primary/25"
+                    key={need.value}
+                  >
+                    <Checkbox
+                      checked={selectedNeeds.includes(need.value)}
+                      onCheckedChange={(checked) =>
+                        setSelectedNeeds((current) =>
+                          checked
+                            ? [...current, need.value]
+                            : current.filter((value) => value !== need.value),
+                        )
+                      }
+                    />
+                    {need.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <button
+              className="inline-flex min-h-12 w-fit items-center gap-2 bg-primary px-7 font-semibold text-primary-foreground transition disabled:opacity-50"
+              disabled={routeLoading || loading}
+              type="submit"
+            >
+              <Navigation aria-hidden="true" className="size-4" />
+              Generate route
+              {routeLoading && (
+                <span className="ml-1 text-xs opacity-70">Loading...</span>
+              )}
+            </button>
+          </form>
+        </FadeInView>
+
         {fallback && (
-          <p className="rounded-lg border border-secondary bg-card p-4 text-sm text-secondary">
+          <motion.p
+            className="border-l-2 border-secondary pl-4 text-sm text-secondary"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
             Showing the standard route - live directions are temporarily
             unavailable
-          </p>
+          </motion.p>
         )}
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,28rem)]">
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,28rem)]">
           <RouteLine generatedBy={route?.generatedBy} route={firstRoute} />
           <StepList route={firstRoute} />
         </div>
+
         {firstRoute && destination?.type === "seating-block" && (
           <Suspense
             fallback={
-              <div className="h-72 animate-pulse rounded-3xl bg-muted" />
+              <div className="h-72 animate-pulse border border-white/[0.06] bg-white/[0.02]" />
             }
           >
             <SeatViewPreview sectionName={destination.name} />

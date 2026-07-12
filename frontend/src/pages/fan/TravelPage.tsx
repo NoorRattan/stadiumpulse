@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { CarFront, Leaf, Train } from "lucide-react";
+import { CarFront, Leaf, Train, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "motion/react";
 
-import { AppShell } from "@/components/layout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { AppShell, PageHero } from "@/components/layout";
+import { FadeInView } from "@/components/motion/FadeInView";
 import {
   Select,
   SelectContent,
@@ -28,7 +27,21 @@ function iconForMode(mode: string): typeof Train {
   return Leaf;
 }
 
-/** Sustainable travel page with public match selection and inline cards. */
+const modeAccent: Record<string, string> = {
+  rail: "#00d4ff",
+  transit: "#00d4ff",
+  share: "#ff6b35",
+  car: "#ff6b35",
+};
+
+function accentForMode(mode: string): string {
+  for (const [key, color] of Object.entries(modeAccent)) {
+    if (mode.toLowerCase().includes(key)) return color;
+  }
+  return "#00ff88";
+}
+
+/** Sustainable travel page - brutalist mode tiles with neon accents. */
 export default function TravelPage(): JSX.Element {
   const { matches, loading } = useMatches();
   const [matchId, setMatchId] = useState("");
@@ -59,104 +72,119 @@ export default function TravelPage(): JSX.Element {
   };
 
   return (
-    <AppShell>
-      <div className="grid gap-6">
-        <section className="grid gap-3">
-          <p className="w-fit rounded-md border border-border bg-card px-3 py-1 text-xs font-black uppercase text-primary">
-            Arrival planning
-          </p>
-          <h1 className="font-display text-5xl font-black uppercase leading-none text-foreground">
-            Getting Here Sustainably
-          </h1>
-          <p className="max-w-3xl text-muted-foreground">
-            Select a scheduled match before requesting travel suggestions. The
-            page never guesses a default match.
-          </p>
-        </section>
+    <AppShell shader="subtle">
+      <div className="grid gap-12">
+        <PageHero
+          badge={
+            <span className="inline-flex items-center gap-2 border border-secondary/25 bg-secondary/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-secondary">
+              Arrival planning
+            </span>
+          }
+          title={
+            <>
+              Getting Here <br />
+              <span className="text-gradient">Sustainably</span>
+            </>
+          }
+          description="Select a scheduled match before requesting travel suggestions. The page never guesses a default match."
+        />
 
-        <section
-          aria-labelledby="travel-form-heading"
-          className="grid gap-4 rounded-lg border border-border bg-card/92 p-5 shadow-[8px_8px_0_rgb(0_0_0/0.16)] dark:shadow-[8px_8px_0_rgb(247_243_232/0.08)]"
-        >
-          <h2
-            className="font-display text-2xl font-black uppercase text-foreground"
-            id="travel-form-heading"
+        <FadeInView>
+          <section
+            aria-labelledby="travel-form-heading"
+            className="border border-white/[0.08] p-6 md:p-8"
           >
-            Match Selector
-          </h2>
-          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-            <div className="grid gap-2">
-              <Label id="match-select-label">Match</Label>
-              <Select value={matchId} onValueChange={setMatchId}>
-                <SelectTrigger
-                  aria-labelledby="match-select-label"
-                  className="min-h-11 w-full"
-                >
-                  <SelectValue
-                    placeholder={
-                      loading ? "Loading matches..." : "Select a match"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {matches.map((match) => (
-                    <SelectItem key={match.matchId} value={match.matchId}>
-                      {match.homeTeam} vs. {match.awayTeam}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              className="min-h-11"
-              disabled={loading || suggestionsLoading}
-              onClick={() => void fetchSuggestions()}
-              type="button"
+            <h2
+              className="font-display text-sm uppercase tracking-widest text-muted-foreground"
+              id="travel-form-heading"
             >
-              Load suggestions
-            </Button>
-          </div>
-        </section>
+              Match Selector
+            </h2>
+            <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <div className="grid gap-1">
+                <span
+                  className="text-xs uppercase tracking-widest text-muted-foreground"
+                  id="match-select-label"
+                >
+                  Match
+                </span>
+                <Select value={matchId} onValueChange={setMatchId}>
+                  <SelectTrigger
+                    aria-labelledby="match-select-label"
+                    className="min-h-12 w-full rounded-none border-0 border-b border-white/20 bg-transparent focus:border-primary"
+                  >
+                    <SelectValue
+                      placeholder={
+                        loading ? "Loading matches..." : "Select a match"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {matches.map((match) => (
+                      <SelectItem key={match.matchId} value={match.matchId}>
+                        {match.homeTeam} vs. {match.awayTeam}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <button
+                className="inline-flex min-h-12 items-center gap-2 bg-primary px-6 font-semibold text-primary-foreground transition disabled:opacity-50"
+                disabled={loading || suggestionsLoading}
+                onClick={() => void fetchSuggestions()}
+                type="button"
+              >
+                {suggestionsLoading ? "Loading..." : "Load suggestions"}
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </button>
+            </div>
+          </section>
+        </FadeInView>
 
-        {!matchId && (
-          <p className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
+        {!matchId && !suggestionsLoading && (
+          <p className="border-l-2 border-white/10 pl-4 text-sm text-muted-foreground">
             Choose a match to see transit, carpool, and lower-congestion travel
             suggestions.
           </p>
         )}
-        {suggestionsLoading && (
-          <p className="text-sm text-accent" role="status">
-            Loading travel suggestions...
-          </p>
+
+        {suggestions.length > 0 && (
+          <section
+            aria-label="Travel suggestions"
+            className="grid gap-0 border border-white/[0.08]"
+          >
+            {suggestions.map((suggestion, i) => {
+              const Icon = iconForMode(suggestion.mode);
+              const accent = accentForMode(suggestion.mode);
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.08 }}
+                  key={`${suggestion.mode}-${suggestion.description}`}
+                >
+                  <div className="flex items-start gap-6 border-b border-white/[0.06] p-6 last:border-0">
+                    <span
+                      className="grid size-11 shrink-0 place-content-center border"
+                      style={{ borderColor: accent + "40", color: accent }}
+                    >
+                      <Icon aria-hidden="true" className="size-5" />
+                    </span>
+                    <div>
+                      <p className="font-display text-lg font-bold text-foreground">
+                        {suggestion.mode}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        {suggestion.description}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </section>
         )}
-        {matchId && suggestions.length === 0 && !suggestionsLoading && (
-          <p className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
-            No travel suggestions loaded for this match yet.
-          </p>
-        )}
-        <section
-          aria-label="Travel suggestions"
-          className="grid gap-4 md:grid-cols-2"
-        >
-          {suggestions.map((suggestion) => {
-            const Icon = iconForMode(suggestion.mode);
-            return (
-              <Card key={`${suggestion.mode}-${suggestion.description}`}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Icon aria-hidden="true" className="size-5 text-success" />
-                    {suggestion.mode}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm leading-6 text-muted-foreground">
-                    {suggestion.description}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </section>
       </div>
     </AppShell>
   );

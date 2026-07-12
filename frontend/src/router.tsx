@@ -24,7 +24,11 @@ function RouteFrame({ children }: { children: ReactNode }): JSX.Element {
   return (
     <ErrorBoundary>
       <Suspense
-        fallback={<div className="px-6 py-10 text-text-primary">Loading</div>}
+        fallback={
+          <div className="grid min-h-[50vh] place-content-center px-6 py-10 text-muted-foreground">
+            <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        }
       >
         {children}
       </Suspense>
@@ -35,7 +39,11 @@ function RouteFrame({ children }: { children: ReactNode }): JSX.Element {
 function OpsGuard({ children }: { children: ReactNode }): JSX.Element {
   const { user, role, loading } = useAuth();
   if (loading) {
-    return <div className="px-6 py-10 text-text-primary">Loading</div>;
+    return (
+      <div className="grid min-h-[50vh] place-content-center px-6 py-10 text-muted-foreground">
+        <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
   }
   if (!user) {
     return <Navigate replace to="/login" />;

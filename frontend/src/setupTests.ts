@@ -11,6 +11,25 @@ class MockResizeObserver implements ResizeObserver {
 
 globalThis.ResizeObserver = MockResizeObserver;
 
+class MockIntersectionObserver implements IntersectionObserver {
+  readonly root: Element | Document | null = null;
+  readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
+  readonly thresholds: ReadonlyArray<number> = [0];
+
+  disconnect = vi.fn();
+  observe = vi.fn();
+  takeRecords = vi.fn((): IntersectionObserverEntry[] => []);
+  unobserve = vi.fn();
+}
+
+globalThis.IntersectionObserver = MockIntersectionObserver;
+
+Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+  writable: true,
+  value: vi.fn(() => null),
+});
+
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({

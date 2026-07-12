@@ -24,7 +24,7 @@ export const ScoreboardMetric = memo(function ScoreboardMetric({
   return (
     <section
       aria-label={label}
-      className="rounded-lg border border-border bg-card/92 p-4 shadow-[6px_6px_0_rgb(0_0_0/0.14)] dark:shadow-[6px_6px_0_rgb(247_243_232/0.07)]"
+      className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl transition hover:border-primary/20"
       data-motion={reducedMotion ? "static" : "animated"}
     >
       <p className="text-sm text-muted-foreground">{label}</p>

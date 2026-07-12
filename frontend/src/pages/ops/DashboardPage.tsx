@@ -4,18 +4,17 @@ import { Activity, AlertTriangle, Radio, RefreshCw, Users } from "lucide-react";
 import {
   CrowdForecastCard,
   OperationalDigest,
-  ScoreboardMetric,
   ZoneCard,
 } from "@/components/crowd";
 import { AppShell } from "@/components/layout";
-import { Button } from "@/components/ui/button";
+import { FadeInView } from "@/components/motion/FadeInView";
 import { useCrowdDensity } from "@/hooks/useCrowdDensity";
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import type { CrowdZoneSummary } from "@/types/domain";
 
 const CrowdField3D = lazy(() => import("@/components/visuals/CrowdField3D"));
 
-/** Ops dashboard page with live crowd density cards and summary metrics. */
+/** Ops dashboard - mission-control aesthetic with live crowd density data. */
 export default function DashboardPage(): JSX.Element {
   const { zones: summaries, loading, error, refresh } = useCrowdDensity();
   const reducedMotion = useReducedMotionSafe();
@@ -23,6 +22,7 @@ export default function DashboardPage(): JSX.Element {
     null,
   );
   const [digestRefreshToken, setDigestRefreshToken] = useState(0);
+
   const busiestZone = summaries.reduce<CrowdZoneSummary | null>(
     (current, zone) =>
       !current || zone.currentDensityPct > current.currentDensityPct
@@ -35,69 +35,113 @@ export default function DashboardPage(): JSX.Element {
   ).length;
 
   return (
-    <AppShell>
-      <div className="grid gap-6">
-        <section className="flex flex-wrap items-end justify-between gap-4">
-          <div className="grid gap-3">
-            <p className="w-fit rounded-md border border-border bg-card px-3 py-1 text-xs font-black uppercase text-primary">
-              Operations command
-            </p>
-            <h1 className="font-display text-5xl font-black uppercase leading-none text-foreground">
-              Crowd Overview
-            </h1>
-            <p className="max-w-3xl text-muted-foreground">
-              A live venue digital twin for staff and volunteers, focused on
-              zones that need action before pressure becomes an incident.
-            </p>
-            <p className="inline-flex w-fit items-center gap-2 rounded-md border border-accent/50 bg-accent/10 px-3 py-1 text-xs font-black uppercase text-accent">
-              <Radio aria-hidden="true" className="size-3" /> Simulated demo
-              signal - live updates
-            </p>
+    <AppShell shader="subtle">
+      <div className="grid gap-10">
+        {/* -- OPS Header -- */}
+        <div className="border-b border-white/[0.06] pb-8">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <span className="live-pulse inline-flex items-center gap-2 border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
+                <Radio aria-hidden="true" className="size-3" />
+                Operations command
+              </span>
+              <h1 className="mt-4 font-display text-4xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
+                Crowd Overview.
+              </h1>
+              <p className="mt-3 max-w-lg text-sm text-muted-foreground">
+                A live venue digital twin for staff and volunteers, focused on
+                zones that need action before pressure becomes an incident.
+              </p>
+            </div>
+            <button
+              className="hidden shrink-0 items-center gap-2 border border-white/15 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-white/[0.08] md:inline-flex"
+              onClick={() => {
+                void refresh();
+                setDigestRefreshToken((current) => current + 1);
+              }}
+              type="button"
+            >
+              <RefreshCw aria-hidden="true" className="size-3.5" />
+              Refresh live data
+            </button>
           </div>
-          <Button
-            onClick={() => {
-              void refresh();
-              setDigestRefreshToken((current) => current + 1);
-            }}
-            type="button"
-            variant="outline"
-          >
-            <RefreshCw aria-hidden="true" /> Refresh live data
-          </Button>
+        </div>
+
+        {/* -- Scoreboard metrics -- */}
+        <section
+          aria-label="Crowd metrics"
+          className="grid grid-cols-3 divide-x divide-white/[0.06] border border-white/[0.06]"
+        >
+          {[
+            {
+              label: "Monitored zones",
+              value: summaries.length,
+              helper: "Live listener",
+            },
+            {
+              label: "Action zones",
+              value: criticalCount,
+              helper: "High or critical",
+            },
+            {
+              label: "Busiest zone",
+              value: busiestZone
+                ? Math.round(busiestZone.currentDensityPct)
+                : "--",
+              helper: busiestZone?.name ?? "No live zones",
+              suffix: busiestZone ? "%" : "",
+            },
+          ].map((m) => (
+            <div className="px-4 py-6 text-center" key={m.label}>
+              <p className="font-display text-4xl font-bold text-foreground lg:text-5xl">
+                {m.value}
+                {m.suffix ?? ""}
+              </p>
+              <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
+                {m.label}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground/50">
+                {m.helper}
+              </p>
+            </div>
+          ))}
         </section>
 
         <OperationalDigest refreshToken={digestRefreshToken} />
 
-        {!reducedMotion && summaries.length > 0 && (
-          <Suspense
-            fallback={
-              <div className="h-64 animate-pulse rounded-3xl bg-muted" />
-            }
-          >
-            <CrowdField3D
-              onSelectZone={setSelectedZone}
-              selectedZoneId={selectedZone?.zoneId}
-              zones={summaries}
-            />
-          </Suspense>
-        )}
+        <FadeInView>
+          {!reducedMotion && summaries.length > 0 && (
+            <Suspense
+              fallback={
+                <div className="h-64 animate-pulse border border-white/[0.06] bg-white/[0.02]" />
+              }
+            >
+              <CrowdField3D
+                onSelectZone={setSelectedZone}
+                selectedZoneId={selectedZone?.zoneId}
+                zones={summaries}
+              />
+            </Suspense>
+          )}
+        </FadeInView>
 
         {selectedZone && (
           <section
             aria-label={`Selected zone: ${selectedZone.name}`}
-            className="grid gap-3"
+            className="grid gap-4"
           >
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-2xl font-black uppercase">
-                Digital twin selection
+              <h2 className="font-display text-xl font-bold text-foreground">
+                Digital twin selection -{" "}
+                <span className="text-primary">{selectedZone.name}</span>
               </h2>
-              <Button
+              <button
+                className="border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-semibold transition hover:bg-white/[0.08]"
                 onClick={() => setSelectedZone(null)}
                 type="button"
-                variant="outline"
               >
-                Clear selection
-              </Button>
+                Clear
+              </button>
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
               <ZoneCard zone={selectedZone} />
@@ -109,61 +153,52 @@ export default function DashboardPage(): JSX.Element {
           </section>
         )}
 
-        <section
-          aria-label="Crowd metrics"
-          className="grid gap-4 md:grid-cols-3"
-        >
-          <ScoreboardMetric
-            helperText="Zones attached to the live listener"
-            label="Monitored zones"
-            value={summaries.length}
-          />
-          <ScoreboardMetric
-            helperText="High or critical density"
-            label="Action zones"
-            value={criticalCount}
-          />
-          <ScoreboardMetric
-            helperText={busiestZone?.name ?? "No live zones yet"}
-            label="Busiest density"
-            suffix="%"
-            value={
-              busiestZone ? Math.round(busiestZone.currentDensityPct) : "--"
-            }
-          />
-        </section>
-
         {error && (
-          <p className="rounded-lg border border-error-text bg-card p-4 text-sm text-error-text">
+          <p className="border border-error-text/30 bg-error-text/[0.04] p-4 text-sm text-error-text">
             Crowd zones could not be loaded. Check your role and connection.
           </p>
         )}
 
-        <section aria-labelledby="zone-grid-heading" className="grid gap-4">
-          <h2
-            className="font-display text-2xl font-black uppercase text-foreground"
-            id="zone-grid-heading"
-          >
-            Zone Grid
-          </h2>
+        {/* -- Zone Grid -- */}
+        <section aria-labelledby="zone-grid-heading" className="grid gap-6">
+          <div className="flex items-center justify-between">
+            <h2
+              className="font-display text-sm uppercase tracking-widest text-muted-foreground"
+              id="zone-grid-heading"
+            >
+              Zone Grid
+            </h2>
+            <button
+              className="inline-flex items-center gap-2 border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-white/[0.08] md:hidden"
+              onClick={() => {
+                void refresh();
+                setDigestRefreshToken((c) => c + 1);
+              }}
+              type="button"
+            >
+              <RefreshCw aria-hidden="true" className="size-3.5" />
+              Refresh
+            </button>
+          </div>
+
           {loading && (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {[Activity, Users, AlertTriangle].map((Icon, index) => (
                 <div
                   aria-hidden="true"
-                  className="min-h-40 rounded-lg border border-border bg-card p-4"
+                  className="border border-white/[0.06] bg-white/[0.01] p-6"
                   key={index}
                 >
-                  <Icon className="size-6 text-muted-foreground" />
-                  <div className="mt-6 h-8 w-24 rounded bg-muted" />
-                  <div className="mt-4 h-4 w-full rounded bg-muted" />
-                  <div className="mt-2 h-4 w-3/4 rounded bg-muted" />
+                  <Icon className="size-5 text-muted-foreground/30" />
+                  <div className="mt-5 h-6 w-24 bg-white/[0.04]" />
+                  <div className="mt-3 h-3 w-full bg-white/[0.04]" />
+                  <div className="mt-2 h-3 w-3/4 bg-white/[0.04]" />
                 </div>
               ))}
             </div>
           )}
           {!loading && summaries.length === 0 && (
-            <p className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
+            <p className="border border-white/[0.06] bg-white/[0.01] p-5 text-sm text-muted-foreground">
               No zones configured yet.
             </p>
           )}

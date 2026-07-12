@@ -9,7 +9,7 @@ interface AtmosphericPanelProps {
   intensity?: "soft" | "strong";
 }
 
-/** Layered shader-style panel used for high-emphasis page sections. */
+/** Layered glass panel with animated shader accents for high-emphasis sections. */
 export function AtmosphericPanel({
   children,
   className,
@@ -19,27 +19,25 @@ export function AtmosphericPanel({
   return (
     <section
       className={cn(
-        "relative isolate overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-[12px_12px_0_rgb(0_0_0/0.22)] dark:shadow-[12px_12px_0_rgb(247_243_232/0.08)]",
-        intensity === "strong" &&
-          "bg-[linear-gradient(135deg,var(--card),var(--background)_72%)]",
+        "relative isolate overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] text-card-foreground backdrop-blur-xl",
+        intensity === "strong" && "shadow-[0_0_60px_rgba(0,255,136,0.06)]",
         className,
       )}
     >
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,var(--primary)_0,transparent_28%),radial-gradient(circle_at_78%_10%,var(--accent)_0,transparent_30%),radial-gradient(circle_at_50%_86%,var(--secondary)_0,transparent_24%)] opacity-45 mix-blend-screen"
+        className={cn(
+          "absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,rgba(0,255,136,0.15),transparent_35%),radial-gradient(circle_at_78%_10%,rgba(0,212,255,0.12),transparent_38%)]",
+          intensity === "soft" && "opacity-60",
+        )}
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgb(255_255_255/0.18)_42%,transparent_63%),linear-gradient(90deg,rgb(255_255_255/0.08)_1px,transparent_1px),linear-gradient(0deg,rgb(255_255_255/0.08)_1px,transparent_1px)] bg-[length:100%_100%,44px_44px,44px_44px] opacity-70"
+        className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:40px_40px]"
       />
       <div
         aria-hidden="true"
-        className="absolute -right-24 -top-24 size-80 rounded-full border border-current/25"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute -bottom-28 left-10 h-64 w-96 rotate-[-8deg] border border-current/20"
+        className="absolute -right-20 -top-20 size-64 rounded-full border border-white/10"
       />
       <div className={cn("relative z-10", contentClassName)}>{children}</div>
     </section>
