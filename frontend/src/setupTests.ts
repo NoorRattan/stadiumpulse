@@ -41,6 +41,9 @@ vi.mock("@/services/supabaseConfig", () => ({
       signInAnonymously: vi.fn(),
       signInWithOAuth: vi.fn(() => Promise.resolve({ error: null })),
       signInWithPassword: vi.fn(() => Promise.resolve({ error: null })),
+      signUp: vi.fn(() =>
+        Promise.resolve({ data: { session: null }, error: null }),
+      ),
       signOut: vi.fn(() => Promise.resolve({ error: null })),
     },
     channel: vi.fn(() => ({

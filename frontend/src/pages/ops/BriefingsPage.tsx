@@ -65,8 +65,11 @@ export default function BriefingsPage(): JSX.Element {
   return (
     <AppShell>
       <div className="grid gap-6">
-        <section className="grid gap-2">
-          <h1 className="font-display text-4xl font-bold text-foreground">
+        <section className="grid gap-3">
+          <p className="w-fit rounded-md border border-border bg-card px-3 py-1 text-xs font-black uppercase text-primary">
+            Shift intelligence
+          </p>
+          <h1 className="font-display text-5xl font-black uppercase leading-none text-foreground">
             Volunteer Briefings
           </h1>
           <p className="max-w-3xl text-muted-foreground">
@@ -110,7 +113,7 @@ export default function BriefingsPage(): JSX.Element {
           >
             <div className="grid gap-2">
               <h2
-                className="font-display text-2xl font-bold text-foreground"
+                className="font-display text-2xl font-black uppercase text-foreground"
                 id="briefing-preview-heading"
               >
                 Briefing Preview

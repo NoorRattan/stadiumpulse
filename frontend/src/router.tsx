@@ -16,6 +16,7 @@ const DashboardPage = lazy(() => import("./pages/ops/DashboardPage"));
 const IncidentsPage = lazy(() => import("./pages/ops/IncidentsPage"));
 const BriefingsPage = lazy(() => import("./pages/ops/BriefingsPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
+const SignupPage = lazy(() => import("./pages/SignupPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const DemoPage = lazy(() => import("./pages/DemoPage"));
 
@@ -121,6 +122,14 @@ const router = createBrowserRouter([
     element: (
       <RouteFrame>
         <LoginPage />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/signup",
+    element: (
+      <RouteFrame>
+        <SignupPage />
       </RouteFrame>
     ),
   },

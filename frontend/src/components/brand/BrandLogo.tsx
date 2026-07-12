@@ -12,15 +12,15 @@ export const BrandLogo = memo(function BrandLogo({
     <div className="flex min-w-0 items-center gap-3">
       <svg
         aria-hidden="true"
-        className="size-11 shrink-0 text-primary"
+        className="size-11 shrink-0 text-foreground"
         fill="none"
         viewBox="0 0 48 48"
         xmlns="http://www.w3.org/2000/svg"
       >
         <rect
-          className="fill-background"
+          className="fill-primary"
           height="44"
-          rx="12"
+          rx="6"
           stroke="currentColor"
           strokeWidth="2.5"
           width="44"
@@ -39,7 +39,7 @@ export const BrandLogo = memo(function BrandLogo({
           strokeLinecap="round"
           strokeWidth="3"
         />
-        <circle className="fill-primary" cx="32.5" cy="15.5" r="4.5" />
+        <circle className="fill-foreground" cx="32.5" cy="15.5" r="4.5" />
         <path
           className="stroke-primary"
           d="M16 15.5h5.5M16 21h9.5M16 26.5h5.5"
@@ -48,7 +48,7 @@ export const BrandLogo = memo(function BrandLogo({
         />
       </svg>
       <div className="min-w-0">
-        <p className="font-display text-xl font-black leading-tight tracking-normal text-foreground md:text-2xl">
+        <p className="font-display text-xl font-black uppercase leading-tight text-foreground md:text-2xl">
           StadiumPulse
         </p>
         {tagline ? (

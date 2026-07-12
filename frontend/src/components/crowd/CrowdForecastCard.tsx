@@ -44,7 +44,7 @@ export function CrowdForecastCard({ zoneId }: { zoneId: string }): JSX.Element {
       </CardHeader>
       <CardContent>
         {!forecast && !error && (
-          <p role="status">Reading recent crowd movement…</p>
+          <p role="status">Reading recent crowd movement...</p>
         )}
         {error && (
           <p className="text-sm text-error-text">
@@ -59,7 +59,7 @@ export function CrowdForecastCard({ zoneId }: { zoneId: string }): JSX.Element {
               </p>
               <p className="mb-1 inline-flex items-center gap-1 text-sm font-bold capitalize">
                 <TrendIcon aria-hidden="true" className="size-4" />{" "}
-                {forecast.direction} · {forecast.confidence} confidence
+                {forecast.direction} - {forecast.confidence} confidence
               </p>
             </div>
             <p className="text-sm leading-6 text-muted-foreground">

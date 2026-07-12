@@ -27,7 +27,7 @@ os.environ.setdefault("GEMINI_MODEL_LITE", "gemini-2.5-flash-lite")
 os.environ.setdefault("LOG_LEVEL", "INFO")
 os.environ.setdefault("SIMULATE_CROWD_DATA", "false")
 
-from dependencies import AuthenticatedUser, extract_bearer_token, get_current_user
+from dependencies import AuthenticatedUser, extract_bearer_token, get_current_user, get_optional_current_user
 from limiter import limiter
 from main import app
 from models.user import UserRole
@@ -565,10 +565,20 @@ async def test_current_user_override(
     return current_user
 
 
+async def test_optional_current_user_override(
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> AuthenticatedUser | None:
+    if not authorization:
+        return None
+    return await test_current_user_override(request, authorization)
+
+
 @pytest.fixture
 def client(mock_db: FakeDb) -> Iterator[TestClient]:
     app.dependency_overrides[get_pool] = lambda: mock_db
     app.dependency_overrides[get_current_user] = test_current_user_override
+    app.dependency_overrides[get_optional_current_user] = test_optional_current_user_override
     reset_storage = getattr(limiter.limiter.storage, "reset", None)
     if callable(reset_storage):
         reset_storage()

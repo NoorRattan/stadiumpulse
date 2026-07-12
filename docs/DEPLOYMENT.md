@@ -21,11 +21,11 @@ supabase db seed
 If you are not using the Supabase CLI, run `supabase/migrations/0001_init.sql` and then `supabase/seed.sql` in the SQL editor.
 For an existing deployment, also run `supabase/migrations/0002_crowd_realtime.sql`. This adds `public.zones` to the Supabase Realtime publication used by the dashboard listener.
 
-Enable these Auth providers in Supabase:
+Enable Email/password Auth in Supabase for account creation and staff access:
 
-- Anonymous sign-in
 - Email/password
-- Google OAuth
+
+Google OAuth is optional. If you enable it in Supabase, also set `VITE_ENABLE_GOOGLE_AUTH=true` for the frontend; otherwise the Google button stays hidden. Anonymous sign-in is not required for the public fan wayfinding and travel fallback flows.
 
 The migration installs `public.custom_access_token_hook`, but Supabase does not call it until you enable it in the dashboard. In Supabase, open **Authentication -> Hooks -> Customize Access Token**, enable the hook, and select `public.custom_access_token_hook`. This is required for staff and volunteer access. The app intentionally ignores `app_metadata.user_role`; both frontend route gating and FastAPI authorization use only the `user_role` access-token claim generated from `public.user_roles`.
 
@@ -79,13 +79,14 @@ Create a Cloudflare Pages project named `stadiumpulse`. The GitHub deploy workfl
 
 Set these GitHub secrets:
 
-| Secret                   | Purpose                                          |
-| ------------------------ | ------------------------------------------------ |
-| `CLOUDFLARE_ACCOUNT_ID`  | Cloudflare account for Pages upload.             |
-| `CLOUDFLARE_API_TOKEN`   | Token with Cloudflare Pages edit permissions.    |
-| `VITE_SUPABASE_URL`      | Supabase project URL for the browser client.     |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anon key for browser auth and Realtime. |
-| `VITE_API_BASE_URL`      | Public Render backend base URL.                  |
+| Secret                    | Purpose                                          |
+| ------------------------- | ------------------------------------------------ |
+| `CLOUDFLARE_ACCOUNT_ID`   | Cloudflare account for Pages upload.             |
+| `CLOUDFLARE_API_TOKEN`    | Token with Cloudflare Pages edit permissions.    |
+| `VITE_SUPABASE_URL`       | Supabase project URL for the browser client.     |
+| `VITE_SUPABASE_ANON_KEY`  | Supabase anon key for browser auth and Realtime. |
+| `VITE_API_BASE_URL`       | Public Render backend base URL.                  |
+| `VITE_ENABLE_GOOGLE_AUTH` | Set to `true` only when Google OAuth is enabled. |
 
 Cloudflare Pages should serve the Vite app directly. API calls go to Render through `VITE_API_BASE_URL`; do not add a Firebase-style `/api/**` rewrite.
 
@@ -125,14 +126,14 @@ After deployment, verify:
 
 - Render `/health` returns `{"status":"ok"}`.
 - Cloudflare Pages loads the app.
-- Anonymous sign-in works.
+- Email signup and sign-in work.
 - Staff routes only work after `user_role` is present in the Supabase access token.
 - A database-only role grant produces a refreshed access token whose decoded payload contains `user_role: "staff"` or `user_role: "volunteer"`.
 - `supabase_realtime` publishes `public.zones` only; do not add `public.incidents`, `public.profiles`, `public.user_roles`, or briefing tables to the Realtime publication.
 - The ops dashboard receives zone updates from Supabase Realtime.
 - The dashboard visibly changes without a reload and labels the signal `Simulated demo signal`.
 - Selecting a 3D zone returns a real `/forecast` response with a deterministic projection and Gemini-written action.
-- Travel initially shows a guided selection state by design; selecting a match completes the authenticated Gemini suggestion flow.
+- Travel initially shows a guided selection state by design; selecting a match works publicly with curated descriptions and uses Gemini-enhanced descriptions for signed-in users.
 
 ## Known Limitation
 

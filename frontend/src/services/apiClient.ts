@@ -7,6 +7,7 @@ interface RequestOptions<TBody> {
   method?: HttpMethod;
   body?: TBody;
   signal?: AbortSignal;
+  timeoutMs?: number;
 }
 
 const env = import.meta.env as Record<string, string | undefined>;
@@ -49,7 +50,7 @@ export async function apiRequest<TResponse, TBody = unknown>(
   const init: RequestInit = {
     method: options.method ?? "GET",
     headers,
-    signal: options.signal ?? AbortSignal.timeout(15_000),
+    signal: options.signal ?? AbortSignal.timeout(options.timeoutMs ?? 15_000),
     cache: "no-store",
   };
 

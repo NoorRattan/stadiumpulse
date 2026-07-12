@@ -153,7 +153,7 @@ export const ConciergeChat = memo(function ConciergeChat({
       />
       <div
         aria-live="polite"
-        className="grid max-h-[32rem] gap-3 overflow-y-auto rounded-lg border border-border bg-background p-4"
+        className="grid max-h-[32rem] gap-3 overflow-y-auto rounded-lg border border-border bg-card/80 p-4 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.05)]"
       >
         {messages.map((message) => (
           <ConciergeMessage
@@ -201,7 +201,7 @@ export const ConciergeChat = memo(function ConciergeChat({
             variant="outline"
           >
             <Mic aria-hidden="true" className="size-4" />
-            {listening ? "Listening…" : "Speak"}
+            {listening ? "Listening..." : "Speak"}
           </Button>
           <Button
             aria-pressed={speakReplies}

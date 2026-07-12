@@ -38,17 +38,20 @@ export default function DashboardPage(): JSX.Element {
     <AppShell>
       <div className="grid gap-6">
         <section className="flex flex-wrap items-end justify-between gap-4">
-          <div className="grid gap-2">
-            <h1 className="font-display text-4xl font-bold text-foreground">
+          <div className="grid gap-3">
+            <p className="w-fit rounded-md border border-border bg-card px-3 py-1 text-xs font-black uppercase text-primary">
+              Operations command
+            </p>
+            <h1 className="font-display text-5xl font-black uppercase leading-none text-foreground">
               Crowd Overview
             </h1>
             <p className="max-w-3xl text-muted-foreground">
               A live venue digital twin for staff and volunteers, focused on
               zones that need action before pressure becomes an incident.
             </p>
-            <p className="inline-flex w-fit items-center gap-2 rounded-full border border-accent/35 bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
+            <p className="inline-flex w-fit items-center gap-2 rounded-md border border-accent/50 bg-accent/10 px-3 py-1 text-xs font-black uppercase text-accent">
               <Radio aria-hidden="true" className="size-3" /> Simulated demo
-              signal · live updates
+              signal - live updates
             </p>
           </div>
           <Button
@@ -85,7 +88,7 @@ export default function DashboardPage(): JSX.Element {
             className="grid gap-3"
           >
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-2xl font-bold">
+              <h2 className="font-display text-2xl font-black uppercase">
                 Digital twin selection
               </h2>
               <Button
@@ -138,7 +141,7 @@ export default function DashboardPage(): JSX.Element {
 
         <section aria-labelledby="zone-grid-heading" className="grid gap-4">
           <h2
-            className="font-display text-2xl font-bold text-foreground"
+            className="font-display text-2xl font-black uppercase text-foreground"
             id="zone-grid-heading"
           >
             Zone Grid

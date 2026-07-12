@@ -172,6 +172,7 @@ async def get_route(
     to_zone_id: str,
     accessibility_needs: list[AccessibilityNeed],
     db: asyncpg.Pool | None = None,
+    use_ai: bool = True,
 ) -> RouteResponse:
     graph = load_zone_graph()
     if AccessibilityNeed.wheelchair in accessibility_needs:
@@ -184,6 +185,12 @@ async def get_route(
         raise ResourceNotFoundError(f"Zone not found: {', '.join(missing)}")
     baseline = dijkstra_shortest_path(graph, from_zone_id, to_zone_id, zones)
     alternatives = find_comparable_alternatives(graph, baseline, from_zone_id, to_zone_id, zones)
+
+    if not use_ai:
+        return RouteResponse(
+            routeOptions=[format_route_as_static_steps(baseline, zones)],
+            generatedBy="fallback",
+        )
 
     try:
         route_options = wayfindingFlow(

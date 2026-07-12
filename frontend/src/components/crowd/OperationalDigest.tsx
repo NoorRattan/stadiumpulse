@@ -58,7 +58,7 @@ export function OperationalDigest({
         </div>
         <p className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
           <ShieldCheck aria-hidden="true" className="size-4 text-primary" />
-          Advice only · no action is executed automatically
+          Advice only - no action is executed automatically
         </p>
       </div>
 
@@ -68,7 +68,7 @@ export function OperationalDigest({
           role="status"
         >
           <Activity aria-hidden="true" className="size-4 animate-pulse" />
-          Ranking operational pressure…
+          Ranking operational pressure...
         </p>
       )}
       {error && (
@@ -85,7 +85,7 @@ export function OperationalDigest({
               {digest.narrative}
             </p>
             <p className="mt-2 text-xs font-semibold text-muted-foreground">
-              Simulated readings · deterministic ranking · AI-written summary
+              Simulated readings - deterministic ranking - AI-written summary
             </p>
           </div>
 

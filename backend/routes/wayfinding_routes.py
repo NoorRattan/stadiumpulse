@@ -1,7 +1,7 @@
 import asyncpg
 from fastapi import APIRouter, Depends, Request
 
-from dependencies import AuthenticatedUser, get_current_user
+from dependencies import AuthenticatedUser, get_optional_current_user
 from limiter import limiter
 from schemas.requests import RouteRequest
 from schemas.responses import RouteResponse, ZoneListResponse, ZoneSummary
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/wayfinding", tags=["wayfinding"])
 @limiter.limit("60/minute")
 async def list_zone_options(
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    _current_user: AuthenticatedUser | None = Depends(get_optional_current_user),
     db: asyncpg.Pool = Depends(get_pool),
 ) -> ZoneListResponse:
     rows = await db.fetch(
@@ -35,7 +35,7 @@ async def list_zone_options(
 async def route(
     request: Request,
     body: RouteRequest,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser | None = Depends(get_optional_current_user),
     db: asyncpg.Pool = Depends(get_pool),
 ) -> RouteResponse:
     return await get_route(
@@ -43,4 +43,5 @@ async def route(
         body.to_zone_id,
         body.accessibility_needs,
         db=db,
+        use_ai=current_user is not None,
     )

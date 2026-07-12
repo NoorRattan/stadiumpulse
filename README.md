@@ -73,7 +73,7 @@ npm run build
 - Staff and volunteer roles live in `public.user_roles`; `backend/scripts/grant_role.py` updates them with the Supabase service role. Supabase's custom access-token hook must be enabled so those rows become the `user_role` JWT claim used by the app.
 - The dashboard refreshes backend-computed bands from a Supabase Realtime change signal; operations mutations still go through FastAPI and re-check roles server-side.
 - Seed and animated crowd data are synthetic demo data. The UI labels them as simulated; no screen represents them as physical venue sensors.
-- The public demo endpoint is read-only and rate-limited. It exposes only the synthetic scenario; staff mutations and Gemini calls stay authenticated.
+- The public demo endpoint is read-only and rate-limited. Fan wayfinding and travel routes also work without an account by returning deterministic fallback content; signed-in users can receive Gemini-enhanced descriptions. Staff mutations stay authenticated.
 - Forecast bands are deterministic from recent readings. Gemini explains the fixed projection and recommends an action but cannot change the computed number or band.
 - Command-center recommendations are decision support only. The app never executes crowd-control actions, and the dashboard marks every ranked action as requiring supervisor approval.
 

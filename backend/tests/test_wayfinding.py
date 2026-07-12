@@ -22,7 +22,7 @@ def test_wayfinding_happy_path(client: TestClient) -> None:
 
 
 @pytest.mark.parametrize("role", [UserRole.fan, UserRole.staff, UserRole.volunteer])
-def test_wayfinding_zone_options_available_to_any_signed_in_role(
+def test_wayfinding_zone_options_available_to_public_and_signed_in_users(
     client: TestClient,
     role: UserRole,
 ) -> None:
@@ -37,9 +37,10 @@ def test_wayfinding_zone_options_available_to_any_signed_in_role(
     assert "capacity" not in zones[0]
 
 
-def test_wayfinding_zone_options_rejects_missing_auth(client: TestClient) -> None:
+def test_wayfinding_zone_options_available_without_auth(client: TestClient) -> None:
     response = client.get("/api/wayfinding/zones")
-    assert response.status_code == 401
+    assert response.status_code == 200
+    assert response.json()["zones"][0]["zoneId"] == "gate-2"
 
 
 def test_wayfinding_ai_failure_returns_fallback(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -70,9 +71,10 @@ def test_wayfinding_invalid_zone_returns_404(client: TestClient) -> None:
     assert response.json()["error"]["code"] == "NOT_FOUND"
 
 
-def test_wayfinding_rejects_missing_auth(client: TestClient) -> None:
+def test_wayfinding_missing_auth_uses_static_fallback(client: TestClient) -> None:
     response = client.post("/api/wayfinding/route", json=route_payload())
-    assert response.status_code == 401
+    assert response.status_code == 200
+    assert response.json()["generatedBy"] == "fallback"
 
 
 def test_wayfinding_validation_failure(client: TestClient) -> None:

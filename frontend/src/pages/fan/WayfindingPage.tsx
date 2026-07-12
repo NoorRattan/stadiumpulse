@@ -77,8 +77,11 @@ export default function WayfindingPage(): JSX.Element {
   return (
     <AppShell>
       <div className="grid gap-6">
-        <section className="grid gap-2">
-          <h1 className="font-display text-4xl font-bold text-foreground">
+        <section className="grid gap-3">
+          <p className="w-fit rounded-md border border-border bg-card px-3 py-1 text-xs font-black uppercase text-primary">
+            Crowd-aware routing
+          </p>
+          <h1 className="font-display text-5xl font-black uppercase leading-none text-foreground">
             Find Your Way
           </h1>
           <p className="max-w-3xl text-muted-foreground">
@@ -89,12 +92,13 @@ export default function WayfindingPage(): JSX.Element {
 
         {error && (
           <p className="rounded-lg border border-error-text bg-card p-4 text-sm text-error-text">
-            Zone options could not be loaded. Please sign in and try again.
+            Zone options could not be loaded. Check the connection and try
+            again.
           </p>
         )}
 
         <form
-          className="grid gap-4 rounded-lg border border-border bg-card p-4"
+          className="grid gap-4 rounded-lg border border-border bg-card/92 p-5 shadow-[8px_8px_0_rgb(0_0_0/0.16)] dark:shadow-[8px_8px_0_rgb(247_243_232/0.08)]"
           onSubmit={(event) => void handleSubmit(event)}
         >
           <div className="grid gap-4 md:grid-cols-2">
@@ -139,7 +143,7 @@ export default function WayfindingPage(): JSX.Element {
             <div className="grid gap-3 md:grid-cols-2">
               {accessibilityNeeds.map((need) => (
                 <label
-                  className="flex min-h-11 items-center gap-3 rounded-lg border border-border bg-background p-3 text-sm text-foreground"
+                  className="flex min-h-11 items-center gap-3 rounded-md border border-border bg-background/70 p-3 text-sm font-semibold text-foreground"
                   key={need.value}
                 >
                   <Checkbox
@@ -175,7 +179,7 @@ export default function WayfindingPage(): JSX.Element {
         )}
         {fallback && (
           <p className="rounded-lg border border-secondary bg-card p-4 text-sm text-secondary">
-            Showing the standard route — live directions are temporarily
+            Showing the standard route - live directions are temporarily
             unavailable
           </p>
         )}

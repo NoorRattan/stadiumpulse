@@ -1,10 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import { axe } from "vitest-axe";
 import { MemoryRouter } from "react-router-dom";
+import { axe } from "vitest-axe";
 
 import { AuthContext, type AuthContextValue } from "@/contexts/AuthContext";
 
-import LoginPage from "./LoginPage";
+import SignupPage from "./SignupPage";
 
 const authValue: AuthContextValue = {
   user: null,
@@ -16,23 +16,23 @@ const authValue: AuthContextValue = {
   refreshRole: vi.fn(),
 };
 
-describe("LoginPage", () => {
+describe("SignupPage", () => {
   it("renders one h1 and has no axe violations", async () => {
     const { container } = render(
       <MemoryRouter>
         <AuthContext.Provider value={authValue}>
-          <LoginPage />
+          <SignupPage />
         </AuthContext.Provider>
       </MemoryRouter>,
     );
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Sign In",
+      "Sign Up",
     );
     expect(
-      screen.getByRole("link", { name: /create an account/i }),
-    ).toHaveAttribute("href", "/signup");
+      screen.getByRole("button", { name: /create account/i }),
+    ).toBeInTheDocument();
     const results = await axe(container);
     expect(results.violations).toHaveLength(0);
   });

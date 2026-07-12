@@ -31,9 +31,12 @@ def test_travel_uses_fresh_cache(client: TestClient, mock_db: FakeDb) -> None:
     assert response.json()["suggestions"][0]["description"] == "Cached rail option"
 
 
-def test_travel_rejects_missing_auth(client: TestClient) -> None:
+def test_travel_missing_auth_returns_static_suggestions(client: TestClient) -> None:
     response = client.get("/api/travel/suggestions?matchId=m_2026_014")
-    assert response.status_code == 401
+    body = response.json()
+    assert response.status_code == 200
+    assert body["matchId"] == "m_2026_014"
+    assert body["suggestions"][0]["description"] == "Best for heavy arrival waves and predictable post-match exits."
 
 
 def test_travel_validation_failure(client: TestClient) -> None:

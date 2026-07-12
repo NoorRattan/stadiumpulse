@@ -92,6 +92,15 @@ async def get_current_user(
     return current_user
 
 
+async def get_optional_current_user(
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> AuthenticatedUser | None:
+    if not authorization:
+        return None
+    return await get_current_user(request, authorization)
+
+
 def require_role(*allowed_roles: UserRole) -> Callable[[AuthenticatedUser], AuthenticatedUser]:
     def dependency(current_user: AuthenticatedUser = Depends(get_current_user)) -> AuthenticatedUser:
         if current_user.role not in allowed_roles:

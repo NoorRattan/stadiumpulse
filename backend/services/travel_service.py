@@ -115,6 +115,7 @@ async def cache_suggestions(db: asyncpg.Pool, match_id: str, suggestions: list[T
 async def get_travel_suggestions(
     match_id: str,
     db: asyncpg.Pool | None = None,
+    use_ai: bool = True,
 ) -> TravelSuggestionsResponse:
     pool = db or await get_pool()
     cached = await get_fresh_cache(pool, match_id)
@@ -131,13 +132,18 @@ async def get_travel_suggestions(
         raise ValueError(f"Match {match_id} has invalid venueZoneIds.")
 
     top_options = rank_by_load(static_transit_options_for_venue(venue_zone_ids), load_estimate)[:3]
-    descriptions = describe_travel_options(
-        [{"mode": option.mode, "note": option.note} for option in top_options],
-        load_estimate,
+    descriptions = (
+        describe_travel_options(
+            [{"mode": option.mode, "note": option.note} for option in top_options],
+            load_estimate,
+        )
+        if use_ai
+        else [option.note for option in top_options]
     )
     suggestions = [
         TravelSuggestion(mode=option.mode, description=description)
         for option, description in zip(top_options, descriptions, strict=False)
     ]
-    await cache_suggestions(pool, match_id, suggestions)
+    if use_ai:
+        await cache_suggestions(pool, match_id, suggestions)
     return TravelSuggestionsResponse(matchId=match_id, suggestions=suggestions)

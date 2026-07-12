@@ -10,7 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { AppShell } from "@/components/layout";
+import { AppShell, AtmosphericPanel } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,7 +43,9 @@ export default function DemoPage(): JSX.Element {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiRequest<DemoExperienceResponse>("/api/demo");
+      const response = await apiRequest<DemoExperienceResponse>("/api/demo", {
+        timeoutMs: 60_000,
+      });
       setDemo(response);
       setSelectedZone(response.zones[0] ?? null);
     } catch (caught) {
@@ -65,13 +67,12 @@ export default function DemoPage(): JSX.Element {
   return (
     <AppShell>
       <div className="grid gap-8">
-        <section className="relative overflow-hidden rounded-[2rem] border border-primary/35 bg-card p-6 shadow-2xl shadow-primary/10 md:p-10">
-          <div className="absolute -right-16 -top-20 size-72 rounded-full bg-primary/12 blur-3xl" />
-          <div className="relative max-w-4xl">
+        <AtmosphericPanel contentClassName="p-6 md:p-10" intensity="strong">
+          <div className="max-w-4xl">
             <Badge className="gap-2" variant="outline">
               <Sparkles aria-hidden="true" /> FIFA World Cup 2026 demo
             </Badge>
-            <h1 className="mt-5 font-display text-4xl font-black tracking-tight text-foreground md:text-6xl">
+            <h1 className="mt-5 font-display text-4xl font-black uppercase leading-none text-foreground md:text-6xl">
               One connected match-day story, from fan arrival to venue command.
             </h1>
             <p className="mt-5 max-w-3xl text-lg leading-8 text-muted-foreground">
@@ -81,24 +82,24 @@ export default function DemoPage(): JSX.Element {
               role checks.
             </p>
           </div>
-        </section>
+        </AtmosphericPanel>
 
         {loading && (
           <div
-            className="grid min-h-56 place-content-center rounded-3xl border border-border bg-card"
+            className="grid min-h-56 place-content-center rounded-lg border border-border bg-card/90"
             role="status"
           >
             <RefreshCw
               aria-hidden="true"
               className="mx-auto size-8 animate-spin text-primary"
             />
-            <p className="mt-3 font-semibold">Connecting the demo stack…</p>
+            <p className="mt-3 font-semibold">Connecting the demo stack...</p>
           </div>
         )}
 
         {error && !loading && (
           <section
-            className="grid gap-4 rounded-3xl border border-error-text bg-card p-6"
+            className="grid gap-4 rounded-lg border border-error-text bg-card p-6"
             role="alert"
           >
             <h2 className="font-display text-2xl font-bold">
@@ -122,7 +123,7 @@ export default function DemoPage(): JSX.Element {
               className="grid gap-3 md:grid-cols-3"
             >
               {[
-                [CheckCircle2, "Frontend → FastAPI", "Connected"],
+                [CheckCircle2, "Frontend to FastAPI", "Connected"],
                 [Database, "Seeded Supabase scenario", demo.databaseStatus],
                 [ShieldCheck, "Data mode", demo.dataStatus],
               ].map(([Icon, label, value]) => (
@@ -206,7 +207,7 @@ export default function DemoPage(): JSX.Element {
                         {selectedZone.alert}
                       </p>
                       <p className="text-xs font-semibold text-muted-foreground">
-                        Synthetic reading · no physical sensor claim
+                        Synthetic reading - no physical sensor claim
                       </p>
                     </div>
                   ) : (

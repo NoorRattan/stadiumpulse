@@ -11,12 +11,12 @@ import {
 import { Link } from "react-router-dom";
 
 import { ConciergeChat } from "@/components/concierge";
-import { AppShell } from "@/components/layout";
+import { AppShell, AtmosphericPanel } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMatches } from "@/hooks/useMatches";
-import { useAuth } from "@/hooks/useAuth";
-import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { LanguageContext } from "@/contexts/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useMatches } from "@/hooks/useMatches";
+import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { apiRequest } from "@/services/apiClient";
 import type { ChatRequest, ChatResponse } from "@/types/api";
 
@@ -64,43 +64,47 @@ export default function HomePage(): JSX.Element {
 
   return (
     <AppShell>
-      <div className="grid gap-12 lg:gap-16">
-        <section className="relative overflow-hidden rounded-[2rem] border border-border bg-card px-6 py-8 shadow-2xl shadow-primary/5 md:px-10 md:py-12 lg:grid lg:min-h-[31rem] lg:grid-cols-[1.05fr_.95fr] lg:items-center">
-          <div className="relative z-10 max-w-2xl">
-            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-primary">
+      <div className="grid gap-10 lg:gap-14">
+        <AtmosphericPanel
+          className="lg:min-h-[31rem]"
+          contentClassName="px-5 py-7 md:px-8 md:py-10 lg:grid lg:grid-cols-[1.02fr_.98fr] lg:items-center"
+          intensity="strong"
+        >
+          <div className="max-w-2xl">
+            <p className="mb-5 inline-flex items-center gap-2 rounded-md border border-current/40 bg-background/30 px-3 py-1.5 text-xs font-black uppercase text-foreground">
               <Radio aria-hidden="true" className="size-3.5" /> Live venue
               intelligence
             </p>
-            <h1 className="font-display text-5xl font-black leading-[.96] tracking-[-0.055em] text-foreground sm:text-6xl lg:text-7xl">
+            <h1 className="font-display text-5xl font-black uppercase leading-none text-foreground sm:text-6xl lg:text-7xl">
               Your match day,{" "}
-              <span className="text-primary">without the guesswork.</span>
+              <span className="text-secondary">without the guesswork.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
               Find accessible routes, avoid crowd pressure, and get trusted
-              answers in your language—from arrival to the final whistle.
+              answers in your language - from arrival to the final whistle.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
-                className="inline-flex min-h-12 items-center gap-2 rounded-full bg-primary px-5 font-bold text-primary-foreground"
+                className="inline-flex min-h-12 items-center gap-2 rounded-md border border-border bg-primary px-5 font-black uppercase text-primary-foreground shadow-[5px_5px_0_var(--secondary)]"
                 to="/wayfinding"
               >
                 Plan my route{" "}
                 <ArrowRight aria-hidden="true" className="size-4" />
               </Link>
               <Link
-                className="inline-flex min-h-12 items-center gap-2 rounded-full border border-border bg-background px-5 font-bold"
+                className="inline-flex min-h-12 items-center gap-2 rounded-md border border-border bg-background/40 px-5 font-black uppercase text-foreground backdrop-blur-xl"
                 to="/concierge"
               >
                 Ask the concierge
               </Link>
               <Link
-                className="inline-flex min-h-12 items-center gap-2 rounded-full border border-accent/45 bg-accent/10 px-5 font-bold text-accent"
+                className="inline-flex min-h-12 items-center gap-2 rounded-md border border-accent/60 bg-accent/15 px-5 font-black uppercase text-foreground backdrop-blur-xl"
                 to="/demo"
               >
                 Explore the FIFA 2026 demo
               </Link>
             </div>
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-muted-foreground">
               <span className="inline-flex items-center gap-2">
                 <ShieldCheck
                   aria-hidden="true"
@@ -116,7 +120,7 @@ export default function HomePage(): JSX.Element {
           </div>
           <div className="relative mt-8 min-h-72 lg:mt-0">
             {reducedMotion ? (
-              <div className="grid h-full min-h-72 place-content-center rounded-3xl bg-[linear-gradient(135deg,var(--muted),transparent)] p-8 text-center">
+              <div className="grid h-full min-h-72 place-content-center rounded-lg border border-border bg-background/40 p-8 text-center text-foreground backdrop-blur-xl">
                 <Map
                   aria-hidden="true"
                   className="mx-auto size-16 text-primary"
@@ -128,18 +132,18 @@ export default function HomePage(): JSX.Element {
             ) : (
               <Suspense
                 fallback={
-                  <div className="h-full min-h-72 animate-pulse rounded-3xl bg-muted" />
+                  <div className="h-full min-h-72 animate-pulse rounded-lg bg-background/20" />
                 }
               >
                 <StadiumScene />
               </Suspense>
             )}
           </div>
-        </section>
+        </AtmosphericPanel>
 
         <section aria-labelledby="quick-actions-heading" className="grid gap-4">
           <h2
-            className="font-display text-3xl font-black tracking-tight text-foreground"
+            className="font-display text-3xl font-black uppercase text-foreground"
             id="quick-actions-heading"
           >
             Match-Day Tools
@@ -149,21 +153,21 @@ export default function HomePage(): JSX.Element {
               const Icon = action.icon;
               return (
                 <Link
-                  className="group rounded-3xl border border-border bg-card p-6 transition hover:-translate-y-1 hover:border-primary/45 hover:shadow-xl hover:shadow-primary/5 focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="group rounded-lg border border-border bg-card/92 p-5 shadow-[7px_7px_0_rgb(0_0_0/0.16)] transition hover:-translate-y-1 hover:bg-foreground hover:text-background focus-visible:ring-3 focus-visible:ring-ring/50 dark:shadow-[7px_7px_0_rgb(247_243_232/0.08)]"
                   key={action.href}
                   to={action.href}
                 >
-                  <span className="grid size-11 place-content-center rounded-2xl bg-primary/12 text-primary">
+                  <span className="grid size-11 place-content-center rounded-md border border-border bg-primary text-primary-foreground group-hover:border-background">
                     <Icon aria-hidden="true" className="size-5" />
                   </span>
-                  <span className="mt-4 block font-semibold text-foreground">
+                  <span className="mt-4 block font-black uppercase text-foreground group-hover:text-background">
                     {action.label}{" "}
                     <ArrowRight
                       aria-hidden="true"
                       className="ml-1 inline size-4 transition group-hover:translate-x-1"
                     />
                   </span>
-                  <span className="mt-2 block text-sm text-muted-foreground">
+                  <span className="mt-2 block text-sm text-muted-foreground group-hover:text-background/75">
                     {action.description}
                   </span>
                 </Link>
@@ -239,13 +243,13 @@ export default function HomePage(): JSX.Element {
                   }}
                 />
               ) : (
-                <div className="grid gap-4 rounded-2xl bg-muted p-5">
+                <div className="grid gap-4 rounded-lg border border-border bg-muted p-5">
                   <p className="text-sm leading-6 text-muted-foreground">
                     Sign in to start a private concierge conversation and keep
                     your accessibility preferences in sync.
                   </p>
                   <Link
-                    className="inline-flex min-h-11 items-center gap-2 font-bold text-primary"
+                    className="inline-flex min-h-11 items-center gap-2 font-black uppercase text-primary"
                     to="/login"
                   >
                     Sign in to ask{" "}

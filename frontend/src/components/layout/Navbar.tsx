@@ -40,7 +40,7 @@ export const Navbar = memo(function Navbar() {
   return (
     <nav
       aria-label="Primary navigation"
-      className="no-scrollbar fixed inset-x-3 bottom-3 z-50 flex max-w-none justify-around gap-1 overflow-x-auto rounded-full border border-border bg-background/94 p-1.5 shadow-2xl backdrop-blur-xl md:static md:max-w-[66vw] md:justify-start md:border-0 md:bg-transparent md:p-0 md:shadow-none"
+      className="no-scrollbar fixed inset-x-3 bottom-3 z-50 flex max-w-none justify-around gap-1 overflow-x-auto rounded-lg border border-border bg-background/94 p-1.5 shadow-[8px_8px_0_rgb(0_0_0/0.2)] backdrop-blur-xl md:static md:max-w-[66vw] md:justify-start md:border-0 md:bg-transparent md:p-0 md:shadow-none"
     >
       {items.map((item) => {
         const Icon = item.icon;
@@ -48,9 +48,9 @@ export const Navbar = memo(function Navbar() {
           <NavLink
             className={({ isActive }) =>
               cn(
-                "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:text-sm md:gap-2 md:px-3",
+                "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2.5 text-xs font-black uppercase text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground sm:text-sm md:gap-2 md:px-3",
                 isActive &&
-                  "bg-foreground text-background shadow-sm hover:bg-foreground hover:text-background",
+                  "border-border bg-foreground text-background shadow-[3px_3px_0_var(--secondary)] hover:bg-foreground hover:text-background",
               )
             }
             end={item.href === "/" || item.href === "/ops"}

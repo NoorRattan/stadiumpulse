@@ -6,7 +6,14 @@ from fastapi import Request
 
 import dependencies
 from config import Settings, get_supabase_jwks_url
-from dependencies import AuthenticatedUser, extract_bearer_token, get_current_user, require_role, verify_token_async
+from dependencies import (
+    AuthenticatedUser,
+    extract_bearer_token,
+    get_current_user,
+    get_optional_current_user,
+    require_role,
+    verify_token_async,
+)
 from models.user import UserRole
 from schemas.errors import ApiError, ErrorCode
 
@@ -137,6 +144,22 @@ async def test_get_current_user_sets_request_state_from_real_verification(monkey
     assert current_user.uid == "staff-1"
     assert current_user.role == UserRole.staff
     assert request.state.current_user == current_user
+
+
+@pytest.mark.asyncio
+async def test_get_optional_current_user_allows_missing_auth_and_reads_present_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def verify_token(token: str) -> dict[str, object]:
+        return {"uid": token, "user_role": "fan"}
+
+    monkeypatch.setattr(dependencies, "verify_token_async", verify_token)
+
+    assert await get_optional_current_user(request_with_headers({}), authorization=None) is None
+    current_user = await get_optional_current_user(request_with_headers({}), authorization="Bearer fan-1")
+
+    assert current_user is not None
+    assert current_user.uid == "fan-1"
 
 
 @pytest.mark.asyncio

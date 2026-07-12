@@ -24,18 +24,18 @@ export const ScoreboardMetric = memo(function ScoreboardMetric({
   return (
     <section
       aria-label={label}
-      className="rounded-lg border border-border bg-card p-4"
+      className="rounded-lg border border-border bg-card/92 p-4 shadow-[6px_6px_0_rgb(0_0_0/0.14)] dark:shadow-[6px_6px_0_rgb(247_243_232/0.07)]"
       data-motion={reducedMotion ? "static" : "animated"}
     >
       <p className="text-sm text-muted-foreground">{label}</p>
       {reducedMotion ? (
-        <p className="mt-2 font-mono text-4xl font-semibold text-foreground">
+        <p className="mt-2 font-mono text-4xl font-black text-foreground">
           {displayValue}
         </p>
       ) : (
         <motion.p
           key={displayValue}
-          className="mt-2 font-mono text-4xl font-semibold text-foreground"
+          className="mt-2 font-mono text-4xl font-black text-foreground"
           initial={{ rotateX: -70, opacity: 0 }}
           animate={{ rotateX: 0, opacity: 1 }}
           transition={{ duration: 0.3 }}

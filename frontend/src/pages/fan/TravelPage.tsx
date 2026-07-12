@@ -61,8 +61,11 @@ export default function TravelPage(): JSX.Element {
   return (
     <AppShell>
       <div className="grid gap-6">
-        <section className="grid gap-2">
-          <h1 className="font-display text-4xl font-bold text-foreground">
+        <section className="grid gap-3">
+          <p className="w-fit rounded-md border border-border bg-card px-3 py-1 text-xs font-black uppercase text-primary">
+            Arrival planning
+          </p>
+          <h1 className="font-display text-5xl font-black uppercase leading-none text-foreground">
             Getting Here Sustainably
           </h1>
           <p className="max-w-3xl text-muted-foreground">
@@ -73,10 +76,10 @@ export default function TravelPage(): JSX.Element {
 
         <section
           aria-labelledby="travel-form-heading"
-          className="grid gap-4 rounded-lg border border-border bg-card p-4"
+          className="grid gap-4 rounded-lg border border-border bg-card/92 p-5 shadow-[8px_8px_0_rgb(0_0_0/0.16)] dark:shadow-[8px_8px_0_rgb(247_243_232/0.08)]"
         >
           <h2
-            className="font-display text-2xl font-bold text-foreground"
+            className="font-display text-2xl font-black uppercase text-foreground"
             id="travel-form-heading"
           >
             Match Selector

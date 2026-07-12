@@ -30,7 +30,7 @@ const bandMeta: Record<
   },
   critical: {
     label: "Critical",
-    className: "border-error text-error-text",
+    className: "border-destructive text-error-text",
     icon: OctagonAlert,
   },
 };
