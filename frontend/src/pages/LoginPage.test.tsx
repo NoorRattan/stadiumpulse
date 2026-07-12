@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { axe } from "vitest-axe";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 
 import { AuthContext, type AuthContextValue } from "@/contexts/AuthContext";
+import { supabase } from "@/services/supabaseConfig";
 
 import LoginPage from "./LoginPage";
 
@@ -14,6 +15,24 @@ const authValue: AuthContextValue = {
   signInGuest: vi.fn(),
   signOut: vi.fn(),
   refreshRole: vi.fn(),
+};
+
+function LocationProbe(): JSX.Element {
+  const location = useLocation();
+  return <span data-testid="location">{location.pathname}</span>;
+}
+
+const emailNotConfirmedError = {
+  message: "Email not confirmed",
+  code: "email_not_confirmed",
+  status: 400,
+  __isAuthError: true,
+  name: "AuthApiError",
+  toJSON: () => ({
+    message: "Email not confirmed",
+    code: "email_not_confirmed",
+    status: 400,
+  }),
 };
 
 describe("LoginPage", () => {
@@ -47,7 +66,31 @@ describe("LoginPage", () => {
     expect(results.violations).toHaveLength(0);
   });
 
-  it("starts a guest session from the sign-in page", () => {
+  it("opens the public demo for guest access", () => {
+    render(
+      <MemoryRouter>
+        <AuthContext.Provider value={authValue}>
+          <LoginPage />
+          <LocationProbe />
+        </AuthContext.Provider>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /continue as guest/i }));
+
+    expect(screen.getByTestId("location")).toHaveTextContent("/demo");
+    expect(authValue.signInGuest).not.toHaveBeenCalled();
+  });
+
+  it("offers to resend confirmation when email is not confirmed", async () => {
+    const signInWithPasswordSpy = vi.spyOn(supabase.auth, "signInWithPassword");
+    const resendSpy = vi.spyOn(supabase.auth, "resend");
+
+    signInWithPasswordSpy.mockResolvedValueOnce({
+      data: { user: null, session: null },
+      error: emailNotConfirmedError as never,
+    });
+
     render(
       <MemoryRouter>
         <AuthContext.Provider value={authValue}>
@@ -56,8 +99,30 @@ describe("LoginPage", () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /continue as guest/i }));
+    fireEvent.change(screen.getByLabelText("Email"), {
+      target: { value: "jnoorrattan@gmail.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /continue with email/i }),
+    );
 
-    expect(authValue.signInGuest).toHaveBeenCalledTimes(1);
+    expect(
+      await screen.findByRole("button", { name: /resend confirmation email/i }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /resend confirmation email/i }),
+    );
+
+    expect(resendSpy).toHaveBeenCalledWith({
+      type: "signup",
+      email: "jnoorrattan@gmail.com",
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
   });
 });

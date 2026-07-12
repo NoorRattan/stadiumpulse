@@ -6,38 +6,53 @@ import { motion } from "motion/react";
 
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/services/supabaseConfig";
 
 const googleAuthEnabled =
   (import.meta.env as Record<string, string | undefined>)
     .VITE_ENABLE_GOOGLE_AUTH === "true";
 
+function errorMessage(caught: unknown): string {
+  if (caught instanceof Error) {
+    return caught.message;
+  }
+  if (
+    caught &&
+    typeof caught === "object" &&
+    "message" in caught &&
+    typeof caught.message === "string"
+  ) {
+    return caught.message;
+  }
+  return "";
+}
+
 /** Sign-in page - split-screen brutalist layout with atmospheric glass form. */
 export default function LoginPage(): JSX.Element {
   const navigate = useNavigate();
-  const { signInGuest } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [guestSubmitting, setGuestSubmitting] = useState(false);
+  const [resendingConfirmation, setResendingConfirmation] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState("");
 
   const finishSignIn = () => {
     void navigate("/");
   };
 
   const authErrorMessage = (caught: unknown): string => {
-    if (!(caught instanceof Error)) {
+    const rawMessage = errorMessage(caught);
+    if (!rawMessage) {
       return "Sign-in failed.";
     }
-    const message = caught.message.toLowerCase();
+    const message = rawMessage.toLowerCase();
     if (message.includes("invalid login credentials")) {
-      return "No matching account was found. Check the email and password, create an account, or continue as guest.";
+      return "No matching account was found. Check the email and password, create an account, or open the public demo.";
     }
-    if (message.includes("anonymous") || message.includes("signup")) {
-      return "Guest sign-in is not enabled for this deployment. Email accounts and the public demo are still available.";
+    if (message.includes("email not confirmed")) {
+      return "Email not confirmed. Resend the confirmation link, then open it from your inbox.";
     }
-    return caught.message;
+    return rawMessage;
   };
 
   const handleEmailSignIn = async (event: FormEvent<HTMLFormElement>) => {
@@ -53,25 +68,40 @@ export default function LoginPage(): JSX.Element {
       }
       finishSignIn();
     } catch (caught) {
+      if (errorMessage(caught).toLowerCase().includes("email not confirmed")) {
+        setConfirmationEmail(email);
+      }
       toast.error(authErrorMessage(caught));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleGuestSignIn = async () => {
-    setGuestSubmitting(true);
+  const handleResendConfirmation = async () => {
+    setResendingConfirmation(true);
     try {
-      await signInGuest();
-      finishSignIn();
+      const targetEmail = confirmationEmail || email;
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: targetEmail,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      if (error) {
+        throw error;
+      }
+      toast.success("Confirmation email sent. Open the link from your inbox.");
     } catch (caught) {
-      toast.error(authErrorMessage(caught));
+      toast.error(
+        errorMessage(caught) || "Could not resend confirmation email.",
+      );
     } finally {
-      setGuestSubmitting(false);
+      setResendingConfirmation(false);
     }
   };
 
-  const disabled = submitting || guestSubmitting;
+  const disabled = submitting || resendingConfirmation;
 
   return (
     <AppShell shader="vivid">
@@ -220,18 +250,39 @@ export default function LoginPage(): JSX.Element {
               </button>
             </form>
 
+            {confirmationEmail && (
+              <div className="mt-4 rounded border border-destructive/30 bg-destructive/10 p-4 text-sm text-muted-foreground">
+                <p className="font-semibold text-foreground">
+                  Confirm your email before signing in.
+                </p>
+                <p className="mt-1">
+                  We can send a fresh confirmation link to {confirmationEmail}.
+                </p>
+                <Button
+                  className="mt-3 min-h-10 w-full rounded-none"
+                  disabled={disabled}
+                  onClick={() => void handleResendConfirmation()}
+                  type="button"
+                  variant="outline"
+                >
+                  <Mail aria-hidden="true" className="size-4" />
+                  {resendingConfirmation
+                    ? "Sending confirmation..."
+                    : "Resend confirmation email"}
+                </Button>
+              </div>
+            )}
+
             <div className="mt-4 grid gap-3">
               <Button
                 className="min-h-12 w-full rounded-none"
                 disabled={disabled}
-                onClick={() => void handleGuestSignIn()}
+                onClick={() => void navigate("/demo")}
                 type="button"
                 variant="outline"
               >
                 <UserRound aria-hidden="true" className="size-4" />
-                {guestSubmitting
-                  ? "Starting guest session..."
-                  : "Continue as guest"}
+                Continue as guest
               </Button>
               <Button
                 asChild
