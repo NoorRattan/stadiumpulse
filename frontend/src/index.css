@@ -11,39 +11,39 @@
 
 :root,
 html[data-theme="light"] {
-  color-scheme: dark;
-  --background: #000000;
-  --foreground: #f0f0f0;
-  --card: rgba(255, 255, 255, 0.03);
-  --card-foreground: #f0f0f0;
-  --popover: #0a0a0a;
-  --popover-foreground: #f0f0f0;
-  --primary: #00ff88;
-  --primary-foreground: #000000;
-  --secondary: #ff6b35;
-  --secondary-foreground: #000000;
-  --muted: rgba(255, 255, 255, 0.05);
-  --muted-foreground: #666666;
-  --accent: #00d4ff;
-  --accent-foreground: #000000;
-  --destructive: #ff4466;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.06);
-  --ring: #00ff88;
-  --chart-1: #00ff88;
-  --chart-2: #ff6b35;
-  --chart-3: #00d4ff;
-  --chart-4: #ff4466;
-  --chart-5: #a78bfa;
-  --success: #00ff88;
+  color-scheme: light;
+  --background: #f7faf9;
+  --foreground: #10211c;
+  --card: rgba(255, 255, 255, 0.82);
+  --card-foreground: #10211c;
+  --popover: #ffffff;
+  --popover-foreground: #10211c;
+  --primary: #057a55;
+  --primary-foreground: #ffffff;
+  --secondary: #d4512a;
+  --secondary-foreground: #ffffff;
+  --muted: #e7eeec;
+  --muted-foreground: #51645f;
+  --accent: #007b99;
+  --accent-foreground: #ffffff;
+  --destructive: #b31f43;
+  --border: rgba(16, 33, 28, 0.14);
+  --input: rgba(16, 33, 28, 0.08);
+  --ring: #057a55;
+  --chart-1: #057a55;
+  --chart-2: #d4512a;
+  --chart-3: #007b99;
+  --chart-4: #c93456;
+  --chart-5: #6d5bd0;
   --radius: 0.5rem;
-  --glow-primary: rgb(0 255 136 / 0.2);
-  --glow-accent: rgb(0 212 255 / 0.15);
-  --glow-spread: 40px;
-  --error-text: #ff6b8a;
-  --surface-noise: rgb(255 255 255 / 0.015);
-  --glass: rgba(255, 255, 255, 0.03);
-  --border-bright: rgba(255, 255, 255, 0.15);
+  --success: #057a55;
+  --glow-primary: rgb(5 122 85 / 0.14);
+  --glow-accent: rgb(0 123 153 / 0.12);
+  --glow-spread: 30px;
+  --error-text: #b31f43;
+  --surface-noise: rgb(16 33 28 / 0.025);
+  --glass: rgba(255, 255, 255, 0.72);
+  --border-bright: rgba(16, 33, 28, 0.22);
 }
 
 html[data-theme="dark"] {
@@ -165,7 +165,7 @@ textarea {
 
 .glass-strong {
   border: 1px solid var(--border-bright);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--card);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
 }
@@ -441,7 +441,7 @@ textarea {
 .input-brutalist {
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--border-bright);
   border-radius: 0;
   padding: 0.75rem 0;
   color: var(--foreground);

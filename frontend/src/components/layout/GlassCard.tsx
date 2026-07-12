@@ -37,7 +37,7 @@ export function GlassCard({
   const inner = (
     <div
       className={cn(
-        "relative rounded-xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-xl",
+        "relative rounded-xl border border-border bg-card p-5 backdrop-blur-xl",
         hover && cn("cursor-pointer transition-all duration-300", glowColor),
         className,
       )}

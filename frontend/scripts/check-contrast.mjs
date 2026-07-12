@@ -1,14 +1,14 @@
 const palettes = {
   light: {
-    background: "#f8f9fa",
-    foreground: "#0a0a0a",
+    background: "#f7faf9",
+    foreground: "#10211c",
     card: "#ffffff",
-    mutedForeground: "#5f6368",
-    primary: "#00a86b",
+    mutedForeground: "#51645f",
+    primary: "#057a55",
     primaryForeground: "#ffffff",
-    accent: "#0099cc",
+    accent: "#007b99",
     accentForeground: "#ffffff",
-    destructive: "#e63946",
+    destructive: "#b31f43",
   },
   dark: {
     background: "#030303",

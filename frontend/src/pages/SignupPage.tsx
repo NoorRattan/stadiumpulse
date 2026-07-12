@@ -49,7 +49,7 @@ export default function SignupPage(): JSX.Element {
       <div className="-mx-5 -mt-10 grid min-h-[92vh] lg:-mx-10 lg:grid-cols-2">
         {/* -- Left side: form -- */}
         <motion.div
-          className="flex items-center justify-center border-r border-white/[0.06] p-10 lg:p-16"
+          className="flex items-center justify-center border-r border-border p-10 lg:p-16"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -126,7 +126,7 @@ export default function SignupPage(): JSX.Element {
               </button>
             </form>
 
-            <div className="mt-6 flex items-center gap-2 border-t border-white/[0.06] pt-6 text-sm text-muted-foreground">
+            <div className="mt-6 flex items-center gap-2 border-t border-border pt-6 text-sm text-muted-foreground">
               <Mail aria-hidden="true" className="size-4 shrink-0" />
               <span>Email confirmation may be required.</span>
             </div>

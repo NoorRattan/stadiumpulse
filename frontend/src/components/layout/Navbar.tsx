@@ -81,7 +81,7 @@ export const Navbar = memo(function Navbar() {
       {/* Mobile: bottom icon bar */}
       <nav
         aria-label="Mobile navigation"
-        className="no-scrollbar fixed inset-x-3 bottom-3 z-50 flex items-center justify-around gap-0 overflow-x-auto rounded-2xl border border-white/[0.08] bg-black/80 p-2 shadow-[0_8px_40px_rgba(0,0,0,0.7)] backdrop-blur-2xl md:hidden"
+        className="no-scrollbar fixed inset-x-3 bottom-3 z-50 flex items-center justify-around gap-0 overflow-x-auto rounded-2xl border border-border bg-card/90 p-2 shadow-[0_8px_40px_rgb(0_0_0/0.18)] backdrop-blur-2xl md:hidden"
       >
         {items.map((item) => {
           const Icon = item.icon;

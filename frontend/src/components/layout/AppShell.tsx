@@ -39,15 +39,15 @@ export const AppShell = memo(function AppShell({
           <AtmosphericShader intensity={shader} />
         )}
         {/* Radial gradient glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(0,255,136,0.07),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,var(--glow-primary),transparent)]" />
         {/* Subtle grid */}
-        <div className="absolute inset-0 opacity-[0.04] [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.5)_1px,transparent_1px)] [background-size:80px_80px]" />
+        <div className="absolute inset-0 opacity-[0.05] [background-image:linear-gradient(var(--border)_1px,transparent_1px),linear-gradient(90deg,var(--border)_1px,transparent_1px)] [background-size:80px_80px]" />
       </div>
 
       <SkipLink />
 
       {/* -- Header -- */}
-      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-black/60 backdrop-blur-2xl">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3.5 lg:px-10">
           <div className="min-w-0 shrink-0">
             <BrandLogo tagline />
@@ -68,7 +68,7 @@ export const AppShell = memo(function AppShell({
       </main>
 
       {/* -- Footer -- */}
-      <footer className="relative z-10 border-t border-white/[0.06] bg-black/60 backdrop-blur-xl">
+      <footer className="relative z-10 border-t border-border bg-card/85 backdrop-blur-xl">
         <div className="mx-auto grid max-w-7xl gap-6 px-5 py-10 lg:grid-cols-[1fr_auto] lg:items-center lg:px-10">
           <div>
             <BrandLogo />
@@ -84,7 +84,7 @@ export const AppShell = memo(function AppShell({
           </div>
         </div>
         {/* Bottom rule */}
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
       </footer>
 
       <Toaster />

@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
-import { LogIn, Mail, Shield, ArrowRight } from "lucide-react";
+import { ArrowRight, LogIn, Mail, Shield, UserRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/services/supabaseConfig";
 
 const googleAuthEnabled =
@@ -15,12 +16,28 @@ const googleAuthEnabled =
 /** Sign-in page - split-screen brutalist layout with atmospheric glass form. */
 export default function LoginPage(): JSX.Element {
   const navigate = useNavigate();
+  const { signInGuest } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [guestSubmitting, setGuestSubmitting] = useState(false);
 
   const finishSignIn = () => {
     void navigate("/");
+  };
+
+  const authErrorMessage = (caught: unknown): string => {
+    if (!(caught instanceof Error)) {
+      return "Sign-in failed.";
+    }
+    const message = caught.message.toLowerCase();
+    if (message.includes("invalid login credentials")) {
+      return "No matching account was found. Check the email and password, create an account, or continue as guest.";
+    }
+    if (message.includes("anonymous") || message.includes("signup")) {
+      return "Guest sign-in is not enabled for this deployment. Email accounts and the public demo are still available.";
+    }
+    return caught.message;
   };
 
   const handleEmailSignIn = async (event: FormEvent<HTMLFormElement>) => {
@@ -36,19 +53,31 @@ export default function LoginPage(): JSX.Element {
       }
       finishSignIn();
     } catch (caught) {
-      toast.error(
-        caught instanceof Error ? caught.message : "Email sign-in failed.",
-      );
+      toast.error(authErrorMessage(caught));
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleGuestSignIn = async () => {
+    setGuestSubmitting(true);
+    try {
+      await signInGuest();
+      finishSignIn();
+    } catch (caught) {
+      toast.error(authErrorMessage(caught));
+    } finally {
+      setGuestSubmitting(false);
+    }
+  };
+
+  const disabled = submitting || guestSubmitting;
+
   return (
     <AppShell shader="vivid">
       <div className="-mx-5 -mt-10 grid min-h-[92vh] lg:-mx-10 lg:grid-cols-2">
         {/* -- Left side: identity panel -- */}
-        <div className="relative flex flex-col justify-between overflow-hidden border-r border-white/[0.06] p-10 lg:p-16">
+        <div className="relative flex flex-col justify-between overflow-hidden border-r border-border p-10 lg:p-16">
           {/* Decorative glows */}
           <div
             aria-hidden="true"
@@ -92,7 +121,7 @@ export default function LoginPage(): JSX.Element {
           </motion.div>
 
           <motion.div
-            className="relative z-10 rounded border border-white/[0.06] bg-white/[0.02] p-4 text-sm leading-6 text-muted-foreground backdrop-blur-sm"
+            className="relative z-10 rounded border border-border bg-card p-4 text-sm leading-6 text-muted-foreground backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
@@ -113,8 +142,8 @@ export default function LoginPage(): JSX.Element {
           <div className="w-full max-w-sm">
             {googleAuthEnabled && (
               <Button
-                className="mb-6 min-h-12 w-full rounded-none border border-white/15 bg-white/[0.04] font-semibold text-foreground hover:bg-white/[0.08]"
-                disabled={submitting}
+                className="mb-6 min-h-12 w-full rounded-none font-semibold"
+                disabled={disabled}
                 onClick={() =>
                   void supabase.auth
                     .signInWithOAuth({ provider: "google" })
@@ -139,7 +168,7 @@ export default function LoginPage(): JSX.Element {
             )}
 
             <form
-              className="grid gap-8"
+              className="grid gap-6"
               onSubmit={(event) => void handleEmailSignIn(event)}
             >
               <div className="grid gap-6">
@@ -156,6 +185,7 @@ export default function LoginPage(): JSX.Element {
                     id="email"
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="you@example.com"
+                    required
                     type="email"
                     value={email}
                   />
@@ -173,6 +203,7 @@ export default function LoginPage(): JSX.Element {
                     id="password"
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="********"
+                    required
                     type="password"
                     value={password}
                   />
@@ -181,7 +212,7 @@ export default function LoginPage(): JSX.Element {
 
               <button
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-primary font-semibold text-primary-foreground shadow-[0_0_30px_rgba(0,255,136,0.2)] transition hover:shadow-[0_0_50px_rgba(0,255,136,0.4)] disabled:opacity-50"
-                disabled={submitting}
+                disabled={disabled}
                 type="submit"
               >
                 <Mail aria-hidden="true" className="size-4" />
@@ -189,7 +220,29 @@ export default function LoginPage(): JSX.Element {
               </button>
             </form>
 
-            <div className="mt-8 grid gap-2 border-t border-white/[0.06] pt-6">
+            <div className="mt-4 grid gap-3">
+              <Button
+                className="min-h-12 w-full rounded-none"
+                disabled={disabled}
+                onClick={() => void handleGuestSignIn()}
+                type="button"
+                variant="outline"
+              >
+                <UserRound aria-hidden="true" className="size-4" />
+                {guestSubmitting
+                  ? "Starting guest session..."
+                  : "Continue as guest"}
+              </Button>
+              <Button
+                asChild
+                className="min-h-12 w-full rounded-none"
+                variant="ghost"
+              >
+                <Link to="/demo">Open public demo</Link>
+              </Button>
+            </div>
+
+            <div className="mt-8 grid gap-2 border-t border-border pt-6">
               <p className="text-center text-sm text-muted-foreground">
                 New to StadiumPulse?{" "}
                 <Link

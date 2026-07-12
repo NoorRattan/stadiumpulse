@@ -37,10 +37,10 @@ export function PageHero({
   const content = (
     <div
       className={cn(
-        "relative overflow-hidden border-b border-white/[0.06]",
+        "relative overflow-hidden border-b border-border",
         fullViewport
           ? "flex min-h-[92vh] flex-col items-start justify-end pb-16 pt-24 px-5 lg:px-10"
-          : "rounded-xl border border-white/[0.08] bg-white/[0.01] p-6 backdrop-blur-xl md:p-10 lg:grid lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-10",
+          : "rounded-xl border border-border bg-card p-6 backdrop-blur-xl md:p-10 lg:grid lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-10",
         className,
       )}
     >
@@ -50,7 +50,7 @@ export function PageHero({
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_20%_30%,rgba(0,255,136,0.06),transparent_70%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_80%_20%,rgba(0,212,255,0.05),transparent_65%)]" />
         {fullViewport && (
-          <div className="absolute inset-0 opacity-[0.025] [background-image:linear-gradient(rgba(255,255,255,0.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.8)_1px,transparent_1px)] [background-size:60px_60px]" />
+          <div className="absolute inset-0 opacity-[0.045] [background-image:linear-gradient(var(--border)_1px,transparent_1px),linear-gradient(90deg,var(--border)_1px,transparent_1px)] [background-size:60px_60px]" />
         )}
       </div>
 
@@ -129,7 +129,7 @@ export function PageHero({
           {visual ??
             (showSphere &&
               (reducedMotion ? (
-                <div className="grid h-full min-h-72 place-content-center rounded-xl border border-white/[0.07] bg-white/[0.02] p-8 text-center">
+                <div className="grid h-full min-h-72 place-content-center rounded-xl border border-border bg-card p-8 text-center">
                   <p className="text-sm text-muted-foreground">
                     Live venue intelligence visualization
                   </p>
@@ -137,7 +137,7 @@ export function PageHero({
               ) : (
                 <Suspense
                   fallback={
-                    <div className="h-full min-h-72 animate-pulse rounded-xl bg-white/[0.03]" />
+                    <div className="h-full min-h-72 animate-pulse rounded-xl bg-muted" />
                   }
                 >
                   <WireframeSphere />

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { axe } from "vitest-axe";
 import { MemoryRouter } from "react-router-dom";
 
@@ -17,6 +17,10 @@ const authValue: AuthContextValue = {
 };
 
 describe("LoginPage", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("renders one h1 and has no axe violations", async () => {
     const { container } = render(
       <MemoryRouter>
@@ -33,7 +37,27 @@ describe("LoginPage", () => {
     expect(
       screen.getByRole("link", { name: /create an account/i }),
     ).toHaveAttribute("href", "/signup");
+    expect(
+      screen.getByRole("button", { name: /continue as guest/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /open public demo/i }),
+    ).toHaveAttribute("href", "/demo");
     const results = await axe(container);
     expect(results.violations).toHaveLength(0);
+  });
+
+  it("starts a guest session from the sign-in page", () => {
+    render(
+      <MemoryRouter>
+        <AuthContext.Provider value={authValue}>
+          <LoginPage />
+        </AuthContext.Provider>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /continue as guest/i }));
+
+    expect(authValue.signInGuest).toHaveBeenCalledTimes(1);
   });
 });

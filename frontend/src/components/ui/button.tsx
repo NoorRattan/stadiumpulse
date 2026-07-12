@@ -10,13 +10,12 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "border-primary/30 bg-primary text-primary-foreground shadow-[0_0_24px_rgba(0,255,136,0.2)] hover:-translate-y-0.5 hover:shadow-[0_0_32px_rgba(0,255,136,0.35)]",
+          "border-primary/30 bg-primary text-primary-foreground shadow-[0_0_24px_var(--glow-primary)] hover:-translate-y-0.5 hover:shadow-[0_0_32px_var(--glow-primary)]",
         outline:
-          "border-white/15 bg-white/5 text-foreground hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/10 aria-expanded:bg-white/10",
+          "border-border bg-card/65 text-foreground hover:-translate-y-0.5 hover:border-border hover:bg-muted aria-expanded:bg-muted",
         secondary:
-          "border-secondary/30 bg-secondary text-secondary-foreground shadow-[0_0_20px_rgba(255,107,53,0.15)] hover:-translate-y-0.5 hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)]",
-        ghost:
-          "hover:bg-white/5 hover:text-foreground aria-expanded:bg-white/5",
+          "border-secondary/30 bg-secondary text-secondary-foreground shadow-[0_0_20px_rgb(212_81_42/0.15)] hover:-translate-y-0.5 hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)]",
+        ghost: "hover:bg-muted hover:text-foreground aria-expanded:bg-muted",
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
         link: "text-primary underline-offset-4 hover:underline",
