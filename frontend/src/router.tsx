@@ -20,6 +20,11 @@ const SignupPage = lazy(() => import("./pages/SignupPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const DemoPage = lazy(() => import("./pages/DemoPage"));
 const AccountPage = lazy(() => import("./pages/AccountPage"));
+const PublicExperiencePage = lazy(
+  () => import("./pages/fan/PublicExperiencePage"),
+);
+const SupportPage = lazy(() => import("./pages/SupportPage"));
+const RolePortalPage = lazy(() => import("./pages/ops/RolePortalPage"));
 
 function RouteFrame({ children }: { children: ReactNode }): JSX.Element {
   return (
@@ -70,12 +75,122 @@ function AccountGuard({ children }: { children: ReactNode }): JSX.Element {
   return <>{children}</>;
 }
 
+function StaffGuard({ children }: { children: ReactNode }): JSX.Element {
+  const { user, role, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="grid min-h-[50vh] place-content-center px-6 py-10 text-muted-foreground">
+        <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate replace to="/login" />;
+  if (role !== "staff") return <Navigate replace to="/account" />;
+  return <>{children}</>;
+}
+
 const router = createBrowserRouter([
   {
     path: "/",
     element: (
       <RouteFrame>
         <HomePage />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/matches",
+    element: (
+      <RouteFrame>
+        <PublicExperiencePage section="matches" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/venues",
+    element: (
+      <RouteFrame>
+        <PublicExperiencePage section="venues" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/accessibility",
+    element: (
+      <RouteFrame>
+        <PublicExperiencePage section="accessibility" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/amenities",
+    element: (
+      <RouteFrame>
+        <PublicExperiencePage section="amenities" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/events",
+    element: (
+      <RouteFrame>
+        <PublicExperiencePage section="events" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/sustainability",
+    element: (
+      <RouteFrame>
+        <PublicExperiencePage section="sustainability" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/alerts",
+    element: (
+      <RouteFrame>
+        <PublicExperiencePage section="alerts" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/help",
+    element: (
+      <RouteFrame>
+        <PublicExperiencePage section="help" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/about",
+    element: (
+      <RouteFrame>
+        <SupportPage section="about" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/contact",
+    element: (
+      <RouteFrame>
+        <SupportPage section="contact" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/privacy",
+    element: (
+      <RouteFrame>
+        <SupportPage section="privacy" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/terms",
+    element: (
+      <RouteFrame>
+        <SupportPage section="terms" />
       </RouteFrame>
     ),
   },
@@ -111,6 +226,46 @@ const router = createBrowserRouter([
           <AccountPage />
         </RouteFrame>
       </AccountGuard>
+    ),
+  },
+  {
+    path: "/volunteer",
+    element: (
+      <OpsGuard>
+        <RouteFrame>
+          <RolePortalPage kind="volunteer" />
+        </RouteFrame>
+      </OpsGuard>
+    ),
+  },
+  {
+    path: "/ops/organizer",
+    element: (
+      <StaffGuard>
+        <RouteFrame>
+          <RolePortalPage kind="operations" />
+        </RouteFrame>
+      </StaffGuard>
+    ),
+  },
+  {
+    path: "/ops/venue-staff",
+    element: (
+      <StaffGuard>
+        <RouteFrame>
+          <RolePortalPage kind="venue-staff" />
+        </RouteFrame>
+      </StaffGuard>
+    ),
+  },
+  {
+    path: "/ops/command",
+    element: (
+      <StaffGuard>
+        <RouteFrame>
+          <RolePortalPage kind="command-center" />
+        </RouteFrame>
+      </StaffGuard>
     ),
   },
   {

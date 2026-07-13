@@ -20,6 +20,7 @@ from routes import (
     concierge_routes,
     crowd_routes,
     demo_routes,
+    experience_routes,
     incident_routes,
     travel_routes,
     wayfinding_routes,
@@ -102,6 +103,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(travel_routes.router)
     app.include_router(crowd_routes.router)
     app.include_router(demo_routes.router)
+    app.include_router(experience_routes.router)
     app.include_router(incident_routes.router)
     app.include_router(briefing_routes.router)
 

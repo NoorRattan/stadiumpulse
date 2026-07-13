@@ -74,33 +74,138 @@ const demo = {
   ],
 };
 
+const experience = {
+  generatedAt: "2026-07-14T12:00:00Z",
+  dataStatus: "curated-and-simulated",
+  tournament: {
+    name: "FIFA World Cup 2026",
+    startsOn: "2026-06-11",
+    endsOn: "2026-07-19",
+    hostCountries: ["Canada", "Mexico", "United States"],
+    summary: "Connected tournament demo.",
+  },
+  matchTicker: [
+    {
+      matchId: "demo-1",
+      homeTeam: "United States",
+      awayTeam: "Canada",
+      kickoffAt: "2026-07-15T18:00:00Z",
+      venueId: "pulse-central",
+      venueName: "StadiumPulse Central",
+      status: "upcoming",
+      score: null,
+      ticketStatus: "Official FIFA availability only",
+    },
+  ],
+  matches: [
+    {
+      matchId: "demo-1",
+      homeTeam: "United States",
+      awayTeam: "Canada",
+      kickoffAt: "2026-07-15T18:00:00Z",
+      venueId: "pulse-central",
+      venueName: "StadiumPulse Central",
+      status: "upcoming",
+      score: null,
+      ticketStatus: "Official FIFA availability only",
+    },
+  ],
+  venues: [
+    {
+      venueId: "pulse-central",
+      name: "StadiumPulse Central",
+      city: "Demo City",
+      country: "United States",
+      address: "100 Match Day Way",
+      mapLabel: "Central transit district",
+      capacity: 68000,
+      gates: ["Gate 2", "Accessible Gate A"],
+      seatingHighlights: ["Lower bowl 100s"],
+      accessibilityFeatures: ["Step-free Gate A", "Sensory room"],
+    },
+  ],
+  amenities: [
+    {
+      amenityId: "food-local",
+      name: "Local Kitchen",
+      category: "food",
+      zone: "North Concourse",
+      openingNote: "Open during the demo match.",
+      accessibilityNote: "Low counter available.",
+    },
+  ],
+  fanEvents: [
+    {
+      eventId: "fan-zone",
+      title: "Fan Zone Opening Session",
+      location: "East Plaza",
+      startsAt: "2026-07-15T13:00:00Z",
+      description: "Synthetic fan event.",
+      ticketRequired: false,
+    },
+  ],
+  sustainability: [
+    {
+      metricId: "transit",
+      label: "Arrivals by shared transport",
+      value: "64%",
+      trend: "+8 percentage points",
+      explanation: "Synthetic scenario estimate.",
+    },
+  ],
+  alerts: [
+    {
+      alertId: "advisory",
+      severity: "advisory",
+      title: "Use North Concourse",
+      message: "Follow staff signs if redirected.",
+      zone: "South Concourse",
+      issuedAt: "2026-07-14T18:55:00Z",
+    },
+  ],
+  faq: [
+    {
+      question: "Does StadiumPulse sell tickets?",
+      answer: "No. Use FIFA.com/tickets.",
+      category: "tickets",
+    },
+  ],
+  officialTicketUrl: "https://www.fifa.com/tickets",
+};
+
 async function fulfillBackend(route: Route): Promise<void> {
   const url = new URL(route.request().url());
   const json = url.pathname.endsWith("/api/demo")
     ? demo
-    : url.pathname.endsWith("/api/concierge/chat")
-      ? {
-          sessionId: "public-concierge",
-          reply:
-            "Gate 4 is beside the east plaza. Follow the accessible-route signs.",
-          detectedLanguage: "en",
-        }
-      : url.pathname.endsWith("/api/wayfinding/zones")
+    : url.pathname.endsWith("/api/experience")
+      ? experience
+      : url.pathname.endsWith("/api/concierge/chat")
         ? {
-            zones: [
-              { zoneId: "gate-2", name: "Gate 2", type: "gate" },
-              {
-                zoneId: "section-120",
-                name: "Section 120",
-                type: "seating-block",
-              },
-            ],
+            sessionId: "public-concierge",
+            reply:
+              "Gate 4 is beside the east plaza. Follow the accessible-route signs.",
+            detectedLanguage: "en",
           }
-        : url.pathname.endsWith("/api/travel/suggestions")
-          ? { matchId: match.id, suggestions: [] }
-          : {
-              error: { code: "NOT_FOUND", message: "Not mocked", status: 404 },
-            };
+        : url.pathname.endsWith("/api/wayfinding/zones")
+          ? {
+              zones: [
+                { zoneId: "gate-2", name: "Gate 2", type: "gate" },
+                {
+                  zoneId: "section-120",
+                  name: "Section 120",
+                  type: "seating-block",
+                },
+              ],
+            }
+          : url.pathname.endsWith("/api/travel/suggestions")
+            ? { matchId: match.id, suggestions: [] }
+            : {
+                error: {
+                  code: "NOT_FOUND",
+                  message: "Not mocked",
+                  status: 404,
+                },
+              };
 
   await route.fulfill({
     status: "error" in json ? 404 : 200,

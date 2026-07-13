@@ -192,3 +192,132 @@ export type IncidentListResponse = PaginatedResponse<IncidentReport>;
 
 /** Briefing route response body. */
 export type BriefingResponse = Briefing;
+
+export interface PublicMatch {
+  matchId: string;
+  homeTeam: string;
+  awayTeam: string;
+  kickoffAt: string;
+  venueId: string;
+  venueName: string;
+  status: "upcoming" | "live" | "complete";
+  score: string | null;
+  ticketStatus: string;
+}
+
+export interface VenueInfo {
+  venueId: string;
+  name: string;
+  city: string;
+  country: string;
+  address: string;
+  mapLabel: string;
+  capacity: number;
+  gates: string[];
+  seatingHighlights: string[];
+  accessibilityFeatures: string[];
+}
+
+export interface AmenityInfo {
+  amenityId: string;
+  name: string;
+  category: "food" | "retail" | "medical" | "restroom" | "guest-services";
+  zone: string;
+  openingNote: string;
+  accessibilityNote: string;
+}
+
+export interface FanEvent {
+  eventId: string;
+  title: string;
+  location: string;
+  startsAt: string;
+  description: string;
+  ticketRequired: boolean;
+}
+
+export interface SustainabilityMetric {
+  metricId: string;
+  label: string;
+  value: string;
+  trend: string;
+  explanation: string;
+}
+
+export interface SafetyAlert {
+  alertId: string;
+  severity: "info" | "advisory" | "urgent";
+  title: string;
+  message: string;
+  zone: string;
+  issuedAt: string;
+}
+
+export interface FaqEntry {
+  question: string;
+  answer: string;
+  category: string;
+}
+
+export interface PublicExperienceResponse {
+  generatedAt: string;
+  dataStatus: "curated-and-simulated";
+  tournament: {
+    name: string;
+    startsOn: string;
+    endsOn: string;
+    hostCountries: string[];
+    summary: string;
+  };
+  matchTicker: PublicMatch[];
+  matches: PublicMatch[];
+  venues: VenueInfo[];
+  amenities: AmenityInfo[];
+  fanEvents: FanEvent[];
+  sustainability: SustainabilityMetric[];
+  alerts: SafetyAlert[];
+  faq: FaqEntry[];
+  officialTicketUrl: string;
+}
+
+export interface AccountExperienceResponse {
+  uid: string;
+  role: string;
+  tickets: Array<{
+    ticketId: string;
+    matchLabel: string;
+    venueName: string;
+    gate: string;
+    seat: string;
+    status: "demo-pass";
+    disclaimer: string;
+  }>;
+  preferences: {
+    language: string;
+    accessibilityNeeds: string[];
+    alertChannels: string[];
+    sustainabilityGoal: string;
+  };
+}
+
+export type PortalKind =
+  | "volunteer"
+  | "operations"
+  | "venue-staff"
+  | "command-center";
+
+export interface RolePortalResponse {
+  portal: PortalKind;
+  role: string;
+  generatedAt: string;
+  dataStatus: "simulated";
+  headline: string;
+  cards: Array<{
+    cardId: string;
+    title: string;
+    detail: string;
+    status: string;
+    priority: "low" | "normal" | "high" | "urgent";
+  }>;
+  advancedCapabilities: string[];
+}

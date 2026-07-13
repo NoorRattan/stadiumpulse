@@ -6,9 +6,21 @@ import { installPublicFixtures } from "./fixtures";
 const publicRoutes = [
   ["/", "Know where to go. Before the crowd does."],
   ["/demo", "One connected match-day story."],
+  ["/matches", "Matches & Tickets"],
+  ["/venues", "Venues, Gates & Seating"],
+  ["/accessibility", "Plan Around Your Needs"],
+  ["/amenities", "Food, Retail & Amenities"],
+  ["/events", "Fan Zones & Events"],
+  ["/sustainability", "A Lower-Impact Match Day"],
+  ["/alerts", "Alerts That Explain What to Do"],
+  ["/help", "Questions, Answered Clearly"],
+  ["/about", "One Match Day. One Shared Picture."],
+  ["/contact", "Contact StadiumPulse"],
+  ["/privacy", "Privacy in Plain Language"],
+  ["/terms", "Terms of Use"],
   ["/concierge", "Ask StadiumPulse."],
   ["/wayfinding", "Find Your Way."],
-  ["/travel", "Getting Here Sustainably"],
+  ["/travel", "Transport & Parking"],
   ["/login", "Sign In"],
   ["/signup", "Sign Up"],
 ] as const;
@@ -84,10 +96,20 @@ test("public concierge answers without requiring sign-in", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("account page sends signed-out visitors to sign in", async ({ page }) => {
-  await page.goto("/account", { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sign In");
+test("account and role portals send signed-out visitors to sign in", async ({
+  page,
+}) => {
+  for (const path of [
+    "/account",
+    "/volunteer",
+    "/ops/organizer",
+    "/ops/venue-staff",
+    "/ops/command",
+  ]) {
+    await page.goto(path, { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sign In");
+  }
 });
 
 test("skip navigation moves focus and reduced motion stops animation", async ({

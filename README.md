@@ -11,6 +11,15 @@ The app has two surfaces in one React build:
 - **Fan Experience PWA**: multilingual voice concierge, accessibility-aware wayfinding, seat-view confidence previews, and sustainable travel suggestions.
 - **Ops Console**: live selectable venue map, ranked 15-minute command digest, density forecasts, incident drafts, and volunteer briefings for staff and volunteers.
 
+## Experience Map
+
+- **Public fan experience**: landing ticker and quick actions, match schedule with official FIFA ticket handoff, venue/gate/seating finder, multilingual concierge, live wayfinding, transport and park-and-ride guidance, accessibility hub, amenities, fan events, sustainability metrics, alerts, and FAQ.
+- **Signed-in account**: clearly labelled demo passes, language and accessibility preferences backed by the API, fan shortcuts, and sign-out.
+- **Role portals**: volunteer schedules/tasks/training; organizer priorities; venue-team queues for security, medical, cleaning, crowd, and guest services; and an explainable command-center recommendation view for staff.
+- **Support and policy**: About, Contact, Privacy, and Terms pages with direct product, safety, AI, and data boundaries.
+
+Advanced capabilities use the project's existing GenAI concierge, route explanations, predictive crowd narratives, incident summaries, and shift briefings. Camera AR, physical sensor/CCTV/social ingestion, official ticket issuance, and autonomous venue control are not represented as live: this repository does not have those physical feeds or commercial integrations, and all such operational data remains explicitly simulated.
+
 ## Product principles
 
 - **Task first on mobile**: the landing experience starts with route planning, venue help, and arrival planning instead of an icon-only dashboard.
@@ -55,7 +64,7 @@ Use `backend/.env.example` and `frontend/.env.example` as the placeholder list f
 
 ## Verification
 
-Current local verification snapshot (2026-07-14): **128 backend tests passed at 100% statement coverage**, **35 frontend tests passed across 24 test files**, and **27 Playwright checks passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles** (with three intentionally skipped duplicate axe scans). The browser suite checks every public route for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies the public concierge conversation, protected account redirect, keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
+Current local verification snapshot (2026-07-14): **138 backend tests passed at 100% statement coverage**, **50 frontend tests passed across 27 test files**, and **27 Playwright checks passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles** (with three intentionally skipped duplicate axe scans). The browser suite checks all 19 public and support routes for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies the public concierge conversation, protected account and role-portal redirects, keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
 
 Backend:
 

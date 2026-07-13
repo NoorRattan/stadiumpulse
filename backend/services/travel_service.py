@@ -24,13 +24,22 @@ class TransitOption:
 STATIC_TRANSIT_OPTIONS: tuple[TransitOption, ...] = (
     TransitOption("rail", 1, ("medium", "high"), "Best for heavy arrival waves and predictable post-match exits."),
     TransitOption(
-        "rideshare-pool",
+        "park-and-ride",
         2,
+        ("low", "medium", "high"),
+        (
+            "Use the signed outer parking hub and transfer to the accessible stadium shuttle; "
+            "venue curb parking is limited."
+        ),
+    ),
+    TransitOption(
+        "rideshare-pool",
+        3,
         ("low", "medium"),
         "Use the signed shared pickup zone after peak pedestrian flow.",
     ),
-    TransitOption("stadium-shuttle", 3, ("high",), "Moves fans from outer transit hubs to gate approaches."),
-    TransitOption("walk", 4, ("low",), "Good for nearby hotels and low-load arrival windows."),
+    TransitOption("stadium-shuttle", 4, ("high",), "Moves fans from outer transit hubs to gate approaches."),
+    TransitOption("walk", 5, ("low",), "Good for nearby hotels and low-load arrival windows."),
 )
 
 

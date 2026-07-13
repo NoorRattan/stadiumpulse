@@ -23,6 +23,27 @@ vi.mock("@/hooks/useMatches", () => ({
   }),
 }));
 
+vi.mock("@/hooks/useExperience", () => ({
+  usePublicExperience: () => ({
+    data: {
+      matchTicker: [
+        {
+          matchId: "demo-1",
+          homeTeam: "United States",
+          awayTeam: "Canada",
+          kickoffAt: "2026-07-15T18:00:00Z",
+          venueName: "StadiumPulse Central",
+          status: "upcoming",
+          score: null,
+        },
+      ],
+    },
+    loading: false,
+    error: null,
+    refresh: vi.fn(),
+  }),
+}));
+
 vi.mock("@/hooks/useReducedMotionSafe", () => ({
   useReducedMotionSafe: () => true,
 }));

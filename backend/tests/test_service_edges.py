@@ -294,9 +294,9 @@ async def test_travel_suggestions_fall_back_when_groq_fails(
 
 @pytest.mark.asyncio
 async def test_travel_ranking_and_missing_match(mock_db: FakeDb) -> None:
-    assert [option.mode for option in static_transit_options_for_venue([])] == ["rail", "rideshare-pool"]
+    assert [option.mode for option in static_transit_options_for_venue([])] == ["rail", "park-and-ride"]
     ranked = rank_by_load(static_transit_options_for_venue(["gate-2"]), "low")
-    assert ranked[0].mode in {"rideshare-pool", "walk"}
+    assert ranked[0].mode == "park-and-ride"
     with pytest.raises(ResourceNotFoundError):
         await get_travel_suggestions("missing", db=mock_db)
 

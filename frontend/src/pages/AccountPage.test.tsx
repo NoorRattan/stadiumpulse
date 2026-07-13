@@ -11,6 +11,36 @@ vi.mock("@/hooks/useReducedMotionSafe", () => ({
   useReducedMotionSafe: () => true,
 }));
 
+vi.mock("@/hooks/useExperience", () => ({
+  useAccountExperience: () => ({
+    data: {
+      uid: "fan-1",
+      role: "fan",
+      tickets: [
+        {
+          ticketId: "demo-fan",
+          matchLabel: "United States vs Canada",
+          venueName: "StadiumPulse Central",
+          gate: "Gate 2",
+          seat: "Section 120 / Demo 14",
+          status: "demo-pass",
+          disclaimer:
+            "Demonstration pass only. This is not an official FIFA ticket.",
+        },
+      ],
+      preferences: {
+        language: "en",
+        accessibilityNeeds: ["step-free route"],
+        alertChannels: ["in-app"],
+        sustainabilityGoal: "Prefer rail",
+      },
+    },
+    loading: false,
+    error: null,
+    refresh: vi.fn(),
+  }),
+}));
+
 const signedInUser = {
   id: "fan-1",
   email: "fan@example.com",

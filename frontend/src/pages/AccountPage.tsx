@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import {
+  Accessibility,
   ArrowRight,
   BotMessageSquare,
+  Languages,
+  Leaf,
   LogOut,
   Map,
   ShieldCheck,
+  TicketCheck,
   UserRound,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,10 +16,19 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccountExperience } from "@/hooks/useExperience";
+import { apiRequest } from "@/services/apiClient";
+import type { AccessibilitySettingsResponse } from "@/types/api";
 
 /** Signed-in landing page with identity, role, useful destinations, and sign-out. */
 export default function AccountPage(): JSX.Element {
   const { profile, role, signOut, user } = useAuth();
+  const {
+    data: accountData,
+    error: accountError,
+    loading: accountLoading,
+    refresh: refreshAccount,
+  } = useAccountExperience();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
   const displayName =
@@ -123,6 +136,83 @@ export default function AccountPage(): JSX.Element {
               </Link>
             )}
           </div>
+
+          <section aria-labelledby="passes-heading" className="mt-8">
+            <div className="flex items-center gap-3">
+              <TicketCheck aria-hidden="true" className="size-6 text-primary" />
+              <h2
+                className="font-display text-2xl font-bold"
+                id="passes-heading"
+              >
+                Tickets & demo passes
+              </h2>
+            </div>
+            {accountLoading && (
+              <p className="mt-4 text-sm text-muted-foreground" role="status">
+                Loading account passes…
+              </p>
+            )}
+            {accountError && (
+              <p
+                className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4"
+                role="alert"
+              >
+                {accountError}
+              </p>
+            )}
+            {accountData?.tickets.map((ticket) => (
+              <article
+                className="mt-4 rounded-2xl border border-primary/35 bg-primary/8 p-5"
+                key={ticket.ticketId}
+              >
+                <p className="text-xs font-bold uppercase tracking-widest text-primary">
+                  {ticket.status}
+                </p>
+                <h3 className="mt-2 font-display text-xl font-bold">
+                  {ticket.matchLabel}
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {ticket.venueName} · {ticket.gate} · {ticket.seat}
+                </p>
+                <p className="mt-4 border-t border-border pt-4 text-sm font-semibold text-foreground">
+                  {ticket.disclaimer}
+                </p>
+              </article>
+            ))}
+          </section>
+
+          {accountData && (
+            <section aria-labelledby="preferences-heading" className="mt-8">
+              <h2
+                className="font-display text-2xl font-bold"
+                id="preferences-heading"
+              >
+                Match-day preferences
+              </h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                <PreferenceCard
+                  icon={Languages}
+                  label="Language"
+                  value={accountData.preferences.language.toUpperCase()}
+                />
+                <PreferenceCard
+                  icon={Accessibility}
+                  label="Accessibility"
+                  value={accountData.preferences.accessibilityNeeds.join(", ")}
+                />
+                <PreferenceCard
+                  icon={Leaf}
+                  label="Sustainability goal"
+                  value={accountData.preferences.sustainabilityGoal}
+                />
+              </div>
+              <AccessibilityPreferencesForm
+                accessibilityNeeds={accountData.preferences.accessibilityNeeds}
+                language={accountData.preferences.language}
+                onSaved={refreshAccount}
+              />
+            </section>
+          )}
         </section>
 
         <aside className="h-fit rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -158,5 +248,151 @@ export default function AccountPage(): JSX.Element {
         </aside>
       </div>
     </AppShell>
+  );
+}
+
+function AccessibilityPreferencesForm({
+  accessibilityNeeds,
+  language,
+  onSaved,
+}: {
+  accessibilityNeeds: string[];
+  language: string;
+  onSaved: () => Promise<void>;
+}): JSX.Element {
+  const [highContrast, setHighContrast] = useState(
+    accessibilityNeeds.includes("high contrast"),
+  );
+  const [reducedMotion, setReducedMotion] = useState(
+    accessibilityNeeds.includes("reduced motion"),
+  );
+  const [screenReaderMode, setScreenReaderMode] = useState(
+    accessibilityNeeds.includes("screen reader mode"),
+  );
+  const [preferredLanguage, setPreferredLanguage] = useState(language);
+  const [saving, setSaving] = useState(false);
+
+  const save = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await apiRequest<
+        AccessibilitySettingsResponse,
+        AccessibilitySettingsResponse
+      >("/api/accessibility/settings", {
+        method: "PUT",
+        body: {
+          highContrast,
+          reducedMotion,
+          screenReaderMode,
+          preferredLanguage,
+        },
+      });
+      await onSaved();
+      toast.success("Match-day preferences saved.");
+    } catch (caught) {
+      toast.error(
+        caught instanceof Error
+          ? caught.message
+          : "Preferences could not be saved.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form
+      className="mt-5 rounded-2xl border border-border bg-card p-5"
+      onSubmit={(event) => void save(event)}
+    >
+      <h3 className="font-display text-lg font-bold">
+        Manage accessibility preferences
+      </h3>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-2 text-sm font-semibold">
+          Preferred language
+          <select
+            className="min-h-11 rounded-lg border border-border bg-background px-3 text-foreground"
+            onChange={(event) => setPreferredLanguage(event.target.value)}
+            value={preferredLanguage}
+          >
+            {["en", "es", "pt", "fr", "ar", "de", "ja", "ko", "zh", "hi"].map(
+              (option) => (
+                <option key={option} value={option}>
+                  {option.toUpperCase()}
+                </option>
+              ),
+            )}
+          </select>
+        </label>
+        <fieldset className="grid gap-2">
+          <legend className="text-sm font-semibold">
+            Display and assistance
+          </legend>
+          <PreferenceCheckbox
+            checked={highContrast}
+            label="High contrast"
+            onChange={setHighContrast}
+          />
+          <PreferenceCheckbox
+            checked={reducedMotion}
+            label="Reduce motion"
+            onChange={setReducedMotion}
+          />
+          <PreferenceCheckbox
+            checked={screenReaderMode}
+            label="Screen reader mode"
+            onChange={setScreenReaderMode}
+          />
+        </fieldset>
+      </div>
+      <button
+        className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-primary px-5 font-bold text-primary-foreground disabled:opacity-60"
+        disabled={saving}
+        type="submit"
+      >
+        {saving ? "Saving..." : "Save preferences"}
+      </button>
+    </form>
+  );
+}
+
+function PreferenceCheckbox({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: (value: boolean) => void;
+}): JSX.Element {
+  return (
+    <label className="flex min-h-9 items-center gap-2 text-sm">
+      <input
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        type="checkbox"
+      />
+      {label}
+    </label>
+  );
+}
+
+function PreferenceCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Languages;
+  label: string;
+  value: string;
+}): JSX.Element {
+  return (
+    <article className="rounded-xl border border-border bg-card p-4">
+      <Icon aria-hidden="true" className="size-5 text-accent" />
+      <h3 className="mt-3 text-sm font-bold">{label}</h3>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{value}</p>
+    </article>
   );
 }

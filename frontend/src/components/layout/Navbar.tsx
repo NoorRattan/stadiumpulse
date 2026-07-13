@@ -2,14 +2,23 @@ import { memo, useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import {
   Activity,
+  Accessibility,
+  Bell,
   BotMessageSquare,
+  CalendarDays,
+  CircleHelp,
   ClipboardList,
+  Command,
+  Leaf,
   LogIn,
   Map,
+  MapPin,
   Menu,
+  ShoppingBag,
   Sparkles,
   Train,
   UserRound,
+  Users,
   X,
 } from "lucide-react";
 
@@ -21,6 +30,7 @@ interface NavigationItem {
   label: string;
   description: string;
   icon: typeof BotMessageSquare;
+  desktop?: boolean;
 }
 
 const fanItems: readonly NavigationItem[] = [
@@ -35,6 +45,18 @@ const fanItems: readonly NavigationItem[] = [
     label: "Live demo",
     description: "Explore the connected system",
     icon: Sparkles,
+  },
+  {
+    href: "/matches",
+    label: "Matches",
+    description: "Schedule and official tickets",
+    icon: CalendarDays,
+  },
+  {
+    href: "/venues",
+    label: "Venues",
+    description: "Stadiums, gates, and seating",
+    icon: MapPin,
   },
   {
     href: "/wayfinding",
@@ -54,9 +76,57 @@ const fanItems: readonly NavigationItem[] = [
     description: "Plan a lower-congestion arrival",
     icon: Train,
   },
+  {
+    href: "/accessibility",
+    label: "Accessibility",
+    description: "Facilities and personalized routes",
+    icon: Accessibility,
+    desktop: false,
+  },
+  {
+    href: "/amenities",
+    label: "Amenities",
+    description: "Food, retail, medical, and services",
+    icon: ShoppingBag,
+    desktop: false,
+  },
+  {
+    href: "/events",
+    label: "Fan events",
+    description: "Fan zones and match-day programme",
+    icon: Sparkles,
+    desktop: false,
+  },
+  {
+    href: "/sustainability",
+    label: "Sustainability",
+    description: "Public impact dashboard",
+    icon: Leaf,
+    desktop: false,
+  },
+  {
+    href: "/alerts",
+    label: "Alerts",
+    description: "Safety notices and guidance",
+    icon: Bell,
+    desktop: false,
+  },
+  {
+    href: "/help",
+    label: "Help",
+    description: "FAQ and support",
+    icon: CircleHelp,
+    desktop: false,
+  },
 ];
 
-const opsItems: readonly NavigationItem[] = [
+const volunteerItems: readonly NavigationItem[] = [
+  {
+    href: "/volunteer",
+    label: "My shift",
+    description: "Schedule, tasks, and training",
+    icon: CalendarDays,
+  },
   {
     href: "/ops",
     label: "Crowd",
@@ -77,11 +147,39 @@ const opsItems: readonly NavigationItem[] = [
   },
 ];
 
+const staffItems: readonly NavigationItem[] = [
+  {
+    href: "/ops/command",
+    label: "Command",
+    description: "Control-room recommendations",
+    icon: Command,
+  },
+  {
+    href: "/ops/organizer",
+    label: "Organizer",
+    description: "Connected operating picture",
+    icon: Activity,
+  },
+  {
+    href: "/ops/venue-staff",
+    label: "Venue teams",
+    description: "Security, medical, and cleaning",
+    icon: Users,
+  },
+  ...volunteerItems,
+];
+
 /** Role-aware navigation with a labelled mobile menu and a compact desktop bar. */
 export const Navbar = memo(function Navbar() {
   const { role, user } = useAuth();
   const [open, setOpen] = useState(false);
-  const items = role === "fan" ? fanItems : opsItems;
+  const items =
+    role === "fan"
+      ? fanItems
+      : role === "volunteer"
+        ? volunteerItems
+        : staffItems;
+  const desktopItems = items.filter((item) => item.desktop !== false);
 
   useEffect(() => {
     if (!open) return;
@@ -98,7 +196,7 @@ export const Navbar = memo(function Navbar() {
         aria-label="Primary navigation"
         className="hidden items-center gap-1 lg:flex"
       >
-        {items.map((item) => {
+        {desktopItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
@@ -155,7 +253,7 @@ export const Navbar = memo(function Navbar() {
       {open && (
         <nav
           aria-label="Mobile navigation"
-          className="fixed inset-x-3 top-[4.75rem] z-50 rounded-2xl border border-border bg-popover p-2 shadow-lg lg:hidden"
+          className="fixed inset-x-3 top-[4.75rem] z-50 max-h-[calc(100dvh-5.5rem)] overflow-y-auto rounded-2xl border border-border bg-popover p-2 shadow-lg lg:hidden"
           id="mobile-navigation-panel"
         >
           <p className="px-3 pb-2 pt-1 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">

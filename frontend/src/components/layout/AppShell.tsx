@@ -1,4 +1,5 @@
 import { memo, type ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 import { ParticleCanvas } from "@/components/visuals/ParticleCanvas";
 import { AccessibilityToggle } from "@/components/accessibility";
@@ -77,6 +78,33 @@ export const AppShell = memo(function AppShell({
               Demo signals are clearly labelled synthetic. No physical sensor
               claims.
             </p>
+            <nav
+              aria-label="Footer navigation"
+              className="mt-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4"
+            >
+              {[
+                ["Matches", "/matches"],
+                ["Venues", "/venues"],
+                ["Accessibility", "/accessibility"],
+                ["Amenities", "/amenities"],
+                ["Fan events", "/events"],
+                ["Sustainability", "/sustainability"],
+                ["Alerts", "/alerts"],
+                ["Help", "/help"],
+                ["About", "/about"],
+                ["Contact", "/contact"],
+                ["Privacy", "/privacy"],
+                ["Terms", "/terms"],
+              ].map(([label, href]) => (
+                <Link
+                  className="font-semibold text-muted-foreground hover:text-primary"
+                  key={href}
+                  to={href}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
           </div>
           <div className="flex items-center gap-4">
             <AccessibilityToggle />

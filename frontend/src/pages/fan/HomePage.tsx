@@ -19,6 +19,7 @@ import { Link } from "react-router-dom";
 import { AppShell } from "@/components/layout";
 import { FadeInView } from "@/components/motion/FadeInView";
 import { useMatches } from "@/hooks/useMatches";
+import { usePublicExperience } from "@/hooks/useExperience";
 
 const fanJourneys = [
   {
@@ -84,6 +85,7 @@ function formatMatchDate(value: string): string {
 /** Task-first fan landing page that explains and demonstrates the connected match-day system. */
 export default function HomePage(): JSX.Element {
   const { matches, loading } = useMatches();
+  const { data: experience } = usePublicExperience();
   const nextMatch = matches[0];
 
   return (
@@ -189,6 +191,57 @@ export default function HomePage(): JSX.Element {
             </div>
           </div>
         </section>
+
+        {experience && (
+          <section
+            aria-labelledby="ticker-heading"
+            className="-mt-8 rounded-2xl border border-border bg-card p-5 md:-mt-14"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                  Live match ticker · simulated
+                </p>
+                <h2
+                  className="mt-2 font-display text-2xl font-bold"
+                  id="ticker-heading"
+                >
+                  Tournament pulse
+                </h2>
+              </div>
+              <Link
+                className="inline-flex min-h-11 items-center gap-2 font-bold text-primary"
+                to="/matches"
+              >
+                Full schedule & tickets{" "}
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {experience.matchTicker.map((match) => (
+                <article
+                  className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background/60 p-4"
+                  key={match.matchId}
+                >
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-accent">
+                      {match.status}
+                    </p>
+                    <h3 className="mt-1 font-bold">
+                      {match.homeTeam} vs {match.awayTeam}
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {match.venueName}
+                    </p>
+                  </div>
+                  <p className="shrink-0 font-mono text-xl font-bold">
+                    {match.score ?? formatMatchDate(match.kickoffAt)}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         <FadeInView>
           <section aria-labelledby="start-heading">

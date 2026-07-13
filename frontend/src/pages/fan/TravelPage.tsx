@@ -84,11 +84,11 @@ export default function TravelPage(): JSX.Element {
           }
           title={
             <>
-              Getting Here <br />
-              <span className="text-gradient">Sustainably</span>
+              Transport & <br />
+              <span className="text-gradient">Parking</span>
             </>
           }
-          description="Select a scheduled match before requesting travel suggestions. The page never guesses a default match."
+          description="Select a scheduled match for rail, shuttle, shared-trip, walking, and park-and-ride guidance. The page never guesses a default match."
         />
 
         <FadeInView>
@@ -145,8 +145,9 @@ export default function TravelPage(): JSX.Element {
 
         {!matchId && !suggestionsLoading && (
           <p className="border-l-2 border-white/10 pl-4 text-sm text-muted-foreground">
-            Choose a match to see transit, carpool, and lower-congestion travel
-            suggestions.
+            Choose a match to see transit, park-and-ride, carpool, and
+            lower-congestion travel suggestions. Stadium curb parking is never
+            guaranteed by this demo.
           </p>
         )}
 
