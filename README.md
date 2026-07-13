@@ -55,7 +55,7 @@ Use `backend/.env.example` and `frontend/.env.example` as the placeholder list f
 
 ## Verification
 
-Current local verification snapshot (2026-07-14): **128 backend tests passed at 100% statement coverage**, **30 frontend tests passed across 23 test files**, and **22 Playwright checks passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles** (with three intentionally skipped duplicate axe scans). The browser suite checks every public route for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies the public concierge conversation, keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
+Current local verification snapshot (2026-07-14): **128 backend tests passed at 100% statement coverage**, **35 frontend tests passed across 24 test files**, and **27 Playwright checks passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles** (with three intentionally skipped duplicate axe scans). The browser suite checks every public route for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies the public concierge conversation, protected account redirect, keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
 
 Backend:
 
@@ -85,6 +85,7 @@ npm run test:e2e
 ## Project Notes
 
 - Supabase Auth creates the browser identity; `/api/auth/signup` creates confirmed email/password accounts without an email verification step, and `/api/auth/bootstrap` creates or reads the backend profile after sign-in.
+- Successful sign-in opens `/account`, where users can confirm their identity and role, reach fan or authorized operations tools, and sign out. Signed-in navigation keeps this account destination visible.
 - Staff and volunteer roles live in `public.user_roles`; `backend/scripts/grant_role.py` updates them with the Supabase service role. Supabase's custom access-token hook must be enabled so those rows become the `user_role` JWT claim used by the app.
 - The dashboard refreshes backend-computed bands from a Supabase Realtime change signal; operations mutations still go through FastAPI and re-check roles server-side.
 - Seed and animated crowd data are synthetic demo data. The UI labels them as simulated; no screen represents them as physical venue sensors.

@@ -84,6 +84,12 @@ test("public concierge answers without requiring sign-in", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("account page sends signed-out visitors to sign in", async ({ page }) => {
+  await page.goto("/account", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sign In");
+});
+
 test("skip navigation moves focus and reduced motion stops animation", async ({
   page,
 }) => {

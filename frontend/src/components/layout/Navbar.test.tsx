@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import type { User } from "@supabase/supabase-js";
 import { MemoryRouter } from "react-router-dom";
 
 import { AuthContext, type AuthContextValue } from "@/contexts/AuthContext";
@@ -16,6 +17,33 @@ const fanAuth: AuthContextValue = {
 };
 
 describe("Navbar", () => {
+  it("replaces sign in with an account destination for authenticated users", () => {
+    render(
+      <MemoryRouter>
+        <AuthContext.Provider
+          value={{
+            ...fanAuth,
+            user: {
+              id: "fan-1",
+              email: "fan@example.com",
+              user_metadata: {},
+            } as User,
+          }}
+        >
+          <Navbar />
+        </AuthContext.Provider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("link", { name: "Account" })).toHaveAttribute(
+      "href",
+      "/account",
+    );
+    expect(
+      screen.queryByRole("link", { name: "Sign in" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("opens a labelled, task-first mobile menu", () => {
     render(
       <MemoryRouter>

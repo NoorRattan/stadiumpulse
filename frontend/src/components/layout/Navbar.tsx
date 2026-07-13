@@ -9,6 +9,7 @@ import {
   Menu,
   Sparkles,
   Train,
+  UserRound,
   X,
 } from "lucide-react";
 
@@ -117,7 +118,15 @@ export const Navbar = memo(function Navbar() {
             </NavLink>
           );
         })}
-        {!user && (
+        {user ? (
+          <Link
+            className="ml-2 inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-bold text-foreground"
+            to="/account"
+          >
+            <UserRound aria-hidden="true" className="size-4" />
+            Account
+          </Link>
+        ) : (
           <Link
             className="ml-2 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground"
             to="/login"
@@ -190,7 +199,16 @@ export const Navbar = memo(function Navbar() {
               </NavLink>
             );
           })}
-          {!user && (
+          {user ? (
+            <Link
+              className="mt-2 flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-bold text-foreground"
+              onClick={() => setOpen(false)}
+              to="/account"
+            >
+              <UserRound aria-hidden="true" className="size-4" />
+              Account
+            </Link>
+          ) : (
             <Link
               className="mt-2 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
               onClick={() => setOpen(false)}

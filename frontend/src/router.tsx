@@ -19,6 +19,7 @@ const LoginPage = lazy(() => import("./pages/LoginPage"));
 const SignupPage = lazy(() => import("./pages/SignupPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const DemoPage = lazy(() => import("./pages/DemoPage"));
+const AccountPage = lazy(() => import("./pages/AccountPage"));
 
 function RouteFrame({ children }: { children: ReactNode }): JSX.Element {
   return (
@@ -54,6 +55,21 @@ function OpsGuard({ children }: { children: ReactNode }): JSX.Element {
   return <>{children}</>;
 }
 
+function AccountGuard({ children }: { children: ReactNode }): JSX.Element {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="grid min-h-[50vh] place-content-center px-6 py-10 text-muted-foreground">
+        <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+  if (!user) {
+    return <Navigate replace to="/login" />;
+  }
+  return <>{children}</>;
+}
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -85,6 +101,16 @@ const router = createBrowserRouter([
       <RouteFrame>
         <TravelPage />
       </RouteFrame>
+    ),
+  },
+  {
+    path: "/account",
+    element: (
+      <AccountGuard>
+        <RouteFrame>
+          <AccountPage />
+        </RouteFrame>
+      </AccountGuard>
     ),
   },
   {

@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { ArrowRight, LogIn, Mail, Shield, UserRound } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/services/supabaseConfig";
 
 const googleAuthEnabled =
@@ -31,13 +32,14 @@ function errorMessage(caught: unknown): string {
 /** Sign-in page - split-screen brutalist layout with atmospheric glass form. */
 export default function LoginPage(): JSX.Element {
   const navigate = useNavigate();
+  const { loading, user } = useAuth();
   const reducedMotion = useReducedMotionSafe();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const finishSignIn = () => {
-    void navigate("/");
+    void navigate("/account", { replace: true });
   };
 
   const authErrorMessage = (caught: unknown): string => {
@@ -75,6 +77,10 @@ export default function LoginPage(): JSX.Element {
   };
 
   const disabled = submitting;
+
+  if (!loading && user) {
+    return <Navigate replace to="/account" />;
+  }
 
   return (
     <AppShell shader="vivid">
