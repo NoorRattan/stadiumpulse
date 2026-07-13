@@ -39,10 +39,10 @@ jobs:
           SUPABASE_URL: https://example.supabase.co
           SUPABASE_DB_URL: postgresql://postgres:postgres@localhost:5432/postgres
           SUPABASE_JWT_SECRET: test-secret-for-ci-only-at-least-32-bytes
-          GEMINI_API_KEY: test-key
+          GROQ_API_KEY: test-key
           ALLOWED_ORIGINS: http://localhost:5173
-          GEMINI_MODEL_PRIMARY: gemini-2.5-flash
-          GEMINI_MODEL_LITE: gemini-2.5-flash-lite
+          GROQ_MODEL_PRIMARY: llama-3.1-8b-instant
+          GROQ_MODEL_LITE: llama-3.1-8b-instant
           LOG_LEVEL: WARNING
 
   frontend:

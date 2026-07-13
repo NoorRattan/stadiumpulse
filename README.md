@@ -13,9 +13,9 @@ The app has two surfaces in one React build:
 
 ## Connected Demo
 
-Open `/demo` locally or visit [https://stadiumpulse.pages.dev/demo](https://stadiumpulse.pages.dev/demo) for the read-only FIFA World Cup 2026 walkthrough. It connects the browser to `GET /api/demo`, reads the seeded Supabase scenario, and presents an animated crowd twin, an accessible route, multilingual concierge examples, sustainable transport guidance, and staff decision support without requiring an account or consuming Gemini quota.
+Open `/demo` locally or visit [https://stadiumpulse.pages.dev/demo](https://stadiumpulse.pages.dev/demo) for the read-only FIFA World Cup 2026 walkthrough. It connects the browser to `GET /api/demo`, reads the seeded Supabase scenario, and presents an animated crowd twin, an accessible route, multilingual concierge examples, sustainable transport guidance, and staff decision support without requiring an account or consuming Groq quota.
 
-The demo preview is intentionally curated and labeled synthetic. Authenticated routes remain the proof path for live Gemini generation and role-protected staff actions.
+The demo preview is intentionally curated and labeled synthetic. Authenticated routes remain the proof path for live Groq generation and role-protected staff actions.
 
 ## Running Locally
 
@@ -73,8 +73,8 @@ npm run build
 - Staff and volunteer roles live in `public.user_roles`; `backend/scripts/grant_role.py` updates them with the Supabase service role. Supabase's custom access-token hook must be enabled so those rows become the `user_role` JWT claim used by the app.
 - The dashboard refreshes backend-computed bands from a Supabase Realtime change signal; operations mutations still go through FastAPI and re-check roles server-side.
 - Seed and animated crowd data are synthetic demo data. The UI labels them as simulated; no screen represents them as physical venue sensors.
-- The public demo endpoint is read-only and rate-limited. Fan wayfinding and travel routes also work without an account by returning deterministic fallback content; signed-in users can receive Gemini-enhanced descriptions. Staff mutations stay authenticated.
-- Forecast bands are deterministic from recent readings. Gemini explains the fixed projection and recommends an action but cannot change the computed number or band.
+- The public demo endpoint is read-only and rate-limited. Fan wayfinding and travel routes also work without an account by returning deterministic fallback content; signed-in users can receive Groq-enhanced descriptions. Staff mutations stay authenticated.
+- Forecast bands are deterministic from recent readings. Groq explains the fixed projection and recommends an action but cannot change the computed number or band.
 - Command-center recommendations are decision support only. The app never executes crowd-control actions, and the dashboard marks every ranked action as requiring supervisor approval.
 
 ## Known Limitations and Dependency Notes

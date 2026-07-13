@@ -21,9 +21,9 @@ os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
 os.environ.setdefault("SUPABASE_DB_URL", "postgresql://postgres:test@localhost:5432/postgres")
 os.environ.setdefault("SUPABASE_JWT_SECRET", "test-secret-at-least-32-bytes-long")
 os.environ.setdefault("ALLOWED_ORIGINS", "http://testserver")
-os.environ.setdefault("GEMINI_API_KEY", "test-gemini-key")
-os.environ.setdefault("GEMINI_MODEL_PRIMARY", "gemini-2.5-flash")
-os.environ.setdefault("GEMINI_MODEL_LITE", "gemini-2.5-flash-lite")
+os.environ.setdefault("GROQ_API_KEY", "test-groq-key")
+os.environ.setdefault("GROQ_MODEL_PRIMARY", "llama-3.1-8b-instant")
+os.environ.setdefault("GROQ_MODEL_LITE", "llama-3.1-8b-instant")
 os.environ.setdefault("LOG_LEVEL", "INFO")
 os.environ.setdefault("SIMULATE_CROWD_DATA", "false")
 
@@ -514,14 +514,14 @@ def mock_db() -> FakeDb:
 
 
 @pytest.fixture
-def mock_genai_client() -> FakeAIClient:
+def mock_ai_client() -> FakeAIClient:
     return FakeAIClient()
 
 
 @pytest.fixture(autouse=True)
-def patch_ai_helpers(monkeypatch: pytest.MonkeyPatch, mock_genai_client: FakeAIClient) -> Iterator[None]:
-    monkeypatch.setattr(concierge_service, "get_ai_client", lambda: mock_genai_client)
-    monkeypatch.setattr(crowd_service, "get_ai_client", lambda: mock_genai_client)
+def patch_ai_helpers(monkeypatch: pytest.MonkeyPatch, mock_ai_client: FakeAIClient) -> Iterator[None]:
+    monkeypatch.setattr(concierge_service, "get_ai_client", lambda: mock_ai_client)
+    monkeypatch.setattr(crowd_service, "get_ai_client", lambda: mock_ai_client)
     monkeypatch.setattr(
         incident_service,
         "incidentTriageFlow",

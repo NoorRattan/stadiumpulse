@@ -40,9 +40,9 @@ def test_supabase_jwks_url_defaults_to_auth_discovery_endpoint() -> None:
         SUPABASE_URL="https://abc.supabase.co/",
         SUPABASE_DB_URL="postgresql://postgres:test@localhost:5432/postgres",
         ALLOWED_ORIGINS=["http://testserver"],
-        GEMINI_API_KEY="gemini-key",
-        GEMINI_MODEL_PRIMARY="primary",
-        GEMINI_MODEL_LITE="lite",
+        GROQ_API_KEY="groq-key",
+        GROQ_MODEL_PRIMARY="primary",
+        GROQ_MODEL_LITE="lite",
         LOG_LEVEL="info",
     )
     assert get_supabase_jwks_url(settings) == "https://abc.supabase.co/auth/v1/.well-known/jwks.json"

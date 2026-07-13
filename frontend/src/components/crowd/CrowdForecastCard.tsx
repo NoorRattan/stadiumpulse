@@ -66,7 +66,7 @@ export function CrowdForecastCard({ zoneId }: { zoneId: string }): JSX.Element {
               {forecast.narrative}
             </p>
             <p className="text-xs font-semibold text-muted-foreground">
-              Deterministic trend projection; Gemini explains the action.
+              Deterministic trend projection; Groq explains the action.
               Simulated demo readings.
             </p>
           </div>

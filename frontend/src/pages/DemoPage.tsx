@@ -101,7 +101,7 @@ export default function DemoPage(): JSX.Element {
           >
             This read-only walkthrough uses synthetic tournament data. It proves
             the browser-to-FastAPI-to-Supabase path while the authenticated app
-            keeps Gemini calls and staff mutations behind role checks.
+            keeps Groq calls and staff mutations behind role checks.
           </motion.p>
         </div>
 

@@ -5,7 +5,7 @@ StadiumPulse deploys with:
 - Supabase for Auth, Postgres, RLS, and Realtime.
 - Render for the FastAPI backend.
 - Cloudflare Pages for the Vite frontend.
-- Google Gemini Developer API for AI calls.
+- Groq API for AI calls.
 
 There is no Firebase Hosting rewrite and no GCP/Firebase runtime dependency.
 
@@ -55,9 +55,9 @@ SUPABASE_JWKS_URL=
 SUPABASE_JWT_SECRET=
 SUPABASE_JWT_AUDIENCE=authenticated
 ALLOWED_ORIGINS=https://<cloudflare-pages-domain>
-GEMINI_API_KEY=<gemini-developer-api-key>
-GEMINI_MODEL_PRIMARY=gemini-2.5-flash
-GEMINI_MODEL_LITE=gemini-2.5-flash-lite
+GROQ_API_KEY=<groq-api-key>
+GROQ_MODEL_PRIMARY=llama-3.1-8b-instant
+GROQ_MODEL_LITE=llama-3.1-8b-instant
 LOG_LEVEL=INFO
 SIMULATE_CROWD_DATA=true
 CROWD_SIMULATION_INTERVAL_SECONDS=20
@@ -135,8 +135,8 @@ After deployment, verify:
 - `supabase_realtime` publishes `public.zones` only; do not add `public.incidents`, `public.profiles`, `public.user_roles`, or briefing tables to the Realtime publication.
 - The ops dashboard receives zone updates from Supabase Realtime.
 - The dashboard visibly changes without a reload and labels the signal `Simulated demo signal`.
-- Selecting a 3D zone returns a real `/forecast` response with a deterministic projection and Gemini-written action.
-- Travel initially shows a guided selection state by design; selecting a match works publicly with curated descriptions and uses Gemini-enhanced descriptions for signed-in users.
+- Selecting a 3D zone returns a real `/forecast` response with a deterministic projection and Groq-written action.
+- Travel initially shows a guided selection state by design; selecting a match works publicly with curated descriptions and uses Groq-enhanced descriptions for signed-in users.
 
 ## Known Limitation
 

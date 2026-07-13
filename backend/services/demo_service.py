@@ -146,7 +146,7 @@ async def build_demo_experience(db: asyncpg.Pool) -> DemoExperienceResponse:
                 else "No elevated zones projected"
             ),
             narrative=(
-                "The deterministic risk engine ranks crowd pressure first; the authenticated Gemini flow "
+                "The deterministic risk engine ranks crowd pressure first; the authenticated Groq flow "
                 "turns those fixed facts into concise staff guidance. Supervisors approve every action."
             ),
             dataStatus="simulated",
@@ -155,7 +155,7 @@ async def build_demo_experience(db: asyncpg.Pool) -> DemoExperienceResponse:
         capabilities=[
             DemoCapability(
                 label="Multilingual GenAI concierge",
-                description="Gemini answers practical stadium questions in ten supported languages.",
+                description="Groq answers practical stadium questions in ten supported languages.",
                 liveEndpoint="POST /api/concierge/chat",
             ),
             DemoCapability(

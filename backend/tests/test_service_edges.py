@@ -79,7 +79,7 @@ def test_density_forecast_covers_confidence_direction_and_bounds() -> None:
     assert rising.projected_density_pct == 100
 
 
-def test_crowd_narration_falls_back_when_gemini_is_unavailable() -> None:
+def test_crowd_narration_falls_back_when_groq_is_unavailable() -> None:
     class FailingAI:
         def generate_text(self, prompt: str, *, tier: str) -> str:
             raise AIServiceError("offline")
@@ -188,7 +188,7 @@ async def test_concierge_language_fallback_existing_session_and_no_data(mock_db:
 
 
 @pytest.mark.asyncio
-async def test_concierge_returns_static_reply_when_gemini_fails(mock_db: FakeDb) -> None:
+async def test_concierge_returns_static_reply_when_groq_fails(mock_db: FakeDb) -> None:
     class FailingAI:
         def generate_json(self, prompt: str, *, tier: str) -> dict[str, object]:
             raise AIServiceError("offline")
@@ -217,7 +217,7 @@ async def test_incident_service_rejects_invalid_ai_severity(mock_db: FakeDb, mon
 
 
 @pytest.mark.asyncio
-async def test_incident_service_uses_static_triage_when_gemini_fails(
+async def test_incident_service_uses_static_triage_when_groq_fails(
     mock_db: FakeDb,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -277,7 +277,7 @@ async def test_travel_cache_and_invalid_match_shapes(mock_db: FakeDb) -> None:
 
 
 @pytest.mark.asyncio
-async def test_travel_suggestions_fall_back_when_gemini_fails(
+async def test_travel_suggestions_fall_back_when_groq_fails(
     mock_db: FakeDb,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -350,7 +350,7 @@ def test_briefing_summary_handles_no_incidents() -> None:
 
 
 @pytest.mark.asyncio
-async def test_briefing_uses_static_paragraph_when_gemini_fails(
+async def test_briefing_uses_static_paragraph_when_groq_fails(
     mock_db: FakeDb,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

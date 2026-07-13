@@ -2,7 +2,7 @@
 
 All protected routes use Supabase Auth access tokens with `Authorization: Bearer <token>`. Role checks are enforced server-side from the `user_role` custom access-token claim.
 
-`GET /api/demo` deliberately avoids Gemini calls and mutations. Its curated synthetic preview proves frontend to FastAPI to Supabase connectivity. Public fan wayfinding and travel routes return deterministic fallback content without authentication; signed-in users can receive the Gemini-enhanced versions. Staff role checks remain server-side for operations routes.
+`GET /api/demo` deliberately avoids Groq calls and mutations. Its curated synthetic preview proves frontend to FastAPI to Supabase connectivity. Public fan wayfinding and travel routes return deterministic fallback content without authentication; signed-in users can receive the Groq-enhanced versions. Staff role checks remain server-side for operations routes.
 
 | Method  | Path                                  | Auth               | Purpose                                                                                       |
 | ------- | ------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
@@ -43,4 +43,4 @@ Standard errors use:
 
 Possible error codes are `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `CONFLICT`, `NOT_FOUND`, `RATE_LIMITED`, `INTERNAL_ERROR`, and `AI_UPSTREAM_ERROR`.
 
-Crowd values in the demo deployment are explicitly simulated. Forecast and digest ranking math is deterministic and bounded to `0..100`; Gemini only phrases the operational narrative around server-computed projections. Digest recommendations never execute an operational change and always require supervisor approval.
+Crowd values in the demo deployment are explicitly simulated. Forecast and digest ranking math is deterministic and bounded to `0..100`; Groq only phrases the operational narrative around server-computed projections. Digest recommendations never execute an operational change and always require supervisor approval.

@@ -56,7 +56,7 @@ async def api_error_handler(request: Request, exc: ApiError) -> JSONResponse:
 async def ai_service_error_handler(request: Request, exc: AIServiceError) -> JSONResponse:
     return error_response(
         ErrorCode.ai_upstream_error,
-        "Gemini upstream request failed.",
+        "AI upstream request failed.",
         HTTPStatus.BAD_GATEWAY,
     )
 

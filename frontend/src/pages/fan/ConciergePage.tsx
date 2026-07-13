@@ -35,7 +35,7 @@ export default function ConciergePage(): JSX.Element {
                 aria-hidden="true"
                 className="size-3.5 text-accent"
               />
-              Powered by Gemini
+              Powered by Groq
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="size-1.5 rounded-full bg-primary" />

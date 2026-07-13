@@ -30,9 +30,9 @@ class Settings(BaseSettings):
         validation_alias="SUPABASE_JWT_AUDIENCE",
     )
     allowed_origins: Annotated[list[str], NoDecode] = Field(validation_alias="ALLOWED_ORIGINS")
-    gemini_api_key: str = Field(validation_alias="GEMINI_API_KEY")
-    gemini_model_primary: str = Field(validation_alias="GEMINI_MODEL_PRIMARY")
-    gemini_model_lite: str = Field(validation_alias="GEMINI_MODEL_LITE")
+    groq_api_key: str | None = Field(default=None, validation_alias="GROQ_API_KEY")
+    groq_model_primary: str = Field(default="llama-3.1-8b-instant", validation_alias="GROQ_MODEL_PRIMARY")
+    groq_model_lite: str = Field(default="llama-3.1-8b-instant", validation_alias="GROQ_MODEL_LITE")
     log_level: str = Field(validation_alias="LOG_LEVEL")
     # StadiumPulse ships as an explicitly labeled tournament demo. Real venue
     # deployments must opt out when physical telemetry is connected.

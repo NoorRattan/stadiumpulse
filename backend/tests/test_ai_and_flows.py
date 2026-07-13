@@ -1,11 +1,17 @@
 from types import SimpleNamespace
 
+import httpx
 import pytest
 
 import services.ai_core as ai_core
 from models.incident import IncidentSeverity
 from models.route import AccessibilityNeed, CongestionLevel
-from services.ai_core import StadiumPulseAIClient, parse_json_object
+from services.ai_core import (
+    GROQ_CHAT_COMPLETIONS_URL,
+    StadiumPulseAIClient,
+    extract_chat_completion_text,
+    parse_json_object,
+)
 from services.exceptions import AIServiceError
 from services.genkit_flows import (
     briefingFlow,
@@ -33,6 +39,30 @@ class StubAIClient:
         return self.payload
 
 
+class FakeGroqHttpClient:
+    def __init__(self, responses: list[object]) -> None:
+        self.responses = responses
+        self.requests: list[dict[str, object]] = []
+
+    def post(self, url: str, *, headers: dict[str, str], json: dict[str, object]) -> object:
+        self.requests.append({"url": url, "headers": headers, "json": json})
+        response = self.responses.pop(0)
+        if isinstance(response, BaseException):
+            raise response
+        return response
+
+
+class FakeGroqResponse:
+    def __init__(self, payload: object) -> None:
+        self.payload = payload
+
+    def raise_for_status(self) -> None:
+        return None
+
+    def json(self) -> object:
+        return self.payload
+
+
 def test_parse_json_object_accepts_plain_and_fenced_json() -> None:
     assert parse_json_object('{"ok": true}') == {"ok": True}
     assert parse_json_object('```json\n{"ok": true}\n```') == {"ok": True}
@@ -47,106 +77,131 @@ def test_parse_json_object_rejects_invalid_and_non_object() -> None:
         parse_json_object("[1]")
 
 
+def test_extract_chat_completion_text_rejects_malformed_payloads() -> None:
+    assert extract_chat_completion_text(None) is None
+    assert extract_chat_completion_text({}) is None
+    assert extract_chat_completion_text({"choices": ["bad"]}) is None
+    assert extract_chat_completion_text({"choices": [{"message": "bad"}]}) is None
+
+
 def test_ai_client_model_selection_and_generate_text(monkeypatch: pytest.MonkeyPatch) -> None:
-    generated: dict[str, str] = {}
-
-    class FakeModels:
-        def generate_content(self, *, model: str, contents: str) -> SimpleNamespace:
-            generated["model"] = model
-            generated["contents"] = contents
-            return SimpleNamespace(text="  response text  ")
-
-    monkeypatch.setattr(ai_core.genai, "Client", lambda **kwargs: SimpleNamespace(models=FakeModels()))
     settings = SimpleNamespace(
-        gemini_api_key="gemini-key",
-        gemini_model_primary="primary-model",
-        gemini_model_lite="lite-model",
+        groq_api_key="groq-key",
+        groq_model_primary="primary-model",
+        groq_model_lite="lite-model",
     )
     client = StadiumPulseAIClient(settings)
+    fake_http = FakeGroqHttpClient([FakeGroqResponse({"choices": [{"message": {"content": "  response text  "}}]})])
+    monkeypatch.setattr(client, "_client", fake_http)
 
     assert client.model_for("primary") == "primary-model"
     assert client.model_for("lite") == "lite-model"
-    assert client.model_candidates_for("primary") == ["primary-model", "gemini-2.5-flash", "gemini-2.5-flash-lite"]
-    assert client.model_candidates_for("lite") == ["lite-model", "gemini-2.5-flash-lite"]
+    assert client.model_candidates_for("primary") == ["primary-model", "llama-3.1-8b-instant"]
+    assert client.model_candidates_for("lite") == ["lite-model", "llama-3.1-8b-instant"]
     assert client.generate_text("hello", tier="lite") == "response text"
-    assert generated == {"model": "lite-model", "contents": "hello"}
+    assert fake_http.requests == [
+        {
+            "url": GROQ_CHAT_COMPLETIONS_URL,
+            "headers": {"Authorization": "Bearer groq-key", "Content-Type": "application/json"},
+            "json": {
+                "model": "lite-model",
+                "messages": [{"role": "user", "content": "hello"}],
+                "temperature": 0.2,
+            },
+        }
+    ]
 
 
 def test_ai_client_retries_stable_model_after_configured_model_failure(monkeypatch: pytest.MonkeyPatch) -> None:
-    attempts: list[str] = []
-
-    class RetryModels:
-        def generate_content(self, *, model: str, contents: str) -> SimpleNamespace:
-            attempts.append(model)
-            if model == "bad-lite-model":
-                raise RuntimeError("model not found")
-            return SimpleNamespace(text="fallback response")
-
-    monkeypatch.setattr(ai_core.genai, "Client", lambda **kwargs: SimpleNamespace(models=RetryModels()))
     settings = SimpleNamespace(
-        gemini_api_key="gemini-key",
-        gemini_model_primary="primary-model",
-        gemini_model_lite="bad-lite-model",
+        groq_api_key="groq-key",
+        groq_model_primary="primary-model",
+        groq_model_lite="bad-lite-model",
     )
+    client = StadiumPulseAIClient(settings)
+    fake_http = FakeGroqHttpClient(
+        [
+            httpx.ConnectError("model not found"),
+            FakeGroqResponse({"choices": [{"message": {"content": "fallback response"}}]}),
+        ]
+    )
+    monkeypatch.setattr(client, "_client", fake_http)
 
-    assert StadiumPulseAIClient(settings).generate_text("hello", tier="lite") == "fallback response"
-    assert attempts == ["bad-lite-model", "gemini-2.5-flash-lite"]
+    assert client.generate_text("hello", tier="lite") == "fallback response"
+    assert [request["json"]["model"] for request in fake_http.requests] == ["bad-lite-model", "llama-3.1-8b-instant"]
 
 
 def test_ai_client_rejects_empty_model_candidate_list(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(ai_core.genai, "Client", lambda **kwargs: SimpleNamespace(models=object()))
     settings = SimpleNamespace(
-        gemini_api_key="gemini-key",
-        gemini_model_primary="primary-model",
-        gemini_model_lite="lite-model",
+        groq_api_key="groq-key",
+        groq_model_primary="primary-model",
+        groq_model_lite="lite-model",
     )
     client = StadiumPulseAIClient(settings)
     monkeypatch.setattr(client, "model_candidates_for", lambda tier: [])
 
-    with pytest.raises(AIServiceError, match="No Gemini model"):
+    with pytest.raises(AIServiceError, match="No Groq model"):
         client.generate_text("hello", tier="lite")
 
 
-def test_ai_client_raises_on_upstream_and_empty_response(monkeypatch: pytest.MonkeyPatch) -> None:
-    class FailingModels:
-        def generate_content(self, *, model: str, contents: str) -> SimpleNamespace:
-            raise RuntimeError("down")
-
-    monkeypatch.setattr(ai_core.genai, "Client", lambda **kwargs: SimpleNamespace(models=FailingModels()))
+def test_ai_client_requires_groq_api_key() -> None:
     settings = SimpleNamespace(
-        gemini_api_key="gemini-key",
-        gemini_model_primary="primary-model",
-        gemini_model_lite="lite-model",
+        groq_api_key=None,
+        groq_model_primary="primary-model",
+        groq_model_lite="lite-model",
+    )
+
+    with pytest.raises(AIServiceError, match="API key"):
+        StadiumPulseAIClient(settings).generate_text("hello", tier="primary")
+
+
+def test_ai_client_raises_on_upstream_and_empty_response(monkeypatch: pytest.MonkeyPatch) -> None:
+    settings = SimpleNamespace(
+        groq_api_key="groq-key",
+        groq_model_primary="primary-model",
+        groq_model_lite="lite-model",
     )
     client = StadiumPulseAIClient(settings)
+    monkeypatch.setattr(
+        client,
+        "_client",
+        FakeGroqHttpClient([httpx.ConnectError("down"), httpx.ConnectError("still down")]),
+    )
 
     with pytest.raises(AIServiceError, match="request failed"):
         client.generate_text("hello", tier="primary")
 
-    class EmptyModels:
-        def generate_content(self, *, model: str, contents: str) -> SimpleNamespace:
-            return SimpleNamespace(text=" ")
-
-    monkeypatch.setattr(ai_core.genai, "Client", lambda **kwargs: SimpleNamespace(models=EmptyModels()))
+    empty_client = StadiumPulseAIClient(settings)
+    monkeypatch.setattr(
+        empty_client,
+        "_client",
+        FakeGroqHttpClient(
+            [
+                FakeGroqResponse({"choices": [{"message": {"content": " "}}]}),
+                FakeGroqResponse({"choices": [{"message": {"content": " "}}]}),
+            ]
+        ),
+    )
     with pytest.raises(AIServiceError, match="empty response"):
-        StadiumPulseAIClient(settings).generate_text("hello", tier="primary")
+        empty_client.generate_text("hello", tier="primary")
 
 
 def test_ai_client_generate_json_and_cached_factory(monkeypatch: pytest.MonkeyPatch) -> None:
-    class JsonModels:
-        def generate_content(self, *, model: str, contents: str) -> SimpleNamespace:
-            return SimpleNamespace(text='{"ok": true}')
-
     settings = SimpleNamespace(
-        gemini_api_key="gemini-key",
-        gemini_model_primary="primary-model",
-        gemini_model_lite="lite-model",
+        groq_api_key="groq-key",
+        groq_model_primary="primary-model",
+        groq_model_lite="lite-model",
     )
-    monkeypatch.setattr(ai_core.genai, "Client", lambda **kwargs: SimpleNamespace(models=JsonModels()))
     monkeypatch.setattr(ai_core, "get_settings", lambda: settings)
     ai_core.get_ai_client.cache_clear()
+    client = StadiumPulseAIClient(settings)
+    monkeypatch.setattr(
+        client,
+        "_client",
+        FakeGroqHttpClient([FakeGroqResponse({"choices": [{"message": {"content": '{"ok": true}'}}]})]),
+    )
 
-    assert StadiumPulseAIClient(settings).generate_json("hello", tier="primary") == {"ok": True}
+    assert client.generate_json("hello", tier="primary") == {"ok": True}
     assert isinstance(ai_core.get_ai_client(), StadiumPulseAIClient)
 
 

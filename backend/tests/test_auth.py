@@ -25,9 +25,9 @@ def signup_settings(service_role_key: str | None = "service-key") -> Settings:
         SUPABASE_DB_URL="postgresql://postgres:test@localhost:5432/postgres",
         SUPABASE_SERVICE_ROLE_KEY=service_role_key,
         ALLOWED_ORIGINS=["http://testserver"],
-        GEMINI_API_KEY="gemini-key",
-        GEMINI_MODEL_PRIMARY="primary",
-        GEMINI_MODEL_LITE="lite",
+        GROQ_API_KEY="groq-key",
+        GROQ_MODEL_PRIMARY="primary",
+        GROQ_MODEL_LITE="lite",
         LOG_LEVEL="debug",
     )
 
