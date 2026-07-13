@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit && vite build",
+    "build:e2e": "vite build --mode test",
     "dev": "vite",
+    "preview": "vite preview",
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "contrast:check": "node scripts/check-contrast.mjs",

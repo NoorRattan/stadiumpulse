@@ -54,7 +54,7 @@ Use `backend/.env.example` and `frontend/.env.example` as the placeholder list f
 
 ## Verification
 
-Current local verification snapshot (2026-07-14): **128 backend tests passed at 100% statement coverage**, **30 frontend tests passed across 23 test files**, and **15 Playwright scenarios passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles**. The browser suite checks every public route for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
+Current local verification snapshot (2026-07-14): **128 backend tests passed at 100% statement coverage**, **30 frontend tests passed across 23 test files**, and **17 Playwright checks passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles** (with three intentionally skipped duplicate axe scans). The browser suite checks every public route for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
 
 Backend:
 

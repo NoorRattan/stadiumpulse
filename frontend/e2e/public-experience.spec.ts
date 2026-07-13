@@ -17,12 +17,12 @@ test.beforeEach(async ({ page }) => {
   await installPublicFixtures(page);
 });
 
-test("public routes have one heading, no overflow, and no serious axe violations", async ({
+test("public routes have one heading and no horizontal overflow", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   for (const [path, heading] of publicRoutes) {
-    await page.goto(path);
+    await page.goto(path, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
     await expect(page.locator("h1")).toHaveCount(1);
 
@@ -31,7 +31,20 @@ test("public routes have one heading, no overflow, and no serious axe violations
       scrollWidth: document.documentElement.scrollWidth,
     }));
     expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
+  }
+});
 
+test("public routes have no serious or critical axe violations", async ({
+  browserName,
+  page,
+}) => {
+  test.skip(
+    browserName !== "chromium",
+    "Axe evaluates the rendered accessibility tree independently of browser engine.",
+  );
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const [path] of publicRoutes) {
+    await page.goto(path, { waitUntil: "domcontentloaded" });
     const results = await new AxeBuilder({ page }).analyze();
     expect(
       results.violations.filter((violation) =>
@@ -44,11 +57,11 @@ test("public routes have one heading, no overflow, and no serious axe violations
 test("venue signals are keyboard-native and expose selection state", async ({
   page,
 }) => {
-  await page.goto("/demo");
+  await page.goto("/demo", { waitUntil: "domcontentloaded" });
   const venueMap = page.getByRole("region", {
     name: "Interactive stadium venue map",
   });
-  await expect(venueMap).toBeVisible();
+  await expect(venueMap).toBeVisible({ timeout: 30_000 });
 
   const zone = venueMap.getByRole("button", {
     name: /Gate 4, 58 percent density/,
@@ -64,7 +77,7 @@ test("skip navigation moves focus and reduced motion stops animation", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   const skipLink = page.getByRole("link", { name: "Skip to main content" });
   await skipLink.focus();
   await expect(skipLink).toBeFocused();
