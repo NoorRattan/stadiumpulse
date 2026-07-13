@@ -44,17 +44,55 @@ interface SpeechRecognitionResultEventLike {
   results: { 0: { 0: { transcript: string } } };
 }
 
+interface SpeechRecognitionErrorEventLike {
+  error: string;
+}
+
 interface SpeechRecognitionLike {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
+  onstart: (() => void) | null;
   onresult: ((event: SpeechRecognitionResultEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
   onend: (() => void) | null;
   start: () => void;
   stop: () => void;
 }
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+const speechLocales: Record<string, string> = {
+  en: "en-US",
+  es: "es-ES",
+  pt: "pt-BR",
+  fr: "fr-FR",
+  ar: "ar-SA",
+  de: "de-DE",
+  ja: "ja-JP",
+  ko: "ko-KR",
+  zh: "zh-CN",
+  hi: "hi-IN",
+};
+
+function speechErrorMessage(error: string): string {
+  if (error === "not-allowed" || error === "service-not-allowed") {
+    return "Microphone access was denied. Allow microphone access in your browser settings and try again.";
+  }
+  if (error === "no-speech") {
+    return "No speech was detected. Try again and speak after Listening appears.";
+  }
+  if (error === "audio-capture") {
+    return "No working microphone was found. Check your device microphone and try again.";
+  }
+  if (error === "network") {
+    return "Voice recognition could not reach the speech service. Check your connection or type your message.";
+  }
+  if (error === "aborted") {
+    return "Voice input stopped.";
+  }
+  return "Voice input could not start. Check microphone permission or type your message instead.";
+}
 
 /** Concierge chat thread with visible language-change system notes. */
 export const ConciergeChat = memo(function ConciergeChat({
@@ -66,6 +104,7 @@ export const ConciergeChat = memo(function ConciergeChat({
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [listening, setListening] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState<string | null>(null);
   const [speakReplies, setSpeakReplies] = useState(false);
   const messageId = useId();
   const recognition = useRef<SpeechRecognitionLike | null>(null);
@@ -91,17 +130,55 @@ export const ConciergeChat = memo(function ConciergeChat({
     [],
   );
 
-  const startListening = () => {
-    if (!Recognition) return;
+  const toggleListening = () => {
+    if (!Recognition) {
+      setVoiceStatus(
+        "Voice input is unavailable in this browser. You can still type your message.",
+      );
+      return;
+    }
+    if (listening) {
+      recognition.current?.stop();
+      setVoiceStatus("Voice input stopped.");
+      return;
+    }
+
     const listener = new Recognition();
-    listener.lang = language;
+    let receivedResult = false;
+    listener.lang = speechLocales[language] ?? language;
     listener.continuous = false;
     listener.interimResults = false;
-    listener.onresult = (event) => setDraft(event.results[0][0].transcript);
-    listener.onend = () => setListening(false);
+    listener.onstart = () => {
+      setListening(true);
+      setVoiceStatus("Listening. Speak now.");
+    };
+    listener.onresult = (event) => {
+      receivedResult = true;
+      setDraft(event.results[0][0].transcript);
+      setVoiceStatus("Voice captured. Review your message, then send it.");
+    };
+    listener.onerror = (event) => {
+      setListening(false);
+      setVoiceStatus(speechErrorMessage(event.error));
+    };
+    listener.onend = () => {
+      setListening(false);
+      recognition.current = null;
+      if (!receivedResult) {
+        setVoiceStatus((current) => current ?? "Voice input stopped.");
+      }
+    };
     recognition.current = listener;
-    setListening(true);
-    listener.start();
+    setVoiceStatus("Requesting microphone access...");
+    try {
+      listener.start();
+    } catch {
+      recognition.current = null;
+      setListening(false);
+      setVoiceStatus(
+        "Voice input could not start. Check microphone permission or type your message instead.",
+      );
+    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -191,17 +268,19 @@ export const ConciergeChat = memo(function ConciergeChat({
           </Button>
           <Button
             aria-label={
-              Recognition
-                ? "Start voice input"
-                : "Voice input unavailable in this browser"
+              listening
+                ? "Stop voice input"
+                : Recognition
+                  ? "Start voice input"
+                  : "Voice input unavailable in this browser"
             }
-            disabled={!Recognition || listening || sending}
-            onClick={startListening}
+            disabled={!Recognition || sending}
+            onClick={toggleListening}
             type="button"
             variant="outline"
           >
             <Mic aria-hidden="true" className="size-4" />
-            {listening ? "Listening..." : "Speak"}
+            {listening ? "Stop listening" : "Speak"}
           </Button>
           <Button
             aria-pressed={speakReplies}
@@ -217,6 +296,15 @@ export const ConciergeChat = memo(function ConciergeChat({
             Read replies aloud
           </Button>
         </div>
+        {voiceStatus && (
+          <p
+            aria-live="polite"
+            className="text-sm text-muted-foreground"
+            role="status"
+          >
+            {voiceStatus}
+          </p>
+        )}
       </form>
     </section>
   );

@@ -96,6 +96,43 @@ test("public concierge answers without requiring sign-in", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("voice input fills the concierge message composer", async ({ page }) => {
+  await page.addInitScript(() => {
+    class MockSpeechRecognition {
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onstart: (() => void) | null = null;
+      onresult:
+        | ((event: { results: { 0: { 0: { transcript: string } } } }) => void)
+        | null = null;
+      onerror: ((event: { error: string }) => void) | null = null;
+      onend: (() => void) | null = null;
+
+      start() {
+        this.onstart?.();
+        this.onresult?.({
+          results: { 0: { 0: { transcript: "Take me to Gate 12" } } },
+        });
+        this.onend?.();
+      }
+
+      stop() {
+        this.onend?.();
+      }
+    }
+
+    Object.defineProperty(window, "SpeechRecognition", {
+      configurable: true,
+      value: MockSpeechRecognition,
+    });
+  });
+  await page.goto("/concierge", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "Start voice input" }).click();
+  await expect(page.getByLabel("Message")).toHaveValue("Take me to Gate 12");
+  await expect(page.getByText(/Voice captured/)).toBeVisible();
+});
+
 test("account and role portals send signed-out visitors to sign in", async ({
   page,
 }) => {
