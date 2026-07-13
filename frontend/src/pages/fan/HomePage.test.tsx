@@ -49,7 +49,7 @@ describe("HomePage", () => {
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Your match day, without the guesswork.",
+      "Know where to go. Before the crowd does.",
     );
     const results = await axe(container);
     expect(results.violations).toHaveLength(0);

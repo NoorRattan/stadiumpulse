@@ -1,6 +1,5 @@
 import { memo, type ReactNode } from "react";
 
-import { AtmosphericShader } from "@/components/visuals/AtmosphericShader";
 import { ParticleCanvas } from "@/components/visuals/ParticleCanvas";
 import { AccessibilityToggle } from "@/components/accessibility";
 import { BrandLogo } from "@/components/brand/BrandLogo";
@@ -28,15 +27,12 @@ export const AppShell = memo(function AppShell({
       {/* -- Background layers -- */}
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
         {/* Particle field */}
-        {renderDecorativeBackground && (
+        {renderDecorativeBackground && shader !== "none" && (
           <ParticleCanvas
             className="absolute inset-0 h-full w-full"
-            count={80}
+            count={shader === "vivid" ? 32 : 18}
+            mouseRepel={false}
           />
-        )}
-        {/* Atmospheric WebGL shader */}
-        {renderDecorativeBackground && shader !== "none" && (
-          <AtmosphericShader intensity={shader} />
         )}
         {/* Radial gradient glow */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,var(--glow-primary),transparent)]" />
@@ -47,8 +43,8 @@ export const AppShell = memo(function AppShell({
       <SkipLink />
 
       {/* -- Header -- */}
-      <header className="sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3.5 lg:px-10">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-2xl">
+        <div className="mx-auto flex min-h-[4.25rem] max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-10">
           <div className="min-w-0 shrink-0">
             <BrandLogo tagline />
           </div>
@@ -61,7 +57,7 @@ export const AppShell = memo(function AppShell({
 
       {/* -- Main -- */}
       <main
-        className="relative z-10 mx-auto w-full max-w-7xl px-5 py-10 pb-32 md:pb-16 lg:px-10 lg:py-14"
+        className="relative z-10 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 md:py-12 lg:px-10"
         id="main-content"
       >
         {children}
@@ -69,14 +65,16 @@ export const AppShell = memo(function AppShell({
 
       {/* -- Footer -- */}
       <footer className="relative z-10 border-t border-border bg-card/85 backdrop-blur-xl">
-        <div className="mx-auto grid max-w-7xl gap-6 px-5 py-10 lg:grid-cols-[1fr_auto] lg:items-center lg:px-10">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-10">
           <div>
             <BrandLogo />
-            <p className="mt-2 text-xs text-muted-foreground">
-              GenAI venue intelligence for FIFA World Cup 2026 match days.
+            <p className="mt-2 max-w-md text-sm text-muted-foreground">
+              One connected match-day guide for routes, venue help, travel, and
+              human-reviewed operations.
             </p>
-            <p className="mt-1 text-xs text-muted-foreground/50">
-              Synthetic demo data - no physical sensor claims.
+            <p className="mt-1 text-xs text-muted-foreground">
+              Demo signals are clearly labelled synthetic. No physical sensor
+              claims.
             </p>
           </div>
           <div className="flex items-center gap-4">

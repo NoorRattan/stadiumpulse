@@ -1,8 +1,8 @@
 # StadiumPulse
 
-GenAI-powered wayfinding and ops intelligence for stadium match days.
+Connected wayfinding and operations intelligence for safer, calmer stadium match days.
 
-I built this to explore what a stadium's crowd and incident data looks like when an LLM is doing real reasoning over it — not just answering FAQs, but actually re-ranking routes around live congestion and triaging incident reports before a human opens the form.
+StadiumPulse explores what happens when crowd, route, travel, and incident context becomes one shared match-day signal. It uses GenAI to explain deterministic decisions—not to invent safety-critical values or take operational action.
 
 StadiumPulse is designed as a **venue nervous system**: one crowd signal powers fan routing, a selectable 3D operations twin, predictive staff decisions, and incident automation instead of feeding unrelated AI widgets.
 
@@ -10,6 +10,14 @@ The app has two surfaces in one React build:
 
 - **Fan Experience PWA**: multilingual voice concierge, accessibility-aware wayfinding, seat-view confidence previews, and sustainable travel suggestions.
 - **Ops Console**: live selectable 3D crowd twin, ranked 15-minute command digest, density forecasts, incident drafts, and volunteer briefings for staff and volunteers.
+
+## Product principles
+
+- **Task first on mobile**: the landing experience starts with route planning, venue help, and arrival planning instead of an icon-only dashboard.
+- **Deterministic before generative**: the backend computes density bands, forecasts, and route choices; Groq explains or translates those fixed results.
+- **Human approval for operations**: incident drafts, crowd actions, and briefings remain decision support. StadiumPulse never executes a venue action.
+- **Honest demo state**: public scenario data is synthetic and labelled as such everywhere it appears.
+- **Accessible by default**: labelled navigation, keyboard focus, high-contrast and reduced-motion controls, route preferences, voice input, and read-aloud replies are built into the shared shell.
 
 ## Connected Demo
 
@@ -45,6 +53,8 @@ Use `backend/.env.example` and `frontend/.env.example` as the placeholder list f
 - Backend health: [https://stadiumpulse-d7js.onrender.com/health](https://stadiumpulse-d7js.onrender.com/health)
 
 ## Verification
+
+Current local verification snapshot (2026-07-13): **128 backend tests passed at 100% statement coverage** and **29 frontend tests passed across 23 test files**. Route tests include automated axe checks; the color-token check covers text, muted text, buttons, and destructive states in both themes.
 
 Backend:
 

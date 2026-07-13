@@ -5,63 +5,78 @@ interface BrandLogoProps {
   tagline?: boolean;
 }
 
-/** StadiumPulse brand mark with animated pulse ring. */
+/** Compact top-down football stadium wordmark used across the app shell. */
 export const BrandLogo = memo(function BrandLogo({
   tagline = false,
 }: BrandLogoProps) {
   return (
-    <Link className="group flex min-w-0 items-center gap-3" to="/">
-      <div className="relative shrink-0">
+    <Link
+      aria-label="StadiumPulse home"
+      className="group flex min-w-0 items-center gap-2.5"
+      to="/"
+    >
+      <div className="shrink-0">
         <svg
           aria-hidden="true"
-          className="size-10 text-foreground transition group-hover:text-primary"
+          className="size-10 drop-shadow-[0_8px_18px_rgb(0_0_0/0.2)] transition-transform duration-200 group-hover:scale-[1.03]"
           fill="none"
           viewBox="0 0 48 48"
           xmlns="http://www.w3.org/2000/svg"
         >
           <rect
-            height="40"
-            rx="8"
-            stroke="currentColor"
+            fill="#102f24"
+            height="44"
+            rx="14"
+            stroke="#35e59a"
+            strokeOpacity="0.38"
             strokeWidth="1.5"
-            width="40"
-            x="4"
-            y="4"
+            width="44"
+            x="2"
+            y="2"
           />
-          <circle
-            className="text-primary"
+          <ellipse
             cx="24"
             cy="24"
-            fill="currentColor"
-            r="6"
+            fill="#0b2219"
+            rx="16.5"
+            ry="13"
+            stroke="#f2f7f5"
+            strokeWidth="2.2"
+          />
+          <rect
+            height="13"
+            rx="1.5"
+            stroke="#35e59a"
+            strokeWidth="2"
+            width="17"
+            x="15.5"
+            y="17.5"
           />
           <path
-            className="text-accent"
-            d="M12 32c3-6 7-9 12-9s9 3 12 9"
-            stroke="currentColor"
+            d="M24 17.5v13"
+            stroke="#35e59a"
             strokeLinecap="round"
-            strokeWidth="2"
+            strokeWidth="1.5"
           />
+          <circle cx="24" cy="24" r="2.4" stroke="#4dd3ff" strokeWidth="1.5" />
           <path
-            className="text-secondary"
-            d="M14 36c2-3 5-5 10-5s8 2 10 5"
-            stroke="currentColor"
+            d="M11.5 18h2.2m-3.2 6h3m-2 6h2.2M34.3 18h2.2m-2 6h3m-3.2 6h2.2"
+            stroke="#a6b2ae"
             strokeLinecap="round"
-            strokeWidth="2"
+            strokeWidth="1.5"
           />
         </svg>
-        <span
-          aria-hidden="true"
-          className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-primary live-pulse"
-        />
       </div>
       <div className="min-w-0">
-        <p className="font-display text-lg font-bold tracking-tight text-foreground md:text-xl">
+        <p className="font-display text-base font-bold leading-none tracking-[-0.045em] text-foreground sm:text-lg md:text-xl">
           Stadium<span className="text-primary">Pulse</span>
         </p>
         {tagline ? (
-          <p className="hidden truncate text-xs text-muted-foreground sm:block">
-            FIFA 2026 venue nervous system
+          <p
+            aria-hidden="true"
+            className="mt-1 hidden truncate text-[0.6rem] font-bold uppercase tracking-[0.18em] text-muted-foreground xl:block"
+          >
+            Match-day intelligence
           </p>
         ) : null}
       </div>

@@ -254,7 +254,7 @@ export default function DemoPage(): JSX.Element {
                       <p className="text-sm leading-7 text-muted-foreground">
                         {selectedZone.alert}
                       </p>
-                      <p className="text-xs text-muted-foreground/50">
+                      <p className="text-xs text-muted-foreground">
                         Synthetic reading - no physical sensor claim
                       </p>
                     </div>

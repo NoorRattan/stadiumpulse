@@ -100,9 +100,7 @@ export default function DashboardPage(): JSX.Element {
               <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
                 {m.label}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground/50">
-                {m.helper}
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{m.helper}</p>
             </div>
           ))}
         </section>

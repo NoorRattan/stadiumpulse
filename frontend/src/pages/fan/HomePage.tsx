@@ -1,530 +1,372 @@
-import { useContext, useRef } from "react";
 import {
+  Accessibility,
   ArrowRight,
   BotMessageSquare,
   CalendarDays,
-  Globe2,
+  CheckCircle2,
+  Clock3,
+  Languages,
+  Leaf,
   Map,
-  MessageSquare,
   Radio,
   ShieldCheck,
+  Sparkles,
   Train,
   Users,
-  Zap,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
 
-import { ConciergeChat } from "@/components/concierge";
-import { AppShell, GlassCard } from "@/components/layout";
-import { AnimatedCounter } from "@/components/motion/AnimatedCounter";
+import { AppShell } from "@/components/layout";
 import { FadeInView } from "@/components/motion/FadeInView";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LanguageContext } from "@/contexts/LanguageContext";
-import { useAuth } from "@/hooks/useAuth";
 import { useMatches } from "@/hooks/useMatches";
-import { apiRequest } from "@/services/apiClient";
-import type { ChatRequest, ChatResponse } from "@/types/api";
 
-const quickActions = [
+const fanJourneys = [
   {
-    label: "Ask the Concierge",
+    label: "Find my way",
     description:
-      "Multilingual GenAI answers about gates, seats, and amenities.",
-    href: "/concierge",
-    icon: MessageSquare,
-    step: "01",
-    accent: "#00ff88",
-  },
-  {
-    label: "Find My Way",
-    description: "Crowd-aware routing with accessibility preferences.",
+      "Choose your gate or seat and get a calmer route with step-free preferences.",
     href: "/wayfinding",
+    action: "Plan a route",
     icon: Map,
-    step: "02",
-    accent: "#00d4ff",
   },
   {
-    label: "Travel Options",
-    description: "Sustainable transit and lower-congestion arrivals.",
+    label: "Ask StadiumPulse",
+    description:
+      "Get venue answers in your language by text or voice, with read-aloud replies.",
+    href: "/concierge",
+    action: "Ask for help",
+    icon: BotMessageSquare,
+  },
+  {
+    label: "Plan my arrival",
+    description:
+      "Compare rail, shuttle, and shared travel around match-day congestion.",
     href: "/travel",
+    action: "View travel options",
     icon: Train,
-    step: "03",
-    accent: "#ff6b35",
   },
 ] as const;
 
-const capabilities = [
+const systemSteps = [
   {
-    icon: BotMessageSquare,
-    title: "Multilingual Concierge",
-    description:
-      "GenAI voice and text assistance in multiple languages for fans, volunteers, and staff.",
-    metric: 12,
-    metricLabel: "languages supported",
-    accentColor: "primary" as const,
-    delay: 0,
+    label: "Sense",
+    detail: "Synthetic crowd readings update six venue zones.",
+    icon: Radio,
   },
   {
-    icon: Users,
-    title: "Crowd Digital Twin",
-    description:
-      "Selectable 3D operations twin with live density bands and 15-minute forecasts.",
-    metric: 94,
-    metricLabel: "zone coverage %",
-    accentColor: "accent" as const,
-    delay: 0.05,
-  },
-  {
+    label: "Reason",
+    detail: "Deterministic rules calculate routes, bands, and forecasts.",
     icon: ShieldCheck,
-    title: "Ops Intelligence",
-    description:
-      "Ranked command digest, incident drafts, and volunteer briefings - all human-approved.",
-    metric: 15,
-    metricLabel: "min decision window",
-    accentColor: "primary" as const,
-    delay: 0.1,
   },
   {
-    icon: Globe2,
-    title: "Sustainable Arrivals",
-    description:
-      "Transit load estimates and lower-congestion travel suggestions for every match.",
-    metric: 3,
-    metricLabel: "transport modes",
-    accentColor: "secondary" as const,
-    delay: 0.15,
+    label: "Explain",
+    detail: "GenAI translates the result into useful, multilingual guidance.",
+    icon: Languages,
+  },
+  {
+    label: "Approve",
+    detail:
+      "Staff make every operational decision; the system never acts alone.",
+    icon: Users,
   },
 ] as const;
 
 function formatMatchDate(value: string): string {
-  if (!value) {
-    return "Schedule time to be confirmed";
-  }
+  if (!value) return "Schedule time to be confirmed";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Schedule time to be confirmed";
   return new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(value));
+  }).format(date);
 }
 
-/** Fan landing page with cinematic hero, live metrics, and match-day tools. */
+/** Task-first fan landing page that explains and demonstrates the connected match-day system. */
 export default function HomePage(): JSX.Element {
   const { matches, loading } = useMatches();
-  const { user } = useAuth();
-  const language = useContext(LanguageContext)?.language ?? "en";
-  const sessionId = useRef<string>();
   const nextMatch = matches[0];
 
   return (
     <AppShell shader="vivid">
-      <div className="grid gap-0">
-        {/* ===========================================
-            HERO - Full viewport, bottom-aligned text
-        ============================================ */}
-        <section
-          aria-label="Stadium Pulse hero"
-          className="relative -mx-5 -mt-10 flex min-h-[92vh] flex-col justify-end overflow-hidden px-5 pb-16 pt-32 lg:-mx-10 lg:px-10"
-        >
-          {/* Live badge */}
-          <motion.div
-            className="mb-8"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          >
-            <span className="live-pulse inline-flex items-center gap-2 border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
-              FIFA World Cup 2026
-            </span>
-          </motion.div>
-
-          {/* Giant headline */}
-          <div className="max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <h1 className="font-display text-[clamp(3rem,10vw,9rem)] font-bold leading-none tracking-tighter text-foreground">
-                Your match day, <br />
-                <span className="text-gradient">without the guesswork.</span>
-              </h1>
-            </motion.div>
-          </div>
-
-          <motion.p
-            className="mt-8 max-w-xl text-base leading-7 text-muted-foreground md:text-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
-          >
-            GenAI-powered venue intelligence for fans, organizers, volunteers,
-            and staff. Navigate crowds, get multilingual help, and make
-            real-time operational decisions.
-          </motion.p>
-
-          <motion.div
-            className="mt-8 flex flex-wrap gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.4 }}
-          >
-            <Link
-              className="inline-flex min-h-12 items-center gap-2 bg-primary px-7 font-semibold text-primary-foreground shadow-[0_0_40px_rgba(0,255,136,0.3)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_60px_rgba(0,255,136,0.5)]"
-              to="/wayfinding"
-            >
-              Plan my route <ArrowRight aria-hidden="true" className="size-4" />
-            </Link>
-            <Link
-              className="inline-flex min-h-12 items-center gap-2 border border-white/15 bg-white/[0.04] px-7 font-semibold text-foreground backdrop-blur-xl transition-all hover:border-white/30 hover:bg-white/[0.08]"
-              to="/demo"
-            >
-              <Zap aria-hidden="true" className="size-4 text-accent" />
-              Explore live demo
-            </Link>
-          </motion.div>
-
-          <motion.div
-            className="mt-8 flex flex-wrap gap-x-8 gap-y-2 text-xs text-muted-foreground"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.55 }}
-          >
-            <span className="inline-flex items-center gap-2">
-              <ShieldCheck
-                aria-hidden="true"
-                className="size-3.5 text-primary"
-              />
-              Accessible by design
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <Radio aria-hidden="true" className="size-3.5 text-accent" />
-              Live operational signals
-            </span>
-          </motion.div>
-
-          {/* Bottom fade-out */}
+      <div className="grid gap-16 md:gap-24">
+        <section className="relative overflow-hidden rounded-3xl border border-border bg-card px-5 py-8 shadow-[0_24px_90px_rgb(0_0_0/0.12)] sm:px-8 sm:py-12 lg:grid lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:gap-12 lg:px-12 lg:py-16">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent"
+            className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,var(--glow-primary),transparent_45%)]"
           />
-        </section>
-
-        {/* ===========================================
-            STATS RAIL
-        ============================================ */}
-        <FadeInView>
-          <section
-            aria-label="Live venue metrics"
-            className="border-y border-white/[0.06] py-12"
-          >
-            <div className="grid grid-cols-3 divide-x divide-white/[0.06]">
-              {[
-                { label: "Monitored zones", value: 28, suffix: "" },
-                { label: "Languages supported", value: 12, suffix: "+" },
-                { label: "Decision window", value: 15, suffix: " min" },
-              ].map((metric) => (
-                <div
-                  className="flex flex-col items-center justify-center px-4 py-6 text-center"
-                  key={metric.label}
-                >
-                  <p className="font-display text-4xl font-bold text-foreground sm:text-5xl lg:text-6xl">
-                    <AnimatedCounter
-                      suffix={metric.suffix}
-                      value={metric.value}
-                    />
-                  </p>
-                  <p className="mt-2 text-xs uppercase tracking-widest text-muted-foreground">
-                    {metric.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-        </FadeInView>
-
-        {/* ===========================================
-            CAPABILITIES BENTO GRID
-        ============================================ */}
-        <FadeInView delay={0.05}>
-          <section
-            aria-labelledby="capabilities-heading"
-            className="grid gap-10 py-20"
-          >
-            <div className="flex items-end justify-between gap-8">
-              <div className="max-w-xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-                  - Capabilities
-                </p>
-                <h2
-                  className="mt-4 font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl"
-                  id="capabilities-heading"
-                >
-                  Intelligent.
-                  <br />
-                  <span className="text-muted-foreground">
-                    Venue operations.
-                  </span>
-                </h2>
-              </div>
-              <p className="hidden max-w-xs text-sm leading-6 text-muted-foreground lg:block">
-                One crowd signal powers fan routing, a selectable 3D operations
-                twin, predictive staff decisions, and incident automation.
-              </p>
-            </div>
-            <div className="grid gap-px border border-white/[0.06] bg-white/[0.06] md:grid-cols-2">
-              {capabilities.map((cap, index) => {
-                const Icon = cap.icon;
-                return (
-                  <GlassCard
-                    accentColor={cap.accentColor}
-                    className="rounded-none border-0"
-                    delay={cap.delay}
-                    hover
-                    key={cap.title}
-                    magnetic
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <span className="font-mono text-xs text-muted-foreground/50">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <Icon
-                        aria-hidden="true"
-                        className="size-5 text-primary transition group-hover:scale-110"
-                      />
-                    </div>
-                    <h3 className="mt-5 font-display text-xl font-bold text-foreground">
-                      {cap.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      {cap.description}
-                    </p>
-                    <p className="mt-5 font-mono text-3xl font-bold text-foreground">
-                      <AnimatedCounter
-                        suffix={
-                          cap.metricLabel.includes("%")
-                            ? "%"
-                            : cap.metricLabel.includes("min")
-                              ? ""
-                              : "+"
-                        }
-                        value={cap.metric}
-                      />
-                    </p>
-                    <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
-                      {cap.metricLabel}
-                    </p>
-                  </GlassCard>
-                );
-              })}
-            </div>
-          </section>
-        </FadeInView>
-
-        {/* ===========================================
-            PROCESS - ARRIVE. NAVIGATE. EXPERIENCE.
-        ============================================ */}
-        <FadeInView delay={0.1}>
-          <section
-            aria-labelledby="quick-actions-heading"
-            className="grid gap-10 py-20"
-          >
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-                - Process
-              </p>
-              <h2
-                className="mt-4 font-display text-4xl font-bold tracking-tight text-foreground md:text-5xl"
-                id="quick-actions-heading"
-              >
-                Arrive.
-                <br />
-                Navigate.
-                <br />
-                <span className="text-muted-foreground">Experience.</span>
-              </h2>
-            </div>
-
-            <div className="grid gap-0 border-t border-white/[0.06]">
-              {quickActions.map((action, idx) => {
-                const Icon = action.icon;
-                return (
-                  <motion.div
-                    key={action.href}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  >
-                    <Link
-                      className="group flex items-center justify-between gap-6 border-b border-white/[0.06] py-8 transition-colors hover:bg-white/[0.01]"
-                      to={action.href}
-                    >
-                      <div className="flex items-center gap-6">
-                        <span className="hidden font-mono text-xs text-muted-foreground/40 sm:block">
-                          {action.step}
-                        </span>
-                        <span
-                          className="grid size-12 shrink-0 place-content-center border"
-                          style={{
-                            borderColor: action.accent + "40",
-                            color: action.accent,
-                          }}
-                        >
-                          <Icon aria-hidden="true" className="size-5" />
-                        </span>
-                        <div>
-                          <p className="font-display text-xl font-bold text-foreground">
-                            {action.label}
-                          </p>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            {action.description}
-                          </p>
-                        </div>
-                      </div>
-                      <ArrowRight
-                        aria-hidden="true"
-                        className="size-5 shrink-0 text-muted-foreground transition group-hover:translate-x-2 group-hover:text-foreground"
-                      />
-                    </Link>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </section>
-        </FadeInView>
-
-        {/* ===========================================
-            MATCH + CONCIERGE SPLIT
-        ============================================ */}
-        <FadeInView delay={0.15}>
-          <section
-            aria-labelledby="match-heading"
-            className="grid gap-px border border-white/[0.06] bg-white/[0.06] py-0 lg:grid-cols-2"
-          >
-            <Card className="rounded-none border-0 bg-black p-8">
-              <CardHeader className="p-0">
-                <CardTitle
-                  className="flex items-center gap-2.5 font-display text-sm uppercase tracking-widest text-muted-foreground"
-                  id="match-heading"
-                >
-                  <CalendarDays aria-hidden="true" className="size-4" />
-                  Today's Match
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="mt-6 p-0">
-                {loading && (
-                  <p className="text-sm text-accent" role="status">
-                    Loading match schedule...
-                  </p>
-                )}
-                {!loading && nextMatch && (
-                  <div className="grid gap-4">
-                    <p className="font-display text-3xl font-bold text-foreground md:text-4xl">
-                      {nextMatch.homeTeam}
-                      <br />
-                      <span className="text-muted-foreground">vs.</span>
-                      <br />
-                      {nextMatch.awayTeam}
-                    </p>
-                    <div className="mt-4 border-t border-white/[0.06] pt-4">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                        Kickoff
-                      </p>
-                      <p className="mt-1 font-mono text-sm text-foreground">
-                        {formatMatchDate(nextMatch.kickoffAt)}
-                      </p>
-                      <p className="mt-3 text-xs uppercase tracking-widest text-muted-foreground">
-                        Transit load estimate
-                      </p>
-                      <p className="mt-1 font-mono text-sm text-secondary">
-                        {nextMatch.transitLoadEstimate}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {!loading && !nextMatch && (
-                  <p className="text-sm text-muted-foreground">
-                    No live match scheduled. Check back on match day.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-none border-0 bg-black p-8">
-              <CardHeader className="p-0">
-                <CardTitle className="font-display text-sm uppercase tracking-widest text-muted-foreground">
-                  Concierge Preview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="mt-6 p-0">
-                {user ? (
-                  <ConciergeChat
-                    initialMessages={[
-                      {
-                        id: "home-welcome",
-                        role: "assistant",
-                        text: "Need a fast answer? Open the concierge for full chat history.",
-                      },
-                    ]}
-                    onSendMessage={async (message) => {
-                      const response = await apiRequest<
-                        ChatResponse,
-                        ChatRequest
-                      >("/api/concierge/chat", {
-                        method: "POST",
-                        body: {
-                          sessionId: sessionId.current,
-                          message,
-                          language,
-                        },
-                      });
-                      sessionId.current = response.sessionId;
-                      return response.reply;
-                    }}
-                  />
-                ) : (
-                  <div className="grid gap-5">
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      Sign in to start a private concierge conversation and keep
-                      your accessibility preferences in sync.
-                    </p>
-                    <Link
-                      className="inline-flex min-h-11 items-center gap-2 border border-primary/40 bg-primary/5 px-5 text-sm font-semibold text-primary transition hover:bg-primary hover:text-primary-foreground"
-                      to="/login"
-                    >
-                      Sign in to ask{" "}
-                      <ArrowRight aria-hidden="true" className="size-4" />
-                    </Link>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-        </FadeInView>
-
-        {/* ===========================================
-            BOTTOM CTA STRIP
-        ============================================ */}
-        <FadeInView delay={0.2}>
-          <section className="flex flex-col items-center gap-8 py-28 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Ready to experience it?
+          <div className="relative z-10">
+            <p className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-primary">
+              <span className="size-2 rounded-full bg-primary" />
+              FIFA World Cup 2026 · Connected demo
             </p>
-            <h2 className="font-display text-5xl font-bold tracking-tight text-foreground md:text-7xl">
-              Enter the arena.
-            </h2>
-            <div className="flex flex-wrap justify-center gap-4">
+            <h1 className="mt-6 max-w-3xl font-display text-[clamp(2.7rem,8vw,6.4rem)] font-bold leading-[0.94] tracking-[-0.055em] text-foreground">
+              Know where to go.{" "}
+              <span className="text-gradient">Before the crowd does.</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+              StadiumPulse turns one shared venue signal into calmer fan routes,
+              multilingual help, smarter arrivals, and human-reviewed
+              operations.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                className="inline-flex min-h-12 items-center gap-2 bg-primary px-8 font-semibold text-primary-foreground shadow-[0_0_40px_rgba(0,255,136,0.25)] transition hover:-translate-y-0.5 hover:shadow-[0_0_60px_rgba(0,255,136,0.4)]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 font-bold text-primary-foreground shadow-[0_12px_32px_var(--glow-primary)] transition-transform hover:-translate-y-0.5"
                 to="/demo"
               >
-                Explore live demo <ArrowRight aria-hidden className="size-4" />
+                <Sparkles aria-hidden="true" className="size-4" />
+                Explore the live demo
               </Link>
               <Link
-                className="inline-flex min-h-12 items-center gap-2 border border-white/15 bg-white/[0.04] px-8 font-semibold text-foreground transition hover:bg-white/[0.08]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-background/60 px-6 font-bold text-foreground transition-colors hover:bg-muted"
                 to="/wayfinding"
               >
                 Plan my route
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+            </div>
+            <p className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
+              <CheckCircle2
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0 text-primary"
+              />
+              No account needed for the read-only demo. All scenario data is
+              clearly labelled synthetic.
+            </p>
+          </div>
+
+          <div className="relative z-10 mt-10 lg:mt-0">
+            <div className="rounded-2xl border border-border bg-background/80 p-4 shadow-xl backdrop-blur-xl sm:p-5">
+              <div className="flex items-center justify-between border-b border-border pb-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    Demo scenario
+                  </p>
+                  <p className="mt-1 font-display text-xl font-bold">
+                    Venue pulse
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                  <span className="size-2 rounded-full bg-primary" /> Ready
+                </span>
+              </div>
+              <dl className="grid gap-3 py-4">
+                <div className="flex items-center justify-between gap-4 rounded-xl bg-muted p-3">
+                  <dt className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Radio aria-hidden="true" className="size-4" /> Crowd view
+                  </dt>
+                  <dd className="text-sm font-bold text-foreground">
+                    6 selectable zones
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-4 rounded-xl bg-muted p-3">
+                  <dt className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Accessibility aria-hidden="true" className="size-4" />{" "}
+                    Route mode
+                  </dt>
+                  <dd className="text-sm font-bold text-foreground">
+                    Step-free aware
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-4 rounded-xl bg-muted p-3">
+                  <dt className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock3 aria-hidden="true" className="size-4" /> Forecast
+                  </dt>
+                  <dd className="text-sm font-bold text-foreground">
+                    15-minute window
+                  </dd>
+                </div>
+              </dl>
+              <Link
+                className="flex min-h-11 items-center justify-between rounded-xl border border-border px-4 text-sm font-bold text-foreground transition-colors hover:bg-muted"
+                to="/demo"
+              >
+                See the whole match-day story
+                <ArrowRight
+                  aria-hidden="true"
+                  className="size-4 text-primary"
+                />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <FadeInView>
+          <section aria-labelledby="start-heading">
+            <div className="max-w-2xl">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                Start with what you need
+              </p>
+              <h2
+                className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl"
+                id="start-heading"
+              >
+                Three match-day tasks. One shared picture.
+              </h2>
+              <p className="mt-3 leading-7 text-muted-foreground">
+                No dashboard training. Choose a task and StadiumPulse uses the
+                same venue context throughout your journey.
+              </p>
+            </div>
+            <div className="mt-8 grid gap-4 lg:grid-cols-3">
+              {fanJourneys.map((journey, index) => {
+                const Icon = journey.icon;
+                return (
+                  <Link
+                    className="group rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl sm:p-6"
+                    key={journey.href}
+                    to={journey.href}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="grid size-11 place-content-center rounded-xl bg-primary/10 text-primary">
+                        <Icon aria-hidden="true" className="size-5" />
+                      </span>
+                      <span className="font-mono text-xs font-bold text-muted-foreground">
+                        0{index + 1}
+                      </span>
+                    </div>
+                    <h3 className="mt-6 font-display text-xl font-bold">
+                      {journey.label}
+                    </h3>
+                    <p className="mt-2 min-h-20 text-sm leading-6 text-muted-foreground">
+                      {journey.description}
+                    </p>
+                    <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary">
+                      {journey.action}
+                      <ArrowRight
+                        aria-hidden="true"
+                        className="size-4 transition-transform group-hover:translate-x-1"
+                      />
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        </FadeInView>
+
+        <FadeInView>
+          <section
+            aria-labelledby="match-heading"
+            className="grid overflow-hidden rounded-3xl border border-border bg-card lg:grid-cols-[.8fr_1.2fr]"
+          >
+            <div className="bg-foreground p-6 text-background sm:p-8 lg:p-10">
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-background/75">
+                <CalendarDays aria-hidden="true" className="size-4" /> Next
+                scenario match
+              </p>
+              {loading ? (
+                <p className="mt-8" role="status">
+                  Loading match schedule…
+                </p>
+              ) : nextMatch ? (
+                <div className="mt-8">
+                  <h2
+                    className="font-display text-3xl font-bold sm:text-4xl"
+                    id="match-heading"
+                  >
+                    {nextMatch.homeTeam}
+                    <span className="my-2 block text-lg font-medium text-background/70">
+                      vs.
+                    </span>
+                    {nextMatch.awayTeam}
+                  </h2>
+                  <p className="mt-6 border-t border-background/20 pt-5 text-sm leading-6 text-background/80">
+                    {formatMatchDate(nextMatch.kickoffAt)}
+                  </p>
+                  <p className="mt-2 text-sm text-background/80">
+                    Transit load:{" "}
+                    <span className="font-bold capitalize text-background">
+                      {nextMatch.transitLoadEstimate}
+                    </span>
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-8">
+                  <h2
+                    className="font-display text-3xl font-bold"
+                    id="match-heading"
+                  >
+                    Match schedule pending
+                  </h2>
+                  <p className="mt-3 text-background/80">
+                    The tools remain available for the synthetic demo scenario.
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="p-6 sm:p-8 lg:p-10">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">
+                One signal, four safeguards
+              </p>
+              <h2 className="mt-3 font-display text-3xl font-bold">
+                Useful AI without handing it the keys.
+              </h2>
+              <div className="mt-7 grid gap-5 sm:grid-cols-2">
+                {systemSteps.map((step) => {
+                  const Icon = step.icon;
+                  return (
+                    <div className="flex gap-3" key={step.label}>
+                      <span className="grid size-10 shrink-0 place-content-center rounded-xl bg-accent/10 text-accent">
+                        <Icon aria-hidden="true" className="size-5" />
+                      </span>
+                      <div>
+                        <h3 className="font-bold">{step.label}</h3>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                          {step.detail}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </FadeInView>
+
+        <FadeInView>
+          <section
+            aria-labelledby="roles-heading"
+            className="grid gap-5 lg:grid-cols-2"
+          >
+            <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+              <span className="grid size-11 place-content-center rounded-xl bg-primary/10 text-primary">
+                <Leaf aria-hidden="true" className="size-5" />
+              </span>
+              <h2
+                className="mt-5 font-display text-2xl font-bold"
+                id="roles-heading"
+              >
+                For fans
+              </h2>
+              <p className="mt-2 leading-7 text-muted-foreground">
+                Route, language, accessibility, and arrival guidance stay in one
+                calm experience instead of four disconnected tools.
+              </p>
+              <Link
+                className="mt-5 inline-flex min-h-11 items-center gap-2 font-bold text-primary"
+                to="/wayfinding"
+              >
+                Plan a route{" "}
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Link>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+              <span className="grid size-11 place-content-center rounded-xl bg-accent/10 text-accent">
+                <Users aria-hidden="true" className="size-5" />
+              </span>
+              <h2 className="mt-5 font-display text-2xl font-bold">
+                For venue teams
+              </h2>
+              <p className="mt-2 leading-7 text-muted-foreground">
+                Role-protected staff tools turn the same signals into forecasts,
+                incident drafts, and briefings that require human approval.
+              </p>
+              <Link
+                className="mt-5 inline-flex min-h-11 items-center gap-2 font-bold text-accent"
+                to="/login"
+              >
+                Staff sign in{" "}
+                <ArrowRight aria-hidden="true" className="size-4" />
               </Link>
             </div>
           </section>

@@ -17,7 +17,7 @@ interface ParticleCanvasProps {
   mouseRepel?: boolean;
 }
 
-const COLORS = ["#00ff88", "#00d4ff", "#ffffff", "#ff6b35"];
+const COLORS = ["#35e59a", "#4dd3ff", "#ffffff", "#ff6b35"];
 
 /** Full-canvas animated particle field with mouse-repel and connection lines. */
 export const ParticleCanvas = memo(function ParticleCanvas({
@@ -113,7 +113,7 @@ export const ParticleCanvas = memo(function ParticleCanvas({
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(q.x, q.y);
-            ctx.strokeStyle = `rgba(0,255,136,${alpha})`;
+            ctx.strokeStyle = `rgba(53,229,154,${alpha})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
