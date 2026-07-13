@@ -7,7 +7,7 @@ import asyncpg
 
 from schemas.responses import TravelSuggestion, TravelSuggestionsResponse
 from services.db import get_pool
-from services.exceptions import ResourceNotFoundError
+from services.exceptions import AIServiceError, ResourceNotFoundError
 from services.genkit_flows import describe_travel_options
 
 TransitLoad = Literal["low", "medium", "high"]
@@ -132,18 +132,21 @@ async def get_travel_suggestions(
         raise ValueError(f"Match {match_id} has invalid venueZoneIds.")
 
     top_options = rank_by_load(static_transit_options_for_venue(venue_zone_ids), load_estimate)[:3]
-    descriptions = (
-        describe_travel_options(
-            [{"mode": option.mode, "note": option.note} for option in top_options],
-            load_estimate,
-        )
-        if use_ai
-        else [option.note for option in top_options]
-    )
+    descriptions = [option.note for option in top_options]
+    used_ai_descriptions = False
+    if use_ai:
+        try:
+            descriptions = describe_travel_options(
+                [{"mode": option.mode, "note": option.note} for option in top_options],
+                load_estimate,
+            )
+            used_ai_descriptions = True
+        except AIServiceError:
+            descriptions = [option.note for option in top_options]
     suggestions = [
         TravelSuggestion(mode=option.mode, description=description)
         for option, description in zip(top_options, descriptions, strict=False)
     ]
-    if use_ai:
+    if used_ai_descriptions:
         await cache_suggestions(pool, match_id, suggestions)
     return TravelSuggestionsResponse(matchId=match_id, suggestions=suggestions)

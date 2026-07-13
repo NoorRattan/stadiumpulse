@@ -32,7 +32,13 @@ async def draft_incident(
 ) -> IncidentReport:
     pool = db or await get_pool()
     zone = await load_zone(pool, zone_id)
-    triage = incidentTriageFlow(zone.zone_id, zone.name, raw_input)
+    try:
+        triage = incidentTriageFlow(zone.zone_id, zone.name, raw_input)
+    except AIServiceError:
+        triage = {
+            "summary": f"Manual review needed for {zone.name}: {raw_input[:160]}",
+            "severity": fallback_severity(raw_input),
+        }
     try:
         severity = IncidentSeverity(triage["severity"])
     except ValueError as exc:
@@ -67,3 +73,12 @@ async def draft_incident(
         resolvedAt=None,
     )
     return incident
+
+
+def fallback_severity(raw_input: str) -> str:
+    lowered = raw_input.lower()
+    if any(term in lowered for term in ("medical", "injury", "fire", "evacuation", "crush", "panic")):
+        return IncidentSeverity.critical.value
+    if any(term in lowered for term in ("blocked", "bottleneck", "crowd", "security", "fight")):
+        return IncidentSeverity.high.value
+    return IncidentSeverity.medium.value

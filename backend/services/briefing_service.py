@@ -7,7 +7,7 @@ from models.incident import IncidentReport
 from models.zone import Zone
 from services.crowd_service import zone_from_row
 from services.db import get_pool
-from services.exceptions import ResourceNotFoundError
+from services.exceptions import AIServiceError, ResourceNotFoundError
 from services.genkit_flows import briefingFlow
 
 
@@ -78,6 +78,19 @@ def build_briefing_content(zone: Zone, shift_label: str, incidents: list[Inciden
     )
 
 
+def fallback_briefing_paragraph(zone: Zone, incidents: list[IncidentReport]) -> str:
+    if incidents:
+        return (
+            f"Start the shift with a focused check of {zone.name}, review the listed open incidents, "
+            "and keep a clear escalation path to supervisors. Keep fan guidance concise and route safety "
+            "concerns through the Incident Copilot for human review."
+        )
+    return (
+        f"Start the shift with a routine sweep of {zone.name}, confirm radio coverage, and keep wayfinding "
+        "answers consistent with posted venue routes. Escalate any safety concern immediately to a supervisor."
+    )
+
+
 async def generate_briefing(
     zone_id: str,
     shift_label: str,
@@ -87,11 +100,14 @@ async def generate_briefing(
     pool = db or await get_pool()
     zone = await load_zone(pool, zone_id)
     incidents = await load_open_incidents(pool, zone_id)
-    paragraph = briefingFlow(
-        zone.model_dump(by_alias=True),
-        shift_label,
-        [incident.model_dump(by_alias=True) for incident in incidents],
-    )
+    try:
+        paragraph = briefingFlow(
+            zone.model_dump(by_alias=True),
+            shift_label,
+            [incident.model_dump(by_alias=True) for incident in incidents],
+        )
+    except AIServiceError:
+        paragraph = fallback_briefing_paragraph(zone, incidents)
     generated_at = datetime.now(tz=UTC)
     content = build_briefing_content(zone, shift_label, incidents, paragraph)
     briefing_id = await pool.fetchval(

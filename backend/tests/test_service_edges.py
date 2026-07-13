@@ -8,8 +8,8 @@ import services.crowd_service as crowd_service
 import services.crowd_simulator as crowd_simulator
 from models.route import AccessibilityNeed, CongestionLevel
 from models.zone import Zone, ZoneType
-from services.briefing_service import summarize_incidents
-from services.concierge_service import handle_chat_message, normalize_language
+from services.briefing_service import generate_briefing, summarize_incidents
+from services.concierge_service import fallback_concierge_reply, handle_chat_message, normalize_language
 from services.crowd_simulator import nudge_crowd_data
 from services.exceptions import AIServiceError, ResourceNotFoundError
 from services.incident_service import draft_incident
@@ -188,6 +188,24 @@ async def test_concierge_language_fallback_existing_session_and_no_data(mock_db:
 
 
 @pytest.mark.asyncio
+async def test_concierge_returns_static_reply_when_gemini_fails(mock_db: FakeDb) -> None:
+    class FailingAI:
+        def generate_json(self, prompt: str, *, tier: str) -> dict[str, object]:
+            raise AIServiceError("offline")
+
+        def generate_text(self, prompt: str, *, tier: str) -> str:
+            raise AIServiceError("offline")
+
+    response = await handle_chat_message("fan-1", "Where is Gate 4?", "en", db=mock_db, ai_client=FailingAI())
+
+    assert response.detected_language == "en"
+    assert "Wayfinding" in response.reply
+    assert "Wayfinding" in fallback_concierge_reply("gate help", "en")
+    assert "replying in English" in fallback_concierge_reply("hola", "es")
+    assert "venue basics" in fallback_concierge_reply("help", "en")
+
+
+@pytest.mark.asyncio
 async def test_incident_service_rejects_invalid_ai_severity(mock_db: FakeDb, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "services.incident_service.incidentTriageFlow",
@@ -196,6 +214,26 @@ async def test_incident_service_rejects_invalid_ai_severity(mock_db: FakeDb, mon
 
     with pytest.raises(AIServiceError, match="unsupported severity"):
         await draft_incident("gate-4", "issue", "staff-1", db=mock_db)
+
+
+@pytest.mark.asyncio
+async def test_incident_service_uses_static_triage_when_gemini_fails(
+    mock_db: FakeDb,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_triage(*args: object, **kwargs: object) -> dict[str, str]:
+        raise AIServiceError("offline")
+
+    monkeypatch.setattr("services.incident_service.incidentTriageFlow", fail_triage)
+
+    medical = await draft_incident("gate-4", "Medical injury near Gate 4", "staff-1", db=mock_db)
+    crowd = await draft_incident("gate-4", "Crowd bottleneck at Gate 4", "staff-1", db=mock_db)
+    routine = await draft_incident("gate-4", "Spilled drink near queue", "staff-1", db=mock_db)
+
+    assert medical.severity.value == "critical"
+    assert crowd.severity.value == "high"
+    assert routine.severity.value == "medium"
+    assert routine.ai_draft_summary.startswith("Manual review needed")
 
 
 @pytest.mark.asyncio
@@ -236,6 +274,22 @@ async def test_travel_cache_and_invalid_match_shapes(mock_db: FakeDb) -> None:
         await get_travel_suggestions("bad-load", db=mock_db)
     with pytest.raises(ValueError, match="invalid venueZoneIds"):
         await get_travel_suggestions("bad-zones", db=mock_db)
+
+
+@pytest.mark.asyncio
+async def test_travel_suggestions_fall_back_when_gemini_fails(
+    mock_db: FakeDb,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_descriptions(*args: object, **kwargs: object) -> list[str]:
+        raise AIServiceError("offline")
+
+    monkeypatch.setattr("services.travel_service.describe_travel_options", fail_descriptions)
+
+    response = await get_travel_suggestions("m_2026_014", db=mock_db, use_ai=True)
+
+    assert response.suggestions[0].description == "Best for heavy arrival waves and predictable post-match exits."
+    assert "m_2026_014" not in mock_db.store["travelSuggestionsCache"]
 
 
 @pytest.mark.asyncio
@@ -293,6 +347,23 @@ def test_wayfinding_alternatives_static_steps_and_missing_route(mock_db: FakeDb)
 
 def test_briefing_summary_handles_no_incidents() -> None:
     assert summarize_incidents([]) == "None reported"
+
+
+@pytest.mark.asyncio
+async def test_briefing_uses_static_paragraph_when_gemini_fails(
+    mock_db: FakeDb,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_briefing(*args: object, **kwargs: object) -> str:
+        raise AIServiceError("offline")
+
+    monkeypatch.setattr("services.briefing_service.briefingFlow", fail_briefing)
+
+    with_incident = await generate_briefing("gate-4", "Morning", "staff-1", db=mock_db)
+    no_incident = await generate_briefing("gate-2", "Morning", "staff-1", db=mock_db)
+
+    assert "review the listed open incidents" in with_incident.content
+    assert "routine sweep" in no_incident.content
 
 
 @pytest.mark.asyncio

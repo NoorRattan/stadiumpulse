@@ -41,6 +41,8 @@ def test_parse_json_object_accepts_plain_and_fenced_json() -> None:
 def test_parse_json_object_rejects_invalid_and_non_object() -> None:
     with pytest.raises(AIServiceError, match="invalid JSON"):
         parse_json_object("{")
+    with pytest.raises(AIServiceError, match="invalid JSON"):
+        parse_json_object("```json\nnot-json\n```")
     with pytest.raises(AIServiceError, match="not an object"):
         parse_json_object("[1]")
 
@@ -64,8 +66,45 @@ def test_ai_client_model_selection_and_generate_text(monkeypatch: pytest.MonkeyP
 
     assert client.model_for("primary") == "primary-model"
     assert client.model_for("lite") == "lite-model"
+    assert client.model_candidates_for("primary") == ["primary-model", "gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    assert client.model_candidates_for("lite") == ["lite-model", "gemini-2.5-flash-lite"]
     assert client.generate_text("hello", tier="lite") == "response text"
     assert generated == {"model": "lite-model", "contents": "hello"}
+
+
+def test_ai_client_retries_stable_model_after_configured_model_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts: list[str] = []
+
+    class RetryModels:
+        def generate_content(self, *, model: str, contents: str) -> SimpleNamespace:
+            attempts.append(model)
+            if model == "bad-lite-model":
+                raise RuntimeError("model not found")
+            return SimpleNamespace(text="fallback response")
+
+    monkeypatch.setattr(ai_core.genai, "Client", lambda **kwargs: SimpleNamespace(models=RetryModels()))
+    settings = SimpleNamespace(
+        gemini_api_key="gemini-key",
+        gemini_model_primary="primary-model",
+        gemini_model_lite="bad-lite-model",
+    )
+
+    assert StadiumPulseAIClient(settings).generate_text("hello", tier="lite") == "fallback response"
+    assert attempts == ["bad-lite-model", "gemini-2.5-flash-lite"]
+
+
+def test_ai_client_rejects_empty_model_candidate_list(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ai_core.genai, "Client", lambda **kwargs: SimpleNamespace(models=object()))
+    settings = SimpleNamespace(
+        gemini_api_key="gemini-key",
+        gemini_model_primary="primary-model",
+        gemini_model_lite="lite-model",
+    )
+    client = StadiumPulseAIClient(settings)
+    monkeypatch.setattr(client, "model_candidates_for", lambda tier: [])
+
+    with pytest.raises(AIServiceError, match="No Gemini model"):
+        client.generate_text("hello", tier="lite")
 
 
 def test_ai_client_raises_on_upstream_and_empty_response(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -6,6 +6,7 @@ import asyncpg
 from schemas.responses import ChatResponse
 from services.ai_core import StadiumPulseAIClient, get_ai_client
 from services.db import get_pool
+from services.exceptions import AIServiceError
 from services.genkit_flows import translateFlow
 
 SUPPORTED_LANGUAGES: tuple[str, ...] = ("en", "es", "pt", "fr", "ar", "de", "ja", "ko", "zh", "hi")
@@ -100,6 +101,18 @@ def build_reply_prompt(
     )
 
 
+def fallback_concierge_reply(message: str, language: str) -> str:
+    guidance = (
+        "I can still help with venue basics: use wayfinding for step-free routes, "
+        "check travel suggestions before arrival, and report urgent safety issues to stadium staff."
+    )
+    if language != "en":
+        return f"AI translation is temporarily unavailable, so I am replying in English. {guidance}"
+    if "gate" in message.lower():
+        return f"{guidance} For gate questions, open Wayfinding and choose your start and destination zones."
+    return guidance
+
+
 async def handle_chat_message(
     user_id: str,
     message: str,
@@ -113,12 +126,18 @@ async def handle_chat_message(
     normalized_language, used_fallback = normalize_language(language)
     active_session_id, _created = await get_or_create_session(user_id, session_id, normalized_language, pool)
 
-    translation = translateFlow(message, normalized_language, ai_client=client)
+    try:
+        translation = translateFlow(message, normalized_language, ai_client=client)
+    except AIServiceError:
+        translation = {"detectedLanguage": normalized_language, "translatedText": message}
     recent_messages = await load_recent_messages(pool, active_session_id)
-    reply = client.generate_text(
-        build_reply_prompt(message, normalized_language, translation["detectedLanguage"], recent_messages),
-        tier="primary",
-    )
+    try:
+        reply = client.generate_text(
+            build_reply_prompt(message, normalized_language, translation["detectedLanguage"], recent_messages),
+            tier="primary",
+        )
+    except AIServiceError:
+        reply = fallback_concierge_reply(message, normalized_language)
     if used_fallback:
         reply = f"Language fallback: unsupported language '{language}' was handled in English. {reply}"
 
