@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     environment: Environment = Field(validation_alias="ENVIRONMENT")
     supabase_url: str = Field(validation_alias="SUPABASE_URL")
     supabase_db_url: str = Field(validation_alias="SUPABASE_DB_URL")
+    supabase_service_role_key: str | None = Field(
+        default=None,
+        validation_alias="SUPABASE_SERVICE_ROLE_KEY",
+    )
     supabase_jwt_secret: str | None = Field(
         default=None,
         validation_alias="SUPABASE_JWT_SECRET",
@@ -41,7 +45,7 @@ class Settings(BaseSettings):
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
-    def split_allowed_origins(cls, value: str | list[str]) -> list[str]:
+    def split_allowed_origins(cls: type["Settings"], value: str | list[str]) -> list[str]:
         origins = value if isinstance(value, list) else [origin.strip() for origin in value.split(",")]
         origins = [origin.strip().rstrip("/") for origin in origins if origin.strip()]
         if "*" in origins:
@@ -59,7 +63,7 @@ class CorsBootstrapSettings(BaseSettings):
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
-    def split_allowed_origins(cls, value: str | list[str]) -> list[str]:
+    def split_allowed_origins(cls: type["CorsBootstrapSettings"], value: str | list[str]) -> list[str]:
         origins = value if isinstance(value, list) else [origin.strip() for origin in value.split(",")]
         origins = [origin.strip().rstrip("/") for origin in origins if origin.strip()]
         if "*" in origins:

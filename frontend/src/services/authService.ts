@@ -10,6 +10,11 @@ interface RoleClaims {
   user_role?: unknown;
 }
 
+interface PasswordSignupResponse {
+  uid: string;
+  email: string;
+}
+
 function normalizeRole(value: unknown): UserRole {
   return value === "staff" || value === "volunteer" ? value : "fan";
 }
@@ -35,6 +40,20 @@ export async function bootstrapUserProfile(): Promise<UserProfileResponse> {
       body: {},
     },
   );
+}
+
+/** Creates a confirmed email/password account through the backend admin flow. */
+export async function createPasswordAccount(
+  email: string,
+  password: string,
+): Promise<PasswordSignupResponse> {
+  return apiRequest<
+    PasswordSignupResponse,
+    { email: string; password: string }
+  >("/api/auth/signup", {
+    method: "POST",
+    body: { email, password },
+  });
 }
 
 /** Signs out the current Supabase Auth user. */

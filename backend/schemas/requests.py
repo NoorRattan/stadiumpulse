@@ -38,3 +38,10 @@ class BriefingGenerateRequest(BaseModel):
 
     zone_id: str = Field(alias="zoneId", min_length=1)
     shift_label: str = Field(alias="shiftLabel", min_length=1, max_length=120)
+
+
+class PasswordSignupRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    email: str = Field(alias="email", min_length=3, max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    password: str = Field(alias="password", min_length=8, max_length=128)

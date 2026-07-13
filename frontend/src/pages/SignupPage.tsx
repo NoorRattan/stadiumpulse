@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { motion } from "motion/react";
 
 import { AppShell } from "@/components/layout";
+import { createPasswordAccount } from "@/services/authService";
 import { supabase } from "@/services/supabaseConfig";
 
 /** Email signup page - mirrored split-screen from LoginPage. */
@@ -18,23 +19,16 @@ export default function SignupPage(): JSX.Element {
     event.preventDefault();
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      await createPasswordAccount(email, password);
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          emailRedirectTo: window.location.origin,
-        },
       });
       if (error) {
         throw error;
       }
-      if (data.session) {
-        toast.success("Account created.");
-        void navigate("/");
-        return;
-      }
-      toast.success("Check your email to confirm your StadiumPulse account.");
-      void navigate("/login");
+      toast.success("Account created.");
+      void navigate("/");
     } catch (caught) {
       toast.error(
         caught instanceof Error ? caught.message : "Account creation failed.",
@@ -128,7 +122,7 @@ export default function SignupPage(): JSX.Element {
 
             <div className="mt-6 flex items-center gap-2 border-t border-border pt-6 text-sm text-muted-foreground">
               <Mail aria-hidden="true" className="size-4 shrink-0" />
-              <span>Email confirmation may be required.</span>
+              <span>Your account opens immediately after signup.</span>
             </div>
           </div>
         </motion.div>

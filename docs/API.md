@@ -8,6 +8,7 @@ All protected routes use Supabase Auth access tokens with `Authorization: Bearer
 | ------- | ------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
 | `GET`   | `/health`                             | None               | Health check. Returns service status without authentication.                                  |
 | `GET`   | `/api/demo`                           | None               | Read-only, rate-limited FIFA 2026 scenario backed by seeded Supabase demo data.               |
+| `POST`  | `/api/auth/signup`                    | None               | Create a confirmed email/password Supabase user and fan profile, then let the browser sign in. |
 | `GET`   | `/api/auth/me`                        | Any signed-in user | Return the current user's backend profile.                                                    |
 | `POST`  | `/api/auth/bootstrap`                 | Any signed-in user | Idempotently create or read the signed-in user's `profiles` row.                              |
 | `POST`  | `/api/concierge/chat`                 | Any signed-in user | Send a multilingual concierge message and receive the assistant reply.                        |
@@ -40,6 +41,6 @@ Standard errors use:
 }
 ```
 
-Possible error codes are `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `RATE_LIMITED`, `INTERNAL_ERROR`, and `AI_UPSTREAM_ERROR`.
+Possible error codes are `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `CONFLICT`, `NOT_FOUND`, `RATE_LIMITED`, `INTERNAL_ERROR`, and `AI_UPSTREAM_ERROR`.
 
 Crowd values in the demo deployment are explicitly simulated. Forecast and digest ranking math is deterministic and bounded to `0..100`; Gemini only phrases the operational narrative around server-computed projections. Digest recommendations never execute an operational change and always require supervisor approval.

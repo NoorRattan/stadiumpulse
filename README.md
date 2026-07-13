@@ -69,7 +69,7 @@ npm run build
 
 ## Project Notes
 
-- Supabase Auth creates the browser identity; `/api/auth/bootstrap` creates the backend profile after sign-in.
+- Supabase Auth creates the browser identity; `/api/auth/signup` creates confirmed email/password accounts without an email verification step, and `/api/auth/bootstrap` creates or reads the backend profile after sign-in.
 - Staff and volunteer roles live in `public.user_roles`; `backend/scripts/grant_role.py` updates them with the Supabase service role. Supabase's custom access-token hook must be enabled so those rows become the `user_role` JWT claim used by the app.
 - The dashboard refreshes backend-computed bands from a Supabase Realtime change signal; operations mutations still go through FastAPI and re-check roles server-side.
 - Seed and animated crowd data are synthetic demo data. The UI labels them as simulated; no screen represents them as physical venue sensors.

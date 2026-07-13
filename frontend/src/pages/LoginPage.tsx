@@ -33,8 +33,6 @@ export default function LoginPage(): JSX.Element {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [resendingConfirmation, setResendingConfirmation] = useState(false);
-  const [confirmationEmail, setConfirmationEmail] = useState("");
 
   const finishSignIn = () => {
     void navigate("/");
@@ -50,7 +48,7 @@ export default function LoginPage(): JSX.Element {
       return "No matching account was found. Check the email and password, create an account, or open the public demo.";
     }
     if (message.includes("email not confirmed")) {
-      return "Email not confirmed. Resend the confirmation link, then open it from your inbox.";
+      return "This account cannot be used yet. Create a new account or open the public demo.";
     }
     return rawMessage;
   };
@@ -68,40 +66,13 @@ export default function LoginPage(): JSX.Element {
       }
       finishSignIn();
     } catch (caught) {
-      if (errorMessage(caught).toLowerCase().includes("email not confirmed")) {
-        setConfirmationEmail(email);
-      }
       toast.error(authErrorMessage(caught));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleResendConfirmation = async () => {
-    setResendingConfirmation(true);
-    try {
-      const targetEmail = confirmationEmail || email;
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: targetEmail,
-        options: {
-          emailRedirectTo: window.location.origin,
-        },
-      });
-      if (error) {
-        throw error;
-      }
-      toast.success("Confirmation email sent. Open the link from your inbox.");
-    } catch (caught) {
-      toast.error(
-        errorMessage(caught) || "Could not resend confirmation email.",
-      );
-    } finally {
-      setResendingConfirmation(false);
-    }
-  };
-
-  const disabled = submitting || resendingConfirmation;
+  const disabled = submitting;
 
   return (
     <AppShell shader="vivid">
@@ -249,29 +220,6 @@ export default function LoginPage(): JSX.Element {
                 {submitting ? "Signing in..." : "Continue with email"}
               </button>
             </form>
-
-            {confirmationEmail && (
-              <div className="mt-4 rounded border border-destructive/30 bg-destructive/10 p-4 text-sm text-muted-foreground">
-                <p className="font-semibold text-foreground">
-                  Confirm your email before signing in.
-                </p>
-                <p className="mt-1">
-                  We can send a fresh confirmation link to {confirmationEmail}.
-                </p>
-                <Button
-                  className="mt-3 min-h-10 w-full rounded-none"
-                  disabled={disabled}
-                  onClick={() => void handleResendConfirmation()}
-                  type="button"
-                  variant="outline"
-                >
-                  <Mail aria-hidden="true" className="size-4" />
-                  {resendingConfirmation
-                    ? "Sending confirmation..."
-                    : "Resend confirmation email"}
-                </Button>
-              </div>
-            )}
 
             <div className="mt-4 grid gap-3">
               <Button

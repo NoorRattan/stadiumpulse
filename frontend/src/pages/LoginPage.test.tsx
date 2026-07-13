@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { axe } from "vitest-axe";
 import { MemoryRouter, useLocation } from "react-router-dom";
 
@@ -21,19 +21,6 @@ function LocationProbe(): JSX.Element {
   const location = useLocation();
   return <span data-testid="location">{location.pathname}</span>;
 }
-
-const emailNotConfirmedError = {
-  message: "Email not confirmed",
-  code: "email_not_confirmed",
-  status: 400,
-  __isAuthError: true,
-  name: "AuthApiError",
-  toJSON: () => ({
-    message: "Email not confirmed",
-    code: "email_not_confirmed",
-    status: 400,
-  }),
-};
 
 describe("LoginPage", () => {
   afterEach(() => {
@@ -82,13 +69,16 @@ describe("LoginPage", () => {
     expect(authValue.signInGuest).not.toHaveBeenCalled();
   });
 
-  it("offers to resend confirmation when email is not confirmed", async () => {
+  it("does not show a verification resend flow when Supabase reports an unconfirmed email", async () => {
     const signInWithPasswordSpy = vi.spyOn(supabase.auth, "signInWithPassword");
-    const resendSpy = vi.spyOn(supabase.auth, "resend");
 
     signInWithPasswordSpy.mockResolvedValueOnce({
       data: { user: null, session: null },
-      error: emailNotConfirmedError as never,
+      error: {
+        message: "Email not confirmed",
+        code: "email_not_confirmed",
+        status: 400,
+      } as never,
     });
 
     render(
@@ -109,20 +99,9 @@ describe("LoginPage", () => {
       screen.getByRole("button", { name: /continue with email/i }),
     );
 
+    await waitFor(() => expect(signInWithPasswordSpy).toHaveBeenCalledOnce());
     expect(
-      await screen.findByRole("button", { name: /resend confirmation email/i }),
-    ).toBeInTheDocument();
-
-    fireEvent.click(
-      screen.getByRole("button", { name: /resend confirmation email/i }),
-    );
-
-    expect(resendSpy).toHaveBeenCalledWith({
-      type: "signup",
-      email: "jnoorrattan@gmail.com",
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-    });
+      screen.queryByRole("button", { name: /resend confirmation email/i }),
+    ).not.toBeInTheDocument();
   });
 });

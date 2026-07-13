@@ -33,6 +33,13 @@ class UserProfileResponse(BaseModel):
     preferred_language: str = Field(alias="preferredLanguage")
 
 
+class PasswordSignupResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    uid: str = Field(alias="uid")
+    email: str = Field(alias="email")
+
+
 class ChatResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 

@@ -25,6 +25,8 @@ Enable Email/password Auth in Supabase for account creation and staff access:
 
 - Email/password
 
+The app creates email/password users through the FastAPI backend with `email_confirm=true`, so the browser signup flow does not require users to open a verification email. Keep the Supabase service-role key server-side only; it belongs in Render as `SUPABASE_SERVICE_ROLE_KEY` and must never be exposed through Vite or Cloudflare Pages.
+
 Google OAuth is optional. If you enable it in Supabase, also set `VITE_ENABLE_GOOGLE_AUTH=true` for the frontend; otherwise the Google button stays hidden. Anonymous sign-in is not required for the public fan wayfinding and travel fallback flows.
 
 The migration installs `public.custom_access_token_hook`, but Supabase does not call it until you enable it in the dashboard. In Supabase, open **Authentication -> Hooks -> Customize Access Token**, enable the hook, and select `public.custom_access_token_hook`. This is required for staff and volunteer access. The app intentionally ignores `app_metadata.user_role`; both frontend route gating and FastAPI authorization use only the `user_role` access-token claim generated from `public.user_roles`.
@@ -48,6 +50,7 @@ Set these Render environment variables:
 ENVIRONMENT=production
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_DB_URL=postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres
+SUPABASE_SERVICE_ROLE_KEY=<supabase-service-role-key>
 SUPABASE_JWKS_URL=
 SUPABASE_JWT_SECRET=
 SUPABASE_JWT_AUDIENCE=authenticated
@@ -84,7 +87,7 @@ Set these GitHub secrets:
 | `CLOUDFLARE_ACCOUNT_ID`   | Cloudflare account for Pages upload.             |
 | `CLOUDFLARE_API_TOKEN`    | Token with Cloudflare Pages edit permissions.    |
 | `VITE_SUPABASE_URL`       | Supabase project URL for the browser client.     |
-| `VITE_SUPABASE_ANON_KEY`  | Supabase anon key for browser auth and Realtime. |
+| `VITE_SUPABASE_ANON_KEY`  | Supabase anon key for browser auth and Realtime. Do not use the service-role key here. |
 | `VITE_API_BASE_URL`       | Public Render backend base URL.                  |
 | `VITE_ENABLE_GOOGLE_AUTH` | Set to `true` only when Google OAuth is enabled. |
 
@@ -126,7 +129,7 @@ After deployment, verify:
 
 - Render `/health` returns `{"status":"ok"}`.
 - Cloudflare Pages loads the app.
-- Email signup and sign-in work.
+- Email signup creates a signed-in account immediately without an email verification step.
 - Staff routes only work after `user_role` is present in the Supabase access token.
 - A database-only role grant produces a refreshed access token whose decoded payload contains `user_role: "staff"` or `user_role: "volunteer"`.
 - `supabase_realtime` publishes `public.zones` only; do not add `public.incidents`, `public.profiles`, `public.user_roles`, or briefing tables to the Realtime publication.

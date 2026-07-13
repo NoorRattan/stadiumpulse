@@ -1,5 +1,6 @@
 from enum import StrEnum
 from http import HTTPStatus
+from typing import Self
 
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
@@ -15,6 +16,7 @@ class ErrorCode(StrEnum):
     validation_error = "VALIDATION_ERROR"
     unauthenticated = "UNAUTHENTICATED"
     forbidden = "FORBIDDEN"
+    conflict = "CONFLICT"
     not_found = "NOT_FOUND"
     rate_limited = "RATE_LIMITED"
     internal_error = "INTERNAL_ERROR"
@@ -36,7 +38,7 @@ class ErrorResponse(BaseModel):
 
 
 class ApiError(Exception):
-    def __init__(self, code: ErrorCode, message: str, status: int) -> None:
+    def __init__(self: Self, code: ErrorCode, message: str, status: int) -> None:
         self.code = code
         self.message = message
         self.status = status
