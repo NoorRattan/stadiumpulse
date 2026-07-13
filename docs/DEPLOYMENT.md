@@ -135,7 +135,7 @@ After deployment, verify:
 - `supabase_realtime` publishes `public.zones` only; do not add `public.incidents`, `public.profiles`, `public.user_roles`, or briefing tables to the Realtime publication.
 - The ops dashboard receives zone updates from Supabase Realtime.
 - The dashboard visibly changes without a reload and labels the signal `Simulated demo signal`.
-- Selecting a 3D zone returns a real `/forecast` response with a deterministic projection and Groq-written action.
+- Selecting a venue-map zone returns a real `/forecast` response with a deterministic projection and Groq-written action.
 - Travel initially shows a guided selection state by design; selecting a match works publicly with curated descriptions and uses Groq-enhanced descriptions for signed-in users.
 
 ## Known Limitation

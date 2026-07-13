@@ -2,12 +2,16 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { ArrowLeft } from "lucide-react";
 
+import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
+
 /** 404 page - brutalist typographic treatment. */
 export default function NotFoundPage(): JSX.Element {
+  const reducedMotion = useReducedMotionSafe();
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={reducedMotion ? false : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="grid gap-6"

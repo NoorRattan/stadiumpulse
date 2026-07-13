@@ -1,12 +1,8 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { motion } from "motion/react";
 
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { cn } from "@/lib/utils";
-
-const WireframeSphere = lazy(
-  () => import("@/components/visuals/WireframeSphere"),
-);
 
 interface PageHeroProps {
   badge?: ReactNode;
@@ -16,7 +12,6 @@ interface PageHeroProps {
   meta?: ReactNode;
   visual?: ReactNode;
   className?: string;
-  showSphere?: boolean;
   fullViewport?: boolean;
 }
 
@@ -29,7 +24,6 @@ export function PageHero({
   meta,
   visual,
   className,
-  showSphere = false,
   fullViewport = false,
 }: PageHeroProps): JSX.Element {
   const reducedMotion = useReducedMotionSafe();
@@ -124,26 +118,8 @@ export function PageHero({
         )}
       </div>
 
-      {(showSphere || visual) && (
-        <div className="relative z-10 mt-8 min-h-72 lg:mt-0">
-          {visual ??
-            (showSphere &&
-              (reducedMotion ? (
-                <div className="grid h-full min-h-72 place-content-center rounded-xl border border-border bg-card p-8 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Live venue intelligence visualization
-                  </p>
-                </div>
-              ) : (
-                <Suspense
-                  fallback={
-                    <div className="h-full min-h-72 animate-pulse rounded-xl bg-muted" />
-                  }
-                >
-                  <WireframeSphere />
-                </Suspense>
-              )))}
-        </div>
+      {visual && (
+        <div className="relative z-10 mt-8 min-h-72 lg:mt-0">{visual}</div>
       )}
     </div>
   );

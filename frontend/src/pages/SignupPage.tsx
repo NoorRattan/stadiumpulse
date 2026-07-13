@@ -5,12 +5,14 @@ import { toast } from "sonner";
 import { motion } from "motion/react";
 
 import { AppShell } from "@/components/layout";
+import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { createPasswordAccount } from "@/services/authService";
 import { supabase } from "@/services/supabaseConfig";
 
 /** Email signup page - mirrored split-screen from LoginPage. */
 export default function SignupPage(): JSX.Element {
   const navigate = useNavigate();
+  const reducedMotion = useReducedMotionSafe();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -44,7 +46,7 @@ export default function SignupPage(): JSX.Element {
         {/* -- Left side: form -- */}
         <motion.div
           className="flex items-center justify-center border-r border-border p-10 lg:p-16"
-          initial={{ opacity: 0, x: -20 }}
+          initial={reducedMotion ? false : { opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         >
@@ -111,7 +113,7 @@ export default function SignupPage(): JSX.Element {
               </div>
 
               <button
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-primary font-semibold text-primary-foreground shadow-[0_0_30px_rgba(0,255,136,0.2)] transition hover:shadow-[0_0_50px_rgba(0,255,136,0.4)] disabled:opacity-50"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-primary font-semibold text-primary-foreground shadow-[0_0_30px_rgba(0,255,136,0.2)] transition hover:shadow-[0_0_50px_rgba(0,255,136,0.4)] disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                 disabled={submitting}
                 type="submit"
               >
@@ -139,7 +141,7 @@ export default function SignupPage(): JSX.Element {
 
           <motion.div
             className="relative z-10"
-            initial={{ opacity: 0, x: 20 }}
+            initial={reducedMotion ? false : { opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
@@ -150,7 +152,7 @@ export default function SignupPage(): JSX.Element {
 
           <motion.div
             className="relative z-10"
-            initial={{ opacity: 0, y: 30 }}
+            initial={reducedMotion ? false : { opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
           >
@@ -172,7 +174,7 @@ export default function SignupPage(): JSX.Element {
 
           <motion.div
             className="relative z-10 grid gap-3"
-            initial={{ opacity: 0 }}
+            initial={reducedMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >

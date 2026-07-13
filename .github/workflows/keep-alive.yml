@@ -12,5 +12,12 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping health endpoint
-        run: curl --fail --show-error --silent "${{ secrets.RENDER_HEALTH_URL }}"
+      - name: Verify health and database-backed demo
+        env:
+          HEALTH_URL: ${{ secrets.RENDER_HEALTH_URL }}
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent "$HEALTH_URL"
+          BASE_URL="${HEALTH_URL%/health}"
+          curl --fail --show-error --silent "$BASE_URL/api/demo" --output demo.json
+          python -c "import json; data=json.load(open('demo.json')); assert data['databaseStatus'] == 'connected'"

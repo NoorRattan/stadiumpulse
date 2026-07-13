@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
@@ -14,13 +14,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RouteLine, StepList } from "@/components/wayfinding";
+import SeatViewPreview from "@/components/visuals/SeatViewPreview";
 import { useWayfinding } from "@/hooks/useWayfinding";
+import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { useZoneOptions } from "@/hooks/useZoneOptions";
 import type { AccessibilityNeed } from "@/types/domain";
-
-const SeatViewPreview = lazy(
-  () => import("@/components/visuals/SeatViewPreview"),
-);
 
 const accessibilityNeeds: readonly {
   value: AccessibilityNeed;
@@ -34,6 +32,7 @@ const accessibilityNeeds: readonly {
 
 /** Fan wayfinding page - brutalist form with zone selectors and accessible route steps. */
 export default function WayfindingPage(): JSX.Element {
+  const reducedMotion = useReducedMotionSafe();
   const { zones, loading, error } = useZoneOptions();
   const { route, loading: routeLoading, getRoute } = useWayfinding();
   const [fromZoneId, setFromZoneId] = useState("");
@@ -181,7 +180,7 @@ export default function WayfindingPage(): JSX.Element {
             </fieldset>
 
             <button
-              className="inline-flex min-h-12 w-fit items-center gap-2 bg-primary px-7 font-semibold text-primary-foreground transition disabled:opacity-50"
+              className="inline-flex min-h-12 w-fit items-center gap-2 bg-primary px-7 font-semibold text-primary-foreground transition disabled:bg-muted disabled:text-muted-foreground"
               disabled={routeLoading || loading}
               type="submit"
             >
@@ -197,7 +196,7 @@ export default function WayfindingPage(): JSX.Element {
         {fallback && (
           <motion.p
             className="border-l-2 border-secondary pl-4 text-sm text-secondary"
-            initial={{ opacity: 0 }}
+            initial={reducedMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
           >
             Showing the standard route - live directions are temporarily
@@ -211,13 +210,7 @@ export default function WayfindingPage(): JSX.Element {
         </div>
 
         {firstRoute && destination?.type === "seating-block" && (
-          <Suspense
-            fallback={
-              <div className="h-72 animate-pulse border border-white/[0.06] bg-white/[0.02]" />
-            }
-          >
-            <SeatViewPreview sectionName={destination.name} />
-          </Suspense>
+          <SeatViewPreview sectionName={destination.name} />
         )}
       </div>
     </AppShell>

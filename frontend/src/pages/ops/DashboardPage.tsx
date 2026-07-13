@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import { Activity, AlertTriangle, Radio, RefreshCw, Users } from "lucide-react";
 
 import {
@@ -8,16 +8,13 @@ import {
 } from "@/components/crowd";
 import { AppShell } from "@/components/layout";
 import { FadeInView } from "@/components/motion/FadeInView";
+import { CrowdVenueMap } from "@/components/visuals/CrowdVenueMap";
 import { useCrowdDensity } from "@/hooks/useCrowdDensity";
-import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import type { CrowdZoneSummary } from "@/types/domain";
-
-const CrowdField3D = lazy(() => import("@/components/visuals/CrowdField3D"));
 
 /** Ops dashboard - mission-control aesthetic with live crowd density data. */
 export default function DashboardPage(): JSX.Element {
   const { zones: summaries, loading, error, refresh } = useCrowdDensity();
-  const reducedMotion = useReducedMotionSafe();
   const [selectedZone, setSelectedZone] = useState<CrowdZoneSummary | null>(
     null,
   );
@@ -49,8 +46,8 @@ export default function DashboardPage(): JSX.Element {
                 Crowd Overview.
               </h1>
               <p className="mt-3 max-w-lg text-sm text-muted-foreground">
-                A live venue digital twin for staff and volunteers, focused on
-                zones that need action before pressure becomes an incident.
+                A live venue map for staff and volunteers, focused on zones that
+                need action before pressure becomes an incident.
               </p>
             </div>
             <button
@@ -108,18 +105,12 @@ export default function DashboardPage(): JSX.Element {
         <OperationalDigest refreshToken={digestRefreshToken} />
 
         <FadeInView>
-          {!reducedMotion && summaries.length > 0 && (
-            <Suspense
-              fallback={
-                <div className="h-64 animate-pulse border border-white/[0.06] bg-white/[0.02]" />
-              }
-            >
-              <CrowdField3D
-                onSelectZone={setSelectedZone}
-                selectedZoneId={selectedZone?.zoneId}
-                zones={summaries}
-              />
-            </Suspense>
+          {summaries.length > 0 && (
+            <CrowdVenueMap
+              onSelectZone={setSelectedZone}
+              selectedZoneId={selectedZone?.zoneId}
+              zones={summaries}
+            />
           )}
         </FadeInView>
 
@@ -130,7 +121,7 @@ export default function DashboardPage(): JSX.Element {
           >
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-display text-xl font-bold text-foreground">
-                Digital twin selection -{" "}
+                Venue map selection -{" "}
                 <span className="text-primary">{selectedZone.name}</span>
               </h2>
               <button

@@ -18,15 +18,18 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: "pip"
           cache-dependency-path: backend/requirements.txt
 
       - run: pip install -r requirements.txt
+
+      - name: Audit production dependencies
+        run: pip install pip-audit==2.10.1 && pip-audit --requirement requirements-prod.txt
 
       - name: Lint
         run: ruff check .
@@ -53,9 +56,9 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "npm"
@@ -63,9 +66,15 @@ jobs:
 
       - run: npm ci
 
+      - name: Audit production dependencies
+        run: npm run audit:prod
+
       - run: npx eslint .
 
       - run: npx prettier --check .
+
+      - name: Check contrast tokens
+        run: npm run contrast:check
 
       - run: npx vitest run
 
@@ -76,6 +85,12 @@ jobs:
           VITE_SUPABASE_URL: https://example.supabase.co
           VITE_SUPABASE_ANON_KEY: test-anon-key
           VITE_API_BASE_URL: https://api.example.com
+
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Cross-browser accessibility and responsive tests
+        run: npm run test:e2e
 
   deploy-backend:
     needs: backend-test
@@ -92,9 +107,9 @@ jobs:
       contents: read
       deployments: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "npm"

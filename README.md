@@ -4,12 +4,12 @@ Connected wayfinding and operations intelligence for safer, calmer stadium match
 
 StadiumPulse explores what happens when crowd, route, travel, and incident context becomes one shared match-day signal. It uses GenAI to explain deterministic decisions—not to invent safety-critical values or take operational action.
 
-StadiumPulse is designed as a **venue nervous system**: one crowd signal powers fan routing, a selectable 3D operations twin, predictive staff decisions, and incident automation instead of feeding unrelated AI widgets.
+StadiumPulse is designed as a **venue nervous system**: one crowd signal powers fan routing, a selectable operations map, predictive staff decisions, and incident automation instead of feeding unrelated AI widgets.
 
 The app has two surfaces in one React build:
 
 - **Fan Experience PWA**: multilingual voice concierge, accessibility-aware wayfinding, seat-view confidence previews, and sustainable travel suggestions.
-- **Ops Console**: live selectable 3D crowd twin, ranked 15-minute command digest, density forecasts, incident drafts, and volunteer briefings for staff and volunteers.
+- **Ops Console**: live selectable venue map, ranked 15-minute command digest, density forecasts, incident drafts, and volunteer briefings for staff and volunteers.
 
 ## Product principles
 
@@ -21,7 +21,7 @@ The app has two surfaces in one React build:
 
 ## Connected Demo
 
-Open `/demo` locally or visit [https://stadiumpulse.pages.dev/demo](https://stadiumpulse.pages.dev/demo) for the read-only FIFA World Cup 2026 walkthrough. It connects the browser to `GET /api/demo`, reads the seeded Supabase scenario, and presents an animated crowd twin, an accessible route, multilingual concierge examples, sustainable transport guidance, and staff decision support without requiring an account or consuming Groq quota.
+Open `/demo` locally or visit [https://stadiumpulse.pages.dev/demo](https://stadiumpulse.pages.dev/demo) for the read-only FIFA World Cup 2026 walkthrough. It connects the browser to `GET /api/demo`, reads the seeded Supabase scenario, and presents a selectable venue map, an accessible route, multilingual concierge examples, sustainable transport guidance, and staff decision support without requiring an account or consuming Groq quota.
 
 The demo preview is intentionally curated and labeled synthetic. Authenticated routes remain the proof path for live Groq generation and role-protected staff actions.
 
@@ -54,7 +54,7 @@ Use `backend/.env.example` and `frontend/.env.example` as the placeholder list f
 
 ## Verification
 
-Current local verification snapshot (2026-07-13): **128 backend tests passed at 100% statement coverage** and **29 frontend tests passed across 23 test files**. Route tests include automated axe checks; the color-token check covers text, muted text, buttons, and destructive states in both themes.
+Current local verification snapshot (2026-07-14): **128 backend tests passed at 100% statement coverage**, **30 frontend tests passed across 23 test files**, and **15 Playwright scenarios passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles**. The browser suite checks every public route for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
 
 Backend:
 
@@ -63,6 +63,7 @@ cd backend
 .\.venv\Scripts\python.exe -m ruff check .
 .\.venv\Scripts\python.exe -m ruff format --check .
 .\.venv\Scripts\python.exe -m pytest --cov=. --cov-fail-under=100
+.\.venv\Scripts\python.exe -m pip_audit -r requirements-prod.txt
 ```
 
 Frontend:
@@ -72,9 +73,12 @@ cd frontend
 npm ci
 npx eslint .
 npx prettier --check .
+npm run contrast:check
 npx vitest run
 npx tsc --noEmit
 npm run build
+npm run audit:prod
+npm run test:e2e
 ```
 
 ## Project Notes

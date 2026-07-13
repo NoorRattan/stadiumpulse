@@ -59,6 +59,7 @@ export const AppShell = memo(function AppShell({
       <main
         className="relative z-10 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 md:py-12 lg:px-10"
         id="main-content"
+        tabIndex={-1}
       >
         {children}
       </main>

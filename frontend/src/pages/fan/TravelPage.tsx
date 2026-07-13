@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMatches } from "@/hooks/useMatches";
+import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { apiRequest } from "@/services/apiClient";
 import type { TravelSuggestionsResponse } from "@/types/api";
 import type { TravelSuggestion } from "@/types/domain";
@@ -43,6 +44,7 @@ function accentForMode(mode: string): string {
 
 /** Sustainable travel page - brutalist mode tiles with neon accents. */
 export default function TravelPage(): JSX.Element {
+  const reducedMotion = useReducedMotionSafe();
   const { matches, loading } = useMatches();
   const [matchId, setMatchId] = useState("");
   const [suggestions, setSuggestions] = useState<TravelSuggestion[]>([]);
@@ -129,7 +131,7 @@ export default function TravelPage(): JSX.Element {
                 </Select>
               </div>
               <button
-                className="inline-flex min-h-12 items-center gap-2 bg-primary px-6 font-semibold text-primary-foreground transition disabled:opacity-50"
+                className="inline-flex min-h-12 items-center gap-2 bg-primary px-6 font-semibold text-primary-foreground transition disabled:bg-muted disabled:text-muted-foreground"
                 disabled={loading || suggestionsLoading}
                 onClick={() => void fetchSuggestions()}
                 type="button"
@@ -158,7 +160,7 @@ export default function TravelPage(): JSX.Element {
               const accent = accentForMode(suggestion.mode);
               return (
                 <motion.div
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={reducedMotion ? false : { opacity: 0, y: 12 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.08 }}

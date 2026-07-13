@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Accessibility,
   BotMessageSquare,
@@ -16,12 +16,11 @@ import { AnimatedCounter } from "@/components/motion/AnimatedCounter";
 import { FadeInView } from "@/components/motion/FadeInView";
 import { MagneticCard } from "@/components/motion/MagneticCard";
 import { StepList } from "@/components/wayfinding";
+import { CrowdVenueMap } from "@/components/visuals/CrowdVenueMap";
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { apiRequest } from "@/services/apiClient";
 import type { DemoExperienceResponse } from "@/types/api";
 import type { CrowdZoneSummary } from "@/types/domain";
-
-const CrowdField3D = lazy(() => import("@/components/visuals/CrowdField3D"));
 
 const featureIcons = [
   BotMessageSquare,
@@ -32,13 +31,13 @@ const featureIcons = [
 
 /** Public, read-only FIFA 2026 walkthrough backed by FastAPI and seeded Supabase data. */
 export default function DemoPage(): JSX.Element {
+  const reducedMotion = useReducedMotionSafe();
   const [demo, setDemo] = useState<DemoExperienceResponse | null>(null);
   const [selectedZone, setSelectedZone] = useState<CrowdZoneSummary | null>(
     null,
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const reducedMotion = useReducedMotionSafe();
 
   const loadDemo = async () => {
     setLoading(true);
@@ -71,7 +70,7 @@ export default function DemoPage(): JSX.Element {
         {/* -- Hero -- */}
         <div className="border-b border-white/[0.06] pb-12">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={reducedMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
@@ -82,7 +81,7 @@ export default function DemoPage(): JSX.Element {
           </motion.div>
           <motion.h1
             className="mt-5 font-display text-4xl font-bold leading-none tracking-tight text-foreground sm:text-5xl lg:text-7xl"
-            initial={{ opacity: 0, y: 20 }}
+            initial={reducedMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
               duration: 0.7,
@@ -95,7 +94,7 @@ export default function DemoPage(): JSX.Element {
           </motion.h1>
           <motion.p
             className="mt-5 max-w-xl text-base text-muted-foreground"
-            initial={{ opacity: 0 }}
+            initial={reducedMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
@@ -187,7 +186,7 @@ export default function DemoPage(): JSX.Element {
               </section>
             </FadeInView>
 
-            {/* 3D crowd twin */}
+            {/* Selectable crowd map */}
             <FadeInView delay={0.1}>
               <section
                 aria-labelledby="digital-twin-heading"
@@ -202,38 +201,14 @@ export default function DemoPage(): JSX.Element {
                       className="mt-2 font-display text-2xl font-bold"
                       id="digital-twin-heading"
                     >
-                      Animated crowd digital twin
+                      Selectable crowd venue map
                     </h2>
                   </div>
-                  {!reducedMotion ? (
-                    <Suspense
-                      fallback={
-                        <div className="h-72 animate-pulse border border-white/[0.06] bg-white/[0.02]" />
-                      }
-                    >
-                      <CrowdField3D
-                        onSelectZone={setSelectedZone}
-                        selectedZoneId={selectedZone?.zoneId}
-                        zones={demo.zones}
-                      />
-                    </Suspense>
-                  ) : (
-                    <div className="grid gap-2 border border-white/[0.06] bg-white/[0.01] p-5">
-                      {demo.zones.map((zone) => (
-                        <button
-                          className="flex min-h-11 items-center justify-between border border-white/[0.06] px-4 text-left transition hover:border-primary/30"
-                          key={zone.zoneId}
-                          onClick={() => setSelectedZone(zone)}
-                          type="button"
-                        >
-                          <span>{zone.name}</span>
-                          <span className="font-mono font-bold text-primary">
-                            {Math.round(zone.currentDensityPct)}%
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <CrowdVenueMap
+                    onSelectZone={setSelectedZone}
+                    selectedZoneId={selectedZone?.zoneId}
+                    zones={demo.zones}
+                  />
                 </div>
 
                 <div className="border border-white/[0.06] bg-white/[0.01] p-6">
@@ -260,7 +235,7 @@ export default function DemoPage(): JSX.Element {
                     </div>
                   ) : (
                     <p className="mt-4 text-sm text-muted-foreground">
-                      Select a zone in the digital twin.
+                      Select a zone in the venue map.
                     </p>
                   )}
                 </div>

@@ -6,6 +6,7 @@ export const SkipLink = memo(function SkipLink() {
     <a
       className="sr-only z-50 rounded-md bg-secondary px-4 py-3 text-sm font-semibold text-secondary-foreground focus:not-sr-only focus:fixed focus:start-4 focus:top-4"
       href="#main-content"
+      onClick={() => document.getElementById("main-content")?.focus()}
     >
       Skip to main content
     </a>
