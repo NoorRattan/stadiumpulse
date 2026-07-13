@@ -96,7 +96,14 @@ test("public concierge answers without requiring sign-in", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("voice input fills the concierge message composer", async ({ page }) => {
+test("voice input fills the concierge message composer", async ({
+  browserName,
+  page,
+}) => {
+  test.skip(
+    browserName === "firefox",
+    "Firefox does not implement the Web Speech Recognition API.",
+  );
   await page.addInitScript(() => {
     class MockSpeechRecognition {
       lang = "";
