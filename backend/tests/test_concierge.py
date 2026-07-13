@@ -1,4 +1,4 @@
-from conftest import auth_headers
+from conftest import FakeDb, auth_headers
 from fastapi.testclient import TestClient
 
 from models.user import UserRole
@@ -16,10 +16,15 @@ def test_chat_happy_path_creates_session(client: TestClient) -> None:
     assert body["detectedLanguage"] == "en"
 
 
-def test_chat_rejects_missing_auth(client: TestClient) -> None:
+def test_chat_supports_stateless_public_access(client: TestClient, mock_db: FakeDb) -> None:
     response = client.post("/api/concierge/chat", json={"message": "Hi", "language": "en"})
-    assert response.status_code == 401
-    assert response.json()["error"]["code"] == "UNAUTHENTICATED"
+    assert response.status_code == 200
+    assert response.json() == {
+        "sessionId": "public-concierge",
+        "reply": "Use the north concourse and monitor crowd density closely.",
+        "detectedLanguage": "en",
+    }
+    assert mock_db.store["conciergeSessions"] == {}
 
 
 def test_chat_validation_failure(client: TestClient) -> None:

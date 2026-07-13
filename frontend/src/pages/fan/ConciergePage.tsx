@@ -39,11 +39,15 @@ export default function ConciergePage(): JSX.Element {
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="size-1.5 rounded-full bg-primary" />
-              12+ languages
+              10 supported languages
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="size-1.5 rounded-full bg-secondary" />
               Accessibility-aware
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="size-1.5 rounded-full bg-primary" />
+              No sign-in required
             </span>
           </div>
         </div>

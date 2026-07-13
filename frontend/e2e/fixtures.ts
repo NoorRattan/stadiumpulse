@@ -78,20 +78,29 @@ async function fulfillBackend(route: Route): Promise<void> {
   const url = new URL(route.request().url());
   const json = url.pathname.endsWith("/api/demo")
     ? demo
-    : url.pathname.endsWith("/api/wayfinding/zones")
+    : url.pathname.endsWith("/api/concierge/chat")
       ? {
-          zones: [
-            { zoneId: "gate-2", name: "Gate 2", type: "gate" },
-            {
-              zoneId: "section-120",
-              name: "Section 120",
-              type: "seating-block",
-            },
-          ],
+          sessionId: "public-concierge",
+          reply:
+            "Gate 4 is beside the east plaza. Follow the accessible-route signs.",
+          detectedLanguage: "en",
         }
-      : url.pathname.endsWith("/api/travel/suggestions")
-        ? { matchId: match.id, suggestions: [] }
-        : { error: { code: "NOT_FOUND", message: "Not mocked", status: 404 } };
+      : url.pathname.endsWith("/api/wayfinding/zones")
+        ? {
+            zones: [
+              { zoneId: "gate-2", name: "Gate 2", type: "gate" },
+              {
+                zoneId: "section-120",
+                name: "Section 120",
+                type: "seating-block",
+              },
+            ],
+          }
+        : url.pathname.endsWith("/api/travel/suggestions")
+          ? { matchId: match.id, suggestions: [] }
+          : {
+              error: { code: "NOT_FOUND", message: "Not mocked", status: 404 },
+            };
 
   await route.fulfill({
     status: "error" in json ? 404 : 200,

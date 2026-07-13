@@ -73,6 +73,17 @@ test("venue signals are keyboard-native and expose selection state", async ({
   await expect(page.getByText("moderate density")).toBeVisible();
 });
 
+test("public concierge answers without requiring sign-in", async ({ page }) => {
+  await page.goto("/concierge", { waitUntil: "domcontentloaded" });
+  await page.getByLabel("Message").fill("Where is Gate 4?");
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(
+    page.getByText(
+      "Gate 4 is beside the east plaza. Follow the accessible-route signs.",
+    ),
+  ).toBeVisible();
+});
+
 test("skip navigation moves focus and reduced motion stops animation", async ({
   page,
 }) => {

@@ -1,7 +1,7 @@
 import asyncpg
 from fastapi import APIRouter, Depends, Request
 
-from dependencies import AuthenticatedUser, get_current_user
+from dependencies import AuthenticatedUser, get_optional_current_user
 from limiter import limiter
 from schemas.requests import ChatRequest
 from schemas.responses import ChatResponse
@@ -16,11 +16,11 @@ router = APIRouter(prefix="/api/concierge", tags=["concierge"])
 async def chat(
     request: Request,
     body: ChatRequest,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser | None = Depends(get_optional_current_user),
     db: asyncpg.Pool = Depends(get_pool),
 ) -> ChatResponse:
     return await handle_chat_message(
-        current_user.uid,
+        current_user.uid if current_user else None,
         body.message,
         body.language,
         body.session_id,

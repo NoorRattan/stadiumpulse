@@ -10,6 +10,7 @@ from services.exceptions import AIServiceError
 from services.genkit_flows import translateFlow
 
 SUPPORTED_LANGUAGES: tuple[str, ...] = ("en", "es", "pt", "fr", "ar", "de", "ja", "ko", "zh", "hi")
+PUBLIC_SESSION_ID = "public-concierge"
 
 
 def normalize_language(language: str) -> tuple[str, bool]:
@@ -114,23 +115,29 @@ def fallback_concierge_reply(message: str, language: str) -> str:
 
 
 async def handle_chat_message(
-    user_id: str,
+    user_id: str | None,
     message: str,
     language: str,
     session_id: str | None = None,
     db: asyncpg.Pool | None = None,
     ai_client: StadiumPulseAIClient | None = None,
 ) -> ChatResponse:
-    pool = db or await get_pool()
     client = ai_client or get_ai_client()
     normalized_language, used_fallback = normalize_language(language)
-    active_session_id, _created = await get_or_create_session(user_id, session_id, normalized_language, pool)
+
+    pool: asyncpg.Pool | None = None
+    if user_id is None:
+        active_session_id = PUBLIC_SESSION_ID
+        recent_messages: list[dict[str, Any]] = []
+    else:
+        pool = db or await get_pool()
+        active_session_id, _created = await get_or_create_session(user_id, session_id, normalized_language, pool)
+        recent_messages = await load_recent_messages(pool, active_session_id)
 
     try:
         translation = translateFlow(message, normalized_language, ai_client=client)
     except AIServiceError:
         translation = {"detectedLanguage": normalized_language, "translatedText": message}
-    recent_messages = await load_recent_messages(pool, active_session_id)
     try:
         reply = client.generate_text(
             build_reply_prompt(message, normalized_language, translation["detectedLanguage"], recent_messages),
@@ -141,8 +148,9 @@ async def handle_chat_message(
     if used_fallback:
         reply = f"Language fallback: unsupported language '{language}' was handled in English. {reply}"
 
-    await append_message(pool, active_session_id, "user", message)
-    await append_message(pool, active_session_id, "assistant", reply)
+    if pool is not None:
+        await append_message(pool, active_session_id, "user", message)
+        await append_message(pool, active_session_id, "assistant", reply)
     return ChatResponse(
         sessionId=active_session_id,
         reply=reply,

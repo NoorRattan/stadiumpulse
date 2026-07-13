@@ -14,6 +14,7 @@ The app has two surfaces in one React build:
 ## Product principles
 
 - **Task first on mobile**: the landing experience starts with route planning, venue help, and arrival planning instead of an icon-only dashboard.
+- **Useful before sign-in**: fans can ask the rate-limited, stateless concierge immediately; signing in adds persistent conversation context.
 - **Deterministic before generative**: the backend computes density bands, forecasts, and route choices; Groq explains or translates those fixed results.
 - **Human approval for operations**: incident drafts, crowd actions, and briefings remain decision support. StadiumPulse never executes a venue action.
 - **Honest demo state**: public scenario data is synthetic and labelled as such everywhere it appears.
@@ -23,7 +24,7 @@ The app has two surfaces in one React build:
 
 Open `/demo` locally or visit [https://stadiumpulse.pages.dev/demo](https://stadiumpulse.pages.dev/demo) for the read-only FIFA World Cup 2026 walkthrough. It connects the browser to `GET /api/demo`, reads the seeded Supabase scenario, and presents a selectable venue map, an accessible route, multilingual concierge examples, sustainable transport guidance, and staff decision support without requiring an account or consuming Groq quota.
 
-The demo preview is intentionally curated and labeled synthetic. Authenticated routes remain the proof path for live Groq generation and role-protected staff actions.
+The demo preview is intentionally curated and labeled synthetic. The public concierge is the proof path for live Groq generation; role-protected staff actions remain authenticated.
 
 ## Running Locally
 
@@ -54,7 +55,7 @@ Use `backend/.env.example` and `frontend/.env.example` as the placeholder list f
 
 ## Verification
 
-Current local verification snapshot (2026-07-14): **128 backend tests passed at 100% statement coverage**, **30 frontend tests passed across 23 test files**, and **17 Playwright checks passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles** (with three intentionally skipped duplicate axe scans). The browser suite checks every public route for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
+Current local verification snapshot (2026-07-14): **128 backend tests passed at 100% statement coverage**, **30 frontend tests passed across 23 test files**, and **22 Playwright checks passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles** (with three intentionally skipped duplicate axe scans). The browser suite checks every public route for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies the public concierge conversation, keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
 
 Backend:
 
@@ -87,7 +88,7 @@ npm run test:e2e
 - Staff and volunteer roles live in `public.user_roles`; `backend/scripts/grant_role.py` updates them with the Supabase service role. Supabase's custom access-token hook must be enabled so those rows become the `user_role` JWT claim used by the app.
 - The dashboard refreshes backend-computed bands from a Supabase Realtime change signal; operations mutations still go through FastAPI and re-check roles server-side.
 - Seed and animated crowd data are synthetic demo data. The UI labels them as simulated; no screen represents them as physical venue sensors.
-- The public demo endpoint is read-only and rate-limited. Fan wayfinding and travel routes also work without an account by returning deterministic fallback content; signed-in users can receive Groq-enhanced descriptions. Staff mutations stay authenticated.
+- The public demo endpoint is read-only and rate-limited. The public concierge is rate-limited and stateless, while signed-in sessions retain recent conversation context. Fan wayfinding and travel routes also work without an account by returning deterministic fallback content; signed-in users can receive Groq-enhanced descriptions. Staff mutations stay authenticated.
 - Forecast bands are deterministic from recent readings. Groq explains the fixed projection and recommends an action but cannot change the computed number or band.
 - Command-center recommendations are decision support only. The app never executes crowd-control actions, and the dashboard marks every ranked action as requiring supervisor approval.
 

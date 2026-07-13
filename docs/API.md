@@ -2,7 +2,7 @@
 
 All protected routes use Supabase Auth access tokens with `Authorization: Bearer <token>`. Role checks are enforced server-side from the `user_role` custom access-token claim.
 
-`GET /api/demo` deliberately avoids Groq calls and mutations. Its curated synthetic preview proves frontend to FastAPI to Supabase connectivity. Public fan wayfinding and travel routes return deterministic fallback content without authentication; signed-in users can receive the Groq-enhanced versions. Staff role checks remain server-side for operations routes.
+`GET /api/demo` deliberately avoids Groq calls and mutations. Its curated synthetic preview proves frontend to FastAPI to Supabase connectivity. Public concierge requests are rate-limited and stateless; signed-in concierge sessions retain recent conversation context. Public fan wayfinding and travel routes return deterministic fallback content without authentication; signed-in users can receive the Groq-enhanced versions. Staff role checks remain server-side for operations routes.
 
 | Method  | Path                                  | Auth               | Purpose                                                                                       |
 | ------- | ------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
@@ -11,7 +11,7 @@ All protected routes use Supabase Auth access tokens with `Authorization: Bearer
 | `POST`  | `/api/auth/signup`                    | None               | Create a confirmed email/password Supabase user and fan profile, then let the browser sign in. |
 | `GET`   | `/api/auth/me`                        | Any signed-in user | Return the current user's backend profile.                                                    |
 | `POST`  | `/api/auth/bootstrap`                 | Any signed-in user | Idempotently create or read the signed-in user's `profiles` row.                              |
-| `POST`  | `/api/concierge/chat`                 | Any signed-in user | Send a multilingual concierge message and receive the assistant reply.                        |
+| `POST`  | `/api/concierge/chat`                 | Optional           | Send a multilingual message. Public requests are stateless; signed-in sessions retain context. |
 | `GET`   | `/api/wayfinding/zones`               | None               | Return identity-only zone options for selectors.                                              |
 | `POST`  | `/api/wayfinding/route`               | Optional           | Generate accessibility-aware route options. Public requests use deterministic fallback steps. |
 | `GET`   | `/api/accessibility/settings`         | Any signed-in user | Read the caller's accessibility preferences.                                                  |
