@@ -27,7 +27,7 @@ export function AtmosphericPanel({
       <div
         aria-hidden="true"
         className={cn(
-          "absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,rgba(0,255,136,0.15),transparent_35%),radial-gradient(circle_at_78%_10%,rgba(0,212,255,0.12),transparent_38%)]",
+          "absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,var(--glow-primary),transparent_35%),radial-gradient(circle_at_78%_10%,var(--glow-accent),transparent_38%)]",
           intensity === "soft" && "opacity-60",
         )}
       />

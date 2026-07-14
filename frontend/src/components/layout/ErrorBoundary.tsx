@@ -10,7 +10,7 @@ interface ErrorBoundaryState {
   hasError: boolean;
 }
 
-/** Placeholder error boundary for lazy routes; Session 5 replaces the visual treatment. */
+/** Last-resort accessible recovery surface for lazy route render failures. */
 export class ErrorBoundary extends Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
@@ -24,11 +24,24 @@ export class ErrorBoundary extends Component<
   render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <main className="mx-auto max-w-3xl px-6 py-12" id="main-content">
+        <main
+          className="mx-auto grid min-h-screen max-w-3xl place-content-center px-6 py-12"
+          id="main-content"
+        >
           <BrandLogo tagline />
-          <p className="mt-3 text-error-text">
+          <h1 className="mt-8 font-display text-3xl font-bold">
+            StadiumPulse needs a reset
+          </h1>
+          <p className="mt-3 text-error-text" role="alert">
             This route could not be rendered.
           </p>
+          <button
+            className="brand-gradient-surface mt-6 min-h-11 rounded-lg px-5 font-extrabold"
+            onClick={() => window.location.reload()}
+            type="button"
+          >
+            Reload StadiumPulse
+          </button>
         </main>
       );
     }

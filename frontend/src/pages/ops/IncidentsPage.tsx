@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ClipboardList } from "lucide-react";
 
@@ -62,7 +62,7 @@ export default function IncidentsPage(): JSX.Element {
     <AppShell shader="subtle">
       <div className="grid gap-10">
         {/* Header */}
-        <div className="border-b border-white/[0.06] pb-8">
+        <div className="border-b border-border pb-8">
           <span className="inline-flex items-center gap-2 border border-accent/25 bg-accent/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-accent">
             <ClipboardList aria-hidden="true" className="size-3" />
             Human-reviewed AI

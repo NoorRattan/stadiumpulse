@@ -126,6 +126,12 @@ export function AccessibilityProvider({
       : "standard";
   }, [highContrast]);
 
+  useEffect(() => {
+    document.documentElement.dataset.screenReader = screenReaderMode
+      ? "enhanced"
+      : "standard";
+  }, [screenReaderMode]);
+
   const reducedMotion = reducedMotionOverride ?? prefersReducedMotion;
   const value = useMemo<AccessibilityContextValue>(
     () => ({

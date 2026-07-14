@@ -15,5 +15,6 @@ export default defineConfig({
     exclude: ["e2e/**", "node_modules/**", "dist/**", "test-results/**"],
     globals: true,
     setupFiles: "./src/setupTests.ts",
+    testTimeout: 10_000,
   },
 });

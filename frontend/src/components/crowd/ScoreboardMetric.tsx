@@ -1,4 +1,4 @@
-import { memo } from "react";
+﻿import { memo } from "react";
 import { motion } from "motion/react";
 
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
@@ -24,7 +24,7 @@ export const ScoreboardMetric = memo(function ScoreboardMetric({
   return (
     <section
       aria-label={label}
-      className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl transition hover:border-primary/20"
+      className="rounded-2xl border border-border bg-card p-5 backdrop-blur-xl transition hover:border-primary/20"
       data-motion={reducedMotion ? "static" : "animated"}
     >
       <p className="text-sm text-muted-foreground">{label}</p>

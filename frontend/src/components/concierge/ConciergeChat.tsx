@@ -1,4 +1,4 @@
-import {
+﻿import {
   memo,
   useContext,
   useEffect,
@@ -230,7 +230,7 @@ export const ConciergeChat = memo(function ConciergeChat({
       />
       <div
         aria-live="polite"
-        className="grid max-h-[32rem] gap-3 overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl"
+        className="grid max-h-[32rem] gap-3 overflow-y-auto rounded-2xl border border-border bg-card p-4 backdrop-blur-xl"
       >
         {messages.map((message) => (
           <ConciergeMessage

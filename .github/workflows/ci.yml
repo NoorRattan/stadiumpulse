@@ -90,6 +90,9 @@ jobs:
           VITE_SUPABASE_ANON_KEY: test-anon-key
           VITE_API_BASE_URL: http://localhost:8000
 
+      - name: Enforce bundle budgets
+        run: npm run bundle:check
+
       - name: Install browser engines
         run: npx playwright install --with-deps chromium firefox webkit
 

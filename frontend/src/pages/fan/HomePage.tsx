@@ -91,7 +91,7 @@ export default function HomePage(): JSX.Element {
   return (
     <AppShell shader="vivid">
       <div className="grid gap-16 md:gap-24">
-        <section className="relative overflow-hidden rounded-3xl border border-border bg-card px-5 py-8 shadow-[0_24px_90px_rgb(0_0_0/0.12)] sm:px-8 sm:py-12 lg:grid lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:gap-12 lg:px-12 lg:py-16">
+        <section className="pulse-beam relative overflow-hidden rounded-3xl px-5 py-8 shadow-[var(--shadow-card)] sm:px-8 sm:py-12 lg:grid lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:gap-12 lg:px-12 lg:py-16">
           <div
             aria-hidden="true"
             className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,var(--glow-primary),transparent_45%)]"
@@ -112,7 +112,7 @@ export default function HomePage(): JSX.Element {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 font-bold text-primary-foreground shadow-[0_12px_32px_var(--glow-primary)] transition-transform hover:-translate-y-0.5"
+                className="brand-gradient-surface inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-6 font-extrabold shadow-[0_12px_32px_var(--glow-primary)] transition-transform hover:-translate-y-0.5"
                 to="/demo"
               >
                 <Sparkles aria-hidden="true" className="size-4" />
@@ -308,9 +308,17 @@ export default function HomePage(): JSX.Element {
                 scenario match
               </p>
               {loading ? (
-                <p className="mt-8" role="status">
-                  Loading match schedule…
-                </p>
+                <div className="mt-8">
+                  <h2
+                    className="font-display text-3xl font-bold"
+                    id="match-heading"
+                  >
+                    Match schedule
+                  </h2>
+                  <p className="mt-3" role="status">
+                    Loading match schedule…
+                  </p>
+                </div>
               ) : nextMatch ? (
                 <div className="mt-8">
                   <h2

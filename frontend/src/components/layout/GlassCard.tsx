@@ -27,17 +27,16 @@ export function GlassCard({
 
   const glowColor = {
     primary:
-      "hover:shadow-[0_0_50px_rgba(0,255,136,0.1)] hover:border-[rgba(0,255,136,0.2)]",
-    accent:
-      "hover:shadow-[0_0_50px_rgba(0,212,255,0.1)] hover:border-[rgba(0,212,255,0.2)]",
+      "hover:border-primary/40 hover:shadow-[0_0_40px_var(--glow-primary)]",
+    accent: "hover:border-accent/40 hover:shadow-[0_0_40px_var(--glow-accent)]",
     secondary:
-      "hover:shadow-[0_0_50px_rgba(255,107,53,0.1)] hover:border-[rgba(255,107,53,0.2)]",
+      "hover:border-secondary/40 hover:shadow-[0_0_40px_var(--glow-accent)]",
   }[accentColor];
 
   const inner = (
     <div
       className={cn(
-        "relative rounded-xl border border-border bg-card p-5 backdrop-blur-xl",
+        "relative rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] backdrop-blur-xl",
         hover && cn("cursor-pointer transition-all duration-300", glowColor),
         className,
       )}

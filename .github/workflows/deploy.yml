@@ -86,6 +86,9 @@ jobs:
           VITE_SUPABASE_ANON_KEY: test-anon-key
           VITE_API_BASE_URL: https://api.example.com
 
+      - name: Enforce bundle budgets
+        run: npm run bundle:check
+
       - name: Install browser engines
         run: npx playwright install --with-deps chromium firefox webkit
 

@@ -33,16 +33,16 @@ export function PageHero({
       className={cn(
         "relative overflow-hidden border-b border-border",
         fullViewport
-          ? "flex min-h-[92vh] flex-col items-start justify-end pb-16 pt-24 px-5 lg:px-10"
-          : "rounded-xl border border-border bg-card p-6 backdrop-blur-xl md:p-10 lg:grid lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-10",
+          ? "flex min-h-[82vh] flex-col items-start justify-end px-5 pb-16 pt-24 lg:px-10"
+          : "pulse-panel rounded-2xl p-6 backdrop-blur-xl md:p-10 lg:grid lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:gap-10",
         className,
       )}
     >
       {/* Background decorations */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_20%_30%,rgba(0,255,136,0.06),transparent_70%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_80%_20%,rgba(0,212,255,0.05),transparent_65%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_20%_30%,var(--glow-primary),transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_80%_20%,var(--glow-accent),transparent_65%)]" />
         {fullViewport && (
           <div className="absolute inset-0 opacity-[0.045] [background-image:linear-gradient(var(--border)_1px,transparent_1px),linear-gradient(90deg,var(--border)_1px,transparent_1px)] [background-size:60px_60px]" />
         )}

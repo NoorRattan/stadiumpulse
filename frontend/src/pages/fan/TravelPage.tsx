@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { CarFront, Leaf, Train, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
@@ -29,17 +29,17 @@ function iconForMode(mode: string): typeof Train {
 }
 
 const modeAccent: Record<string, string> = {
-  rail: "#00d4ff",
-  transit: "#00d4ff",
-  share: "#ff6b35",
-  car: "#ff6b35",
+  rail: "var(--brand-cyan)",
+  transit: "var(--brand-cyan)",
+  share: "var(--brand-amber)",
+  car: "var(--brand-amber)",
 };
 
 function accentForMode(mode: string): string {
   for (const [key, color] of Object.entries(modeAccent)) {
     if (mode.toLowerCase().includes(key)) return color;
   }
-  return "#00ff88";
+  return "var(--brand-magenta)";
 }
 
 /** Sustainable travel page - brutalist mode tiles with neon accents. */
@@ -94,7 +94,7 @@ export default function TravelPage(): JSX.Element {
         <FadeInView>
           <section
             aria-labelledby="travel-form-heading"
-            className="border border-white/[0.08] p-6 md:p-8"
+            className="border border-border p-6 md:p-8"
           >
             <h2
               className="font-display text-sm uppercase tracking-widest text-muted-foreground"
@@ -113,7 +113,7 @@ export default function TravelPage(): JSX.Element {
                 <Select value={matchId} onValueChange={setMatchId}>
                   <SelectTrigger
                     aria-labelledby="match-select-label"
-                    className="min-h-12 w-full rounded-none border-0 border-b border-white/20 bg-transparent focus:border-primary"
+                    className="min-h-12 w-full rounded-none border-0 border-b border-input bg-transparent focus:border-primary"
                   >
                     <SelectValue
                       placeholder={
@@ -144,7 +144,7 @@ export default function TravelPage(): JSX.Element {
         </FadeInView>
 
         {!matchId && !suggestionsLoading && (
-          <p className="border-l-2 border-white/10 pl-4 text-sm text-muted-foreground">
+          <p className="border-l-2 border-border pl-4 text-sm text-muted-foreground">
             Choose a match to see transit, park-and-ride, carpool, and
             lower-congestion travel suggestions. Stadium curb parking is never
             guaranteed by this demo.
@@ -154,7 +154,7 @@ export default function TravelPage(): JSX.Element {
         {suggestions.length > 0 && (
           <section
             aria-label="Travel suggestions"
-            className="grid gap-0 border border-white/[0.08]"
+            className="grid gap-0 border border-border"
           >
             {suggestions.map((suggestion, i) => {
               const Icon = iconForMode(suggestion.mode);
@@ -167,10 +167,13 @@ export default function TravelPage(): JSX.Element {
                   transition={{ duration: 0.4, delay: i * 0.08 }}
                   key={`${suggestion.mode}-${suggestion.description}`}
                 >
-                  <div className="flex items-start gap-6 border-b border-white/[0.06] p-6 last:border-0">
+                  <div className="flex items-start gap-6 border-b border-border p-6 last:border-0">
                     <span
                       className="grid size-11 shrink-0 place-content-center border"
-                      style={{ borderColor: accent + "40", color: accent }}
+                      style={{
+                        borderColor: `color-mix(in srgb, ${accent} 25%, transparent)`,
+                        color: accent,
+                      }}
                     >
                       <Icon aria-hidden="true" className="size-5" />
                     </span>

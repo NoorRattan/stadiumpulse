@@ -202,9 +202,9 @@ export const Navbar = memo(function Navbar() {
             <NavLink
               className={({ isActive }) =>
                 cn(
-                  "relative inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                  "relative inline-flex min-h-11 items-center gap-2 rounded-lg border border-transparent px-3 text-sm font-semibold text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground",
                   isActive &&
-                    "bg-muted text-foreground after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:rounded-full after:bg-primary",
+                    "border-primary/30 bg-primary/10 text-primary shadow-[0_0_24px_var(--glow-primary)]",
                 )
               }
               end={item.href === "/" || item.href === "/ops"}
@@ -218,7 +218,7 @@ export const Navbar = memo(function Navbar() {
         })}
         {user ? (
           <Link
-            className="ml-2 inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-bold text-foreground"
+            className="ml-2 inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-bold text-foreground transition-colors hover:border-primary/50 hover:text-primary"
             to="/account"
           >
             <UserRound aria-hidden="true" className="size-4" />
@@ -226,7 +226,7 @@ export const Navbar = memo(function Navbar() {
           </Link>
         ) : (
           <Link
-            className="ml-2 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground"
+            className="brand-gradient-surface ml-2 inline-flex min-h-11 items-center gap-2 rounded-lg px-4 text-sm font-extrabold transition-transform hover:-translate-y-0.5"
             to="/login"
           >
             <LogIn aria-hidden="true" className="size-4" />
@@ -238,7 +238,7 @@ export const Navbar = memo(function Navbar() {
       <button
         aria-controls="mobile-navigation-panel"
         aria-expanded={open}
-        className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-bold text-foreground shadow-sm lg:hidden"
+        className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-bold text-foreground shadow-sm transition-colors hover:border-primary/50 lg:hidden"
         onClick={() => setOpen((current) => !current)}
         type="button"
       >
@@ -253,7 +253,7 @@ export const Navbar = memo(function Navbar() {
       {open && (
         <nav
           aria-label="Mobile navigation"
-          className="fixed inset-x-3 top-[4.75rem] z-50 max-h-[calc(100dvh-5.5rem)] overflow-y-auto rounded-2xl border border-border bg-popover p-2 shadow-lg lg:hidden"
+          className="fixed inset-x-3 top-[4.75rem] z-50 max-h-[calc(100dvh-5.5rem)] overflow-y-auto rounded-2xl border border-border bg-popover p-2 shadow-[var(--shadow-popover)] lg:hidden"
           id="mobile-navigation-panel"
         >
           <p className="px-3 pb-2 pt-1 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
@@ -266,7 +266,7 @@ export const Navbar = memo(function Navbar() {
                 className={({ isActive }) =>
                   cn(
                     "flex min-h-14 items-center gap-3 rounded-xl px-3 text-foreground transition-colors hover:bg-muted",
-                    isActive && "bg-muted",
+                    isActive && "bg-primary/10 text-primary",
                   )
                 }
                 end={item.href === "/" || item.href === "/ops"}
@@ -308,7 +308,7 @@ export const Navbar = memo(function Navbar() {
             </Link>
           ) : (
             <Link
-              className="mt-2 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
+              className="brand-gradient-surface mt-2 flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-sm font-extrabold"
               onClick={() => setOpen(false)}
               to="/login"
             >

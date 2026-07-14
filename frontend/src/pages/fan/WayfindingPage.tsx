@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+﻿import { useMemo, useState, type FormEvent } from "react";
 import { Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
@@ -77,7 +77,7 @@ export default function WayfindingPage(): JSX.Element {
     <AppShell shader="subtle">
       <div className="grid gap-10">
         {/* Header */}
-        <div className="border-b border-white/[0.06] pb-8">
+        <div className="border-b border-border pb-8">
           <span className="inline-flex items-center gap-2 border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
             Crowd-aware routing
           </span>
@@ -99,7 +99,7 @@ export default function WayfindingPage(): JSX.Element {
 
         <FadeInView>
           <form
-            className="grid gap-8 border border-white/[0.08] p-6 md:p-8"
+            className="grid gap-8 border border-border p-6 md:p-8"
             onSubmit={(event) => void handleSubmit(event)}
           >
             <h2 className="font-display text-sm uppercase tracking-widest text-muted-foreground">
@@ -118,7 +118,7 @@ export default function WayfindingPage(): JSX.Element {
                 <Select value={fromZoneId} onValueChange={setFromZoneId}>
                   <SelectTrigger
                     aria-labelledby="from-zone-label"
-                    className="min-h-12 w-full rounded-none border-0 border-b border-white/20 bg-transparent focus:border-primary"
+                    className="min-h-12 w-full rounded-none border-0 border-b border-input bg-transparent focus:border-primary"
                   >
                     <SelectValue
                       placeholder={
@@ -139,7 +139,7 @@ export default function WayfindingPage(): JSX.Element {
                 <Select value={toZoneId} onValueChange={setToZoneId}>
                   <SelectTrigger
                     aria-labelledby="to-zone-label"
-                    className="min-h-12 w-full rounded-none border-0 border-b border-white/20 bg-transparent focus:border-primary"
+                    className="min-h-12 w-full rounded-none border-0 border-b border-input bg-transparent focus:border-primary"
                   >
                     <SelectValue
                       placeholder={
@@ -160,7 +160,7 @@ export default function WayfindingPage(): JSX.Element {
               <div className="grid gap-2 md:grid-cols-2">
                 {accessibilityNeeds.map((need) => (
                   <label
-                    className="flex min-h-11 cursor-pointer items-center gap-3 border border-white/[0.08] px-4 text-sm font-medium text-foreground transition hover:border-primary/25"
+                    className="flex min-h-11 cursor-pointer items-center gap-3 border border-border px-4 text-sm font-medium text-foreground transition hover:border-primary/25"
                     key={need.value}
                   >
                     <Checkbox

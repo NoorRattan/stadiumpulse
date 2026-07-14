@@ -21,9 +21,13 @@ export default function SeatViewPreview({
         </p>
       </div>
       <div
-        className="relative min-h-72 overflow-hidden bg-[linear-gradient(180deg,#87c6dc_0%,#d9f2ee_42%,#0f2e24_43%,#07110d_100%)]"
+        className="relative min-h-72 overflow-hidden"
         role="img"
         aria-label={`Static demo sightline from ${sectionName}: an unobstructed view over the seating row toward the football pitch`}
+        style={{
+          background:
+            "linear-gradient(180deg, var(--visual-sky) 0%, var(--visual-sky-haze) 42%, var(--visual-stadium) 43%, var(--visual-stadium) 100%)",
+        }}
       >
         <svg
           aria-hidden="true"
@@ -31,16 +35,19 @@ export default function SeatViewPreview({
           preserveAspectRatio="none"
           viewBox="0 0 800 360"
         >
-          <path d="M0 154 400 95l400 59v60L400 138 0 214Z" fill="#163d32" />
+          <path
+            d="M0 154 400 95l400 59v60L400 138 0 214Z"
+            fill="var(--visual-stadium)"
+          />
           <path
             d="M112 214 400 144l288 70-116 114H228Z"
-            fill="#16875c"
-            stroke="#d9f2ee"
+            fill="var(--visual-field)"
+            stroke="var(--visual-field-line)"
             strokeWidth="4"
           />
           <path
             d="M400 144v184M228 328l344-114"
-            stroke="#d9f2ee"
+            stroke="var(--visual-field-line)"
             strokeWidth="3"
           />
           <ellipse
@@ -49,19 +56,25 @@ export default function SeatViewPreview({
             fill="none"
             rx="52"
             ry="30"
-            stroke="#d9f2ee"
+            stroke="var(--visual-field-line)"
             strokeWidth="3"
           />
-          <path d="M0 292c148-52 652-52 800 0v68H0Z" fill="#0a1712" />
+          <path
+            d="M0 292c148-52 652-52 800 0v68H0Z"
+            fill="var(--visual-stadium)"
+          />
           {[90, 215, 340, 465, 590, 715].map((x) => (
             <g key={x}>
-              <path d={`M${x - 34} 302h68l16 58H${x - 50}Z`} fill="#d9a51d" />
-              <circle cx={x} cy="284" fill="#f2f7f5" r="12" />
+              <path
+                d={`M${x - 34} 302h68l16 58H${x - 50}Z`}
+                fill="var(--visual-seat)"
+              />
+              <circle cx={x} cy="284" fill="var(--visual-sky-haze)" r="12" />
             </g>
           ))}
           <path
             d="M400 330 500 225"
-            stroke="#4dd3ff"
+            stroke="var(--visual-marker)"
             strokeDasharray="9 8"
             strokeWidth="5"
           />

@@ -82,13 +82,21 @@ test("venue signals are keyboard-native and expose selection state", async ({
   await expect(zone).toBeFocused();
   await zone.press("Enter");
   await expect(zone).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByText("moderate density")).toBeVisible();
+  await expect(
+    page.getByText("moderate density", { exact: true }),
+  ).toBeVisible();
 });
 
 test("public concierge answers without requiring sign-in", async ({ page }) => {
   await page.goto("/concierge", { waitUntil: "domcontentloaded" });
   await page.getByLabel("Message").fill("Where is Gate 4?");
-  await page.getByRole("button", { name: "Send message" }).click();
+  const sendButton = page.getByRole("button", { name: "Send message" });
+  await sendButton.focus();
+  await expect(sendButton).toBeFocused();
+  await sendButton.press("Enter");
+  await expect(
+    page.getByText("Where is Gate 4?", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByText(
       "Gate 4 is beside the east plaza. Follow the accessible-route signs.",
@@ -167,6 +175,41 @@ test("skip navigation moves focus and reduced motion stops animation", async ({
   await skipLink.press("Enter");
   await expect(page.locator("#main-content")).toBeFocused();
 
-  const animatedElements = await page.locator("[style*='animation']").count();
-  expect(animatedElements).toBe(0);
+  await expect(page.locator("canvas")).toHaveCount(0);
+  const motionStyles = await page
+    .locator(".reveal-frame, button, a")
+    .evaluateAll((elements) =>
+      elements.map((element) => {
+        const styles = getComputedStyle(element);
+        return {
+          animationDuration: styles.animationDuration,
+          transitionDuration: styles.transitionDuration,
+        };
+      }),
+    );
+  for (const style of motionStyles) {
+    expect(parseFloat(style.animationDuration) || 0).toBeLessThanOrEqual(0.01);
+    expect(parseFloat(style.transitionDuration) || 0).toBeLessThanOrEqual(0.01);
+  }
+});
+
+test("theme control is persistent, labelled, and motion-safe", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  const toggle = page.getByRole("button", { name: "Switch to light theme" });
+  await expect(toggle).toBeVisible();
+  await toggle.click();
+
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(page.locator("meta[name='theme-color']")).not.toHaveAttribute(
+    "content",
+    "#0b1121",
+  );
+  expect(
+    await page.evaluate(() => localStorage.getItem("stadiumpulse-theme")),
+  ).toBe("light");
+  await expect(page.locator("[data-theme-wave-overlay]")).toHaveCount(0);
 });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { FileText } from "lucide-react";
 
@@ -67,7 +67,7 @@ export default function BriefingsPage(): JSX.Element {
     <AppShell shader="subtle">
       <div className="grid gap-10">
         {/* Header */}
-        <div className="border-b border-white/[0.06] pb-8">
+        <div className="border-b border-border pb-8">
           <span className="inline-flex items-center gap-2 border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
             <FileText aria-hidden="true" className="size-3" />
             Shift intelligence
@@ -103,7 +103,7 @@ export default function BriefingsPage(): JSX.Element {
                 }}
               />
             ) : (
-              <div className="border border-white/[0.08] p-5">
+              <div className="border border-border p-5">
                 <p className="font-semibold text-foreground">
                   Read-only volunteer access
                 </p>
@@ -138,7 +138,7 @@ export default function BriefingsPage(): JSX.Element {
                   >
                     <SelectTrigger
                       aria-labelledby="briefing-preview-zone-label"
-                      className="mt-1 min-h-12 w-full rounded-none border-0 border-b border-white/20 bg-transparent focus:border-primary"
+                      className="mt-1 min-h-12 w-full rounded-none border-0 border-b border-input bg-transparent focus:border-primary"
                     >
                       <SelectValue placeholder="Select a zone" />
                     </SelectTrigger>

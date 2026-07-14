@@ -1,10 +1,19 @@
-import { motion, type HTMLMotionProps } from "motion/react";
-import type { ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
 
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { cn } from "@/lib/utils";
 
-interface FadeInViewProps extends Omit<HTMLMotionProps<"div">, "children"> {
+interface FadeInViewProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  "children"
+> {
   children: ReactNode;
   delay?: number;
 }
@@ -14,24 +23,44 @@ export function FadeInView({
   children,
   className,
   delay = 0,
+  style,
   ...props
 }: FadeInViewProps): JSX.Element {
   const reducedMotion = useReducedMotionSafe();
+  const container = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const canObserve = typeof IntersectionObserver !== "undefined";
 
-  if (reducedMotion) {
-    return <div className={className}>{children}</div>;
-  }
+  useEffect(() => {
+    if (reducedMotion || !canObserve) return;
+    const element = container.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setVisible(true);
+        observer.disconnect();
+      },
+      { rootMargin: "0px 0px -60px" },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [canObserve, reducedMotion]);
+
+  const revealStyle = {
+    ...style,
+    "--reveal-delay": `${Math.max(0, delay) * 1000}ms`,
+  } as CSSProperties;
 
   return (
-    <motion.div
-      className={cn(className)}
-      initial={{ opacity: 0, y: 28 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] }}
+    <div
+      className={cn("reveal-frame", className)}
+      data-visible={visible || reducedMotion || !canObserve}
+      ref={container}
+      style={revealStyle}
       {...props}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

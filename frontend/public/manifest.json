@@ -1,12 +1,12 @@
 {
   "name": "StadiumPulse",
   "short_name": "StadiumPulse",
-  "description": "The live intelligence layer for match-day operations and fan experience",
+  "description": "Connected wayfinding, accessibility, travel guidance, and human-reviewed operations intelligence for calmer match days.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#07110d",
-  "theme_color": "#0b2219",
+  "background_color": "#0b1121",
+  "theme_color": "#0b1121",
   "icons": [
     {
       "src": "/icons/brand-mark.svg",

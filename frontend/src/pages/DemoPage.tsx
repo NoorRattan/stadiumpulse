@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   Accessibility,
   BotMessageSquare,
@@ -68,7 +68,7 @@ export default function DemoPage(): JSX.Element {
     <AppShell shader="vivid">
       <div className="grid gap-16">
         {/* -- Hero -- */}
-        <div className="border-b border-white/[0.06] pb-12">
+        <div className="border-b border-border pb-12">
           <motion.div
             initial={reducedMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -106,7 +106,7 @@ export default function DemoPage(): JSX.Element {
 
         {loading && (
           <div
-            className="grid min-h-56 place-content-center border border-white/[0.06] bg-white/[0.01]"
+            className="grid min-h-56 place-content-center border border-border bg-card"
             role="status"
           >
             <RefreshCw
@@ -145,7 +145,7 @@ export default function DemoPage(): JSX.Element {
             <FadeInView>
               <section
                 aria-label="Connected demo status"
-                className="grid gap-0 border border-white/[0.06] md:grid-cols-3"
+                className="grid gap-0 border border-border md:grid-cols-3"
               >
                 {[
                   [CheckCircle2, "Frontend to FastAPI", "Connected", "primary"],
@@ -158,7 +158,7 @@ export default function DemoPage(): JSX.Element {
                   [ShieldCheck, "Data mode", demo.dataStatus, "secondary"],
                 ].map(([Icon, label, value, color]) => (
                   <div
-                    className="flex items-start gap-4 border-b border-r border-white/[0.06] p-6 last:border-b-0 md:border-b-0"
+                    className="flex items-start gap-4 border-b border-r border-border p-6 last:border-b-0 md:border-b-0"
                     key={String(label)}
                   >
                     <Icon
@@ -211,7 +211,7 @@ export default function DemoPage(): JSX.Element {
                   />
                 </div>
 
-                <div className="border border-white/[0.06] bg-white/[0.01] p-6">
+                <div className="border border-border bg-card p-6">
                   <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                     Selected live scenario signal
                   </p>
@@ -245,7 +245,7 @@ export default function DemoPage(): JSX.Element {
             {/* Accessible route + Concierge */}
             <FadeInView delay={0.15}>
               <section className="grid gap-6 lg:grid-cols-2">
-                <div className="border border-white/[0.06] bg-white/[0.01] p-6">
+                <div className="border border-border bg-card p-6">
                   <div className="flex items-center gap-2.5">
                     <Accessibility
                       aria-hidden="true"
@@ -260,7 +260,7 @@ export default function DemoPage(): JSX.Element {
                   </div>
                 </div>
 
-                <div className="border border-white/[0.06] bg-white/[0.01] p-6">
+                <div className="border border-border bg-card p-6">
                   <div className="flex items-center gap-2.5">
                     <BotMessageSquare
                       aria-hidden="true"
@@ -273,7 +273,7 @@ export default function DemoPage(): JSX.Element {
                   <div className="mt-5 grid gap-4">
                     {demo.conciergeExamples.map((example) => (
                       <div
-                        className="border border-white/[0.06] bg-white/[0.02] p-4"
+                        className="border border-border bg-muted/50 p-4"
                         key={example.language}
                       >
                         <p className="text-xs font-semibold uppercase tracking-wide text-primary">
@@ -307,12 +307,12 @@ export default function DemoPage(): JSX.Element {
                     What the full authenticated app demonstrates
                   </h2>
                 </div>
-                <div className="grid gap-0 border border-white/[0.06] md:grid-cols-2">
+                <div className="grid gap-0 border border-border md:grid-cols-2">
                   {demo.capabilities.map((capability, index) => {
                     const Icon = featureIcons[index] ?? Sparkles;
                     return (
                       <MagneticCard
-                        className="border-b border-r border-white/[0.06] p-6 last:border-b-0 transition-colors hover:bg-white/[0.02]"
+                        className="border-b border-r border-border p-6 last:border-b-0 transition-colors hover:bg-muted/50"
                         key={capability.label}
                       >
                         <div className="flex items-center gap-2">
@@ -327,7 +327,7 @@ export default function DemoPage(): JSX.Element {
                         <p className="mt-3 text-sm leading-6 text-muted-foreground">
                           {capability.description}
                         </p>
-                        <code className="mt-3 block overflow-x-auto border border-white/[0.06] bg-black/50 px-3 py-2 font-mono text-xs text-accent">
+                        <code className="mt-3 block overflow-x-auto border border-border bg-background px-3 py-2 font-mono text-xs text-accent">
                           {capability.liveEndpoint}
                         </code>
                       </MagneticCard>

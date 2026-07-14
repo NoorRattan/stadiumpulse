@@ -113,7 +113,7 @@ export default function SignupPage(): JSX.Element {
               </div>
 
               <button
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-primary font-semibold text-primary-foreground shadow-[0_0_30px_rgba(0,255,136,0.2)] transition hover:shadow-[0_0_50px_rgba(0,255,136,0.4)] disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+                className="brand-gradient-surface inline-flex min-h-12 w-full items-center justify-center gap-2 font-extrabold shadow-[var(--shadow-glow)] transition hover:-translate-y-0.5 disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                 disabled={submitting}
                 type="submit"
               >

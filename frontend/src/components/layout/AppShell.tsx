@@ -44,8 +44,8 @@ export const AppShell = memo(function AppShell({
       <SkipLink />
 
       {/* -- Header -- */}
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-2xl">
-        <div className="mx-auto flex min-h-[4.25rem] max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-10">
+      <header className="sticky top-0 z-40 border-b border-border bg-[var(--glass-strong)] backdrop-blur-2xl">
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
           <div className="min-w-0 shrink-0">
             <BrandLogo tagline />
           </div>
@@ -58,7 +58,7 @@ export const AppShell = memo(function AppShell({
 
       {/* -- Main -- */}
       <main
-        className="relative z-10 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 md:py-12 lg:px-10"
+        className="relative z-10 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 md:py-12 lg:px-8"
         id="main-content"
         tabIndex={-1}
       >
@@ -66,8 +66,8 @@ export const AppShell = memo(function AppShell({
       </main>
 
       {/* -- Footer -- */}
-      <footer className="relative z-10 border-t border-border bg-card/85 backdrop-blur-xl">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-center lg:px-10">
+      <footer className="relative z-10 border-t border-border bg-[var(--glass-strong)] backdrop-blur-xl">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-end lg:px-8">
           <div>
             <BrandLogo />
             <p className="mt-2 max-w-md text-sm text-muted-foreground">
@@ -80,7 +80,7 @@ export const AppShell = memo(function AppShell({
             </p>
             <nav
               aria-label="Footer navigation"
-              className="mt-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4"
+              className="mt-6 grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4"
             >
               {[
                 ["Matches", "/matches"],

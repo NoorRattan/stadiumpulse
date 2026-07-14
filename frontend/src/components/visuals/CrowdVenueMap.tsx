@@ -1,10 +1,10 @@
 import type { CrowdZoneSummary } from "@/types/domain";
 
 const bandStyle = {
-  normal: { color: "#16a36a", label: "Normal" },
-  moderate: { color: "#ca8a04", label: "Moderate" },
-  high: { color: "#ea580c", label: "High" },
-  critical: { color: "#dc264f", label: "Critical" },
+  normal: { color: "var(--band-normal)", label: "Normal" },
+  moderate: { color: "var(--band-moderate)", label: "Moderate" },
+  high: { color: "var(--band-high)", label: "High" },
+  critical: { color: "var(--band-critical)", label: "Critical" },
 } as const;
 
 /** Lightweight, keyboard-native venue map for selecting crowd zones. */
@@ -50,7 +50,8 @@ export function CrowdVenueMap({
               strokeWidth="3"
             />
             <rect
-              fill="rgb(22 163 106 / .16)"
+              fill="var(--band-normal)"
+              fillOpacity=".16"
               height="104"
               rx="8"
               stroke="var(--primary)"
@@ -139,6 +140,9 @@ export function CrowdVenueMap({
                     <span className="font-mono text-sm font-bold text-foreground">
                       {Math.round(zone.currentDensityPct)}%
                     </span>
+                  </span>
+                  <span className="mt-1 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    {style.label} density
                   </span>
                   <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-muted">
                     <span

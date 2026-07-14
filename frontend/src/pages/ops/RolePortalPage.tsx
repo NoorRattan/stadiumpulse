@@ -76,7 +76,11 @@ export default function RolePortalPage({
           title={copy.title}
         />
 
-        {loading && <p role="status">Loading role-scoped workspace…</p>}
+        {loading && (
+          <p className="pulse-panel rounded-xl p-5" role="status">
+            Loading role-scoped workspace…
+          </p>
+        )}
         {error && (
           <div
             className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-destructive/40 bg-destructive/10 p-5"
@@ -115,7 +119,7 @@ export default function RolePortalPage({
               <div className="mt-6 grid gap-4 lg:grid-cols-3">
                 {data.cards.map((card) => (
                   <article
-                    className="rounded-2xl border border-border bg-card p-5"
+                    className="pulse-panel rounded-2xl p-5 transition-transform hover:-translate-y-1"
                     key={card.cardId}
                   >
                     {card.priority === "urgent" ? (
@@ -145,7 +149,7 @@ export default function RolePortalPage({
 
             <section
               aria-labelledby="advanced-capabilities"
-              className="rounded-2xl border border-accent/35 bg-accent/8 p-6"
+              className="pulse-beam rounded-2xl p-6"
             >
               <div className="flex items-center gap-3">
                 <Sparkles aria-hidden="true" className="size-6 text-accent" />

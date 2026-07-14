@@ -5,11 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { useTheme } from "@/hooks/useTheme";
 
-const THEME_BACKGROUND = {
-  light: "#f7faf9",
-  dark: "#07110d",
-} as const;
-
 function drawWave(
   context: CanvasRenderingContext2D,
   originX: number,
@@ -82,7 +77,10 @@ export function ThemeToggle(): JSX.Element {
       return;
     }
     context.scale(pixelRatio, pixelRatio);
-    context.fillStyle = THEME_BACKGROUND[incomingTheme];
+    context.fillStyle = window
+      .getComputedStyle(document.documentElement)
+      .getPropertyValue(`--theme-background-${incomingTheme}`)
+      .trim();
     const originX = event.clientX;
     const originY = event.clientY;
     const farthestX = Math.max(originX, window.innerWidth - originX);
@@ -120,17 +118,20 @@ export function ThemeToggle(): JSX.Element {
   return (
     <Button
       aria-label={`Switch to ${next} theme`}
-      className="relative size-11 shrink-0 overflow-hidden rounded-lg border-border bg-card text-foreground shadow-sm hover:bg-muted"
+      className="relative h-11 shrink-0 overflow-hidden rounded-full border-border bg-card/80 px-3 text-foreground shadow-[var(--shadow-popover)] hover:border-primary/50 hover:bg-muted"
       onClick={handleThemeChange}
-      size="icon"
+      title={`Switch to ${next} theme`}
       type="button"
       variant="outline"
     >
       {theme === "dark" ? (
-        <Sun aria-hidden="true" className="relative z-10" />
+        <Sun aria-hidden="true" className="relative z-10 size-4" />
       ) : (
-        <Moon aria-hidden="true" className="relative z-10" />
+        <Moon aria-hidden="true" className="relative z-10 size-4" />
       )}
+      <span aria-hidden="true" className="relative z-10 hidden 2xl:inline">
+        {next === "dark" ? "Dark" : "Light"}
+      </span>
     </Button>
   );
 }

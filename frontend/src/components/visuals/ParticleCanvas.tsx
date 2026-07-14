@@ -1,5 +1,7 @@
-import { useEffect, useRef, memo } from "react";
+import { memo, useEffect, useRef } from "react";
+
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
+import { useTheme } from "@/hooks/useTheme";
 
 interface Particle {
   x: number;
@@ -17,8 +19,6 @@ interface ParticleCanvasProps {
   mouseRepel?: boolean;
 }
 
-const COLORS = ["#35e59a", "#4dd3ff", "#ffffff", "#ff6b35"];
-
 /** Full-canvas animated particle field with mouse-repel and connection lines. */
 export const ParticleCanvas = memo(function ParticleCanvas({
   className = "",
@@ -29,6 +29,7 @@ export const ParticleCanvas = memo(function ParticleCanvas({
   const animRef = useRef<number>(0);
   const mouseRef = useRef({ x: -9999, y: -9999 });
   const reduced = useReducedMotionSafe();
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (reduced) return;
@@ -40,10 +41,25 @@ export const ParticleCanvas = memo(function ParticleCanvas({
     let W = 0;
     let H = 0;
     let particles: Particle[] = [];
+    let active = !document.hidden;
+    const rootStyles = window.getComputedStyle(document.documentElement);
+    const readToken = (name: string) =>
+      rootStyles.getPropertyValue(name).trim();
+    const colors = [
+      readToken("--brand-cyan"),
+      readToken("--brand-magenta"),
+      readToken("--brand-amber"),
+      readToken("--foreground"),
+    ].filter(Boolean);
+    const connectionColor = readToken("--brand-cyan");
 
     const resize = () => {
-      W = canvas.width = canvas.offsetWidth;
-      H = canvas.height = canvas.offsetHeight;
+      W = canvas.offsetWidth;
+      H = canvas.offsetHeight;
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.max(1, Math.floor(W * pixelRatio));
+      canvas.height = Math.max(1, Math.floor(H * pixelRatio));
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     };
 
     const spawn = (): Particle => ({
@@ -53,7 +69,8 @@ export const ParticleCanvas = memo(function ParticleCanvas({
       vy: (Math.random() - 0.5) * 0.35,
       size: Math.random() * 1.6 + 0.4,
       opacity: Math.random() * 0.5 + 0.1,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      color:
+        colors[Math.floor(Math.random() * colors.length)] ?? connectionColor,
     });
 
     const init = () => {
@@ -61,6 +78,7 @@ export const ParticleCanvas = memo(function ParticleCanvas({
     };
 
     const draw = () => {
+      if (!active) return;
       ctx.clearRect(0, 0, W, H);
 
       const mx = mouseRef.current.x;
@@ -73,8 +91,9 @@ export const ParticleCanvas = memo(function ParticleCanvas({
         if (mouseRepel) {
           const dx = p.x - mx;
           const dy = p.y - my;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 100) {
+          const distanceSquared = dx * dx + dy * dy;
+          if (distanceSquared > 0 && distanceSquared < 10_000) {
+            const dist = Math.sqrt(distanceSquared);
             const force = (100 - dist) / 100;
             p.vx += (dx / dist) * force * 0.3;
             p.vy += (dy / dist) * force * 0.3;
@@ -107,15 +126,18 @@ export const ParticleCanvas = memo(function ParticleCanvas({
           const q = particles[j];
           const dx = p.x - q.x;
           const dy = p.y - q.y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d < 80) {
+          const distanceSquared = dx * dx + dy * dy;
+          if (distanceSquared < 6_400) {
+            const d = Math.sqrt(distanceSquared);
             const alpha = (1 - d / 80) * 0.12;
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(q.x, q.y);
-            ctx.strokeStyle = `rgba(53,229,154,${alpha})`;
+            ctx.strokeStyle = connectionColor;
+            ctx.globalAlpha = alpha;
             ctx.lineWidth = 0.5;
             ctx.stroke();
+            ctx.globalAlpha = 1;
           }
         }
       }
@@ -133,6 +155,13 @@ export const ParticleCanvas = memo(function ParticleCanvas({
     const handleMouseLeave = () => {
       mouseRef.current = { x: -9999, y: -9999 };
     };
+    const handleVisibilityChange = () => {
+      active = !document.hidden;
+      if (active) {
+        cancelAnimationFrame(animRef.current);
+        animRef.current = requestAnimationFrame(draw);
+      }
+    };
 
     resize();
     init();
@@ -144,16 +173,22 @@ export const ParticleCanvas = memo(function ParticleCanvas({
     });
     ro.observe(canvas);
 
-    window.addEventListener("mousemove", handleMouseMove, { passive: true });
-    canvas.addEventListener("mouseleave", handleMouseLeave);
+    if (mouseRepel) {
+      window.addEventListener("mousemove", handleMouseMove, { passive: true });
+      canvas.addEventListener("mouseleave", handleMouseLeave);
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelAnimationFrame(animRef.current);
       ro.disconnect();
-      window.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("mouseleave", handleMouseLeave);
+      if (mouseRepel) {
+        window.removeEventListener("mousemove", handleMouseMove);
+        canvas.removeEventListener("mouseleave", handleMouseLeave);
+      }
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [count, mouseRepel, reduced]);
+  }, [count, mouseRepel, reduced, theme]);
 
   if (reduced) return null;
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Activity, AlertTriangle, Radio, RefreshCw, Users } from "lucide-react";
 
 import {
@@ -35,7 +35,7 @@ export default function DashboardPage(): JSX.Element {
     <AppShell shader="subtle">
       <div className="grid gap-10">
         {/* -- OPS Header -- */}
-        <div className="border-b border-white/[0.06] pb-8">
+        <div className="border-b border-border pb-8">
           <div className="flex items-center justify-between gap-4">
             <div>
               <span className="live-pulse inline-flex items-center gap-2 border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
@@ -51,7 +51,7 @@ export default function DashboardPage(): JSX.Element {
               </p>
             </div>
             <button
-              className="hidden shrink-0 items-center gap-2 border border-white/15 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-white/[0.08] md:inline-flex"
+              className="hidden shrink-0 items-center gap-2 border border-border bg-muted px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted/80 md:inline-flex"
               onClick={() => {
                 void refresh();
                 setDigestRefreshToken((current) => current + 1);
@@ -67,7 +67,7 @@ export default function DashboardPage(): JSX.Element {
         {/* -- Scoreboard metrics -- */}
         <section
           aria-label="Crowd metrics"
-          className="grid grid-cols-3 divide-x divide-white/[0.06] border border-white/[0.06]"
+          className="grid grid-cols-3 divide-x divide-border border border-border"
         >
           {[
             {
@@ -125,7 +125,7 @@ export default function DashboardPage(): JSX.Element {
                 <span className="text-primary">{selectedZone.name}</span>
               </h2>
               <button
-                className="border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-semibold transition hover:bg-white/[0.08]"
+                className="border border-border bg-muted px-4 py-2 text-sm font-semibold transition hover:bg-muted/80"
                 onClick={() => setSelectedZone(null)}
                 type="button"
               >
@@ -158,7 +158,7 @@ export default function DashboardPage(): JSX.Element {
               Zone Grid
             </h2>
             <button
-              className="inline-flex items-center gap-2 border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-white/[0.08] md:hidden"
+              className="inline-flex items-center gap-2 border border-border bg-muted px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/80 md:hidden"
               onClick={() => {
                 void refresh();
                 setDigestRefreshToken((c) => c + 1);
@@ -175,19 +175,19 @@ export default function DashboardPage(): JSX.Element {
               {[Activity, Users, AlertTriangle].map((Icon, index) => (
                 <div
                   aria-hidden="true"
-                  className="border border-white/[0.06] bg-white/[0.01] p-6"
+                  className="border border-border bg-card p-6"
                   key={index}
                 >
                   <Icon className="size-5 text-muted-foreground/30" />
-                  <div className="mt-5 h-6 w-24 bg-white/[0.04]" />
-                  <div className="mt-3 h-3 w-full bg-white/[0.04]" />
-                  <div className="mt-2 h-3 w-3/4 bg-white/[0.04]" />
+                  <div className="mt-5 h-6 w-24 bg-muted" />
+                  <div className="mt-3 h-3 w-full bg-muted" />
+                  <div className="mt-2 h-3 w-3/4 bg-muted" />
                 </div>
               ))}
             </div>
           )}
           {!loading && summaries.length === 0 && (
-            <p className="border border-white/[0.06] bg-white/[0.01] p-5 text-sm text-muted-foreground">
+            <p className="border border-border bg-card p-5 text-sm text-muted-foreground">
               No zones configured yet.
             </p>
           )}
