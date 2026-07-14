@@ -70,7 +70,7 @@ describe("HomePage", () => {
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Know where to go. Before the crowd does.",
+      /Every venue,\s*in one pulse\./,
     );
     const results = await axe(container);
     expect(results.violations).toHaveLength(0);

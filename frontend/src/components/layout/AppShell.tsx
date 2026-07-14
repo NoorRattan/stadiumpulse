@@ -1,119 +1,145 @@
 import { memo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-import { ParticleCanvas } from "@/components/visuals/ParticleCanvas";
 import { AccessibilityToggle } from "@/components/accessibility";
 import { BrandLogo } from "@/components/brand/BrandLogo";
-import { Toaster } from "@/components/ui/sonner";
+import { PulseConciergeDock } from "@/components/concierge/PulseConciergeDock";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { Toaster } from "@/components/ui/sonner";
 
 import { Navbar } from "./Navbar";
 import { SkipLink } from "./SkipLink";
 
-/** Props for the shared application shell. */
 export interface AppShellProps {
   children: ReactNode;
   shader?: "subtle" | "vivid" | "none";
+  flush?: boolean;
 }
 
-/** Shared header, navigation, accessibility controls, and main landmark. */
+const platformLinks = [
+  ["Fan Companion", "/fan"],
+  ["Volunteer Hub", "/volunteer"],
+  ["Staff Operations", "/staff"],
+  ["Organizer Command Center", "/organizer"],
+] as const;
+
+const matchDayLinks = [
+  ["Live Concierge", "/concierge"],
+  ["Crowd Insights", "/demo"],
+  ["Sustainability", "/sustainability"],
+  ["Accessibility", "/accessibility"],
+] as const;
+
+const additionalLinks = [
+  ["Matches & Tickets", "/matches"],
+  ["Venues", "/venues"],
+  ["Amenities", "/amenities"],
+  ["Fan Events", "/events"],
+  ["Alerts", "/alerts"],
+  ["Wayfinding", "/wayfinding"],
+  ["Travel", "/travel"],
+  ["Help", "/help"],
+  ["About", "/about"],
+  ["Sign In", "/login"],
+] as const;
+
+/** Shared reference-matched shell used by copied and StadiumPulse-only pages. */
 export const AppShell = memo(function AppShell({
   children,
-  shader = "subtle",
+  flush = false,
 }: AppShellProps) {
-  const renderDecorativeBackground = import.meta.env.MODE !== "test";
-
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
-      {/* -- Background layers -- */}
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
-        {/* Particle field */}
-        {renderDecorativeBackground && shader !== "none" && (
-          <ParticleCanvas
-            className="absolute inset-0 h-full w-full"
-            count={shader === "vivid" ? 32 : 18}
-            mouseRepel={false}
-          />
-        )}
-        {/* Radial gradient glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,var(--glow-primary),transparent)]" />
-        {/* Subtle grid */}
-        <div className="absolute inset-0 opacity-[0.05] [background-image:linear-gradient(var(--border)_1px,transparent_1px),linear-gradient(90deg,var(--border)_1px,transparent_1px)] [background-size:80px_80px]" />
-      </div>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0 opacity-70 [background-image:linear-gradient(var(--grid-line)_1px,transparent_1px),linear-gradient(90deg,var(--grid-line)_1px,transparent_1px)] [background-size:80px_80px]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_85%_5%,var(--glow-primary),transparent_28%),radial-gradient(circle_at_5%_55%,var(--glow-accent),transparent_23%)]"
+      />
 
       <SkipLink />
 
-      {/* -- Header -- */}
       <header className="sticky top-0 z-40 border-b border-border bg-[var(--glass-strong)] backdrop-blur-2xl">
-        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
-          <div className="min-w-0 shrink-0">
-            <BrandLogo tagline />
-          </div>
-          <div className="flex min-w-0 items-center gap-2">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+          <BrandLogo tagline />
+          <div className="flex items-center gap-2">
             <Navbar />
             <ThemeToggle />
           </div>
         </div>
       </header>
 
-      {/* -- Main -- */}
       <main
-        className="relative z-10 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 md:py-12 lg:px-8"
+        className={`relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 ${flush ? "" : "py-10 md:py-14"}`}
         id="main-content"
         tabIndex={-1}
       >
         {children}
       </main>
 
-      {/* -- Footer -- */}
       <footer className="relative z-10 border-t border-border bg-[var(--glass-strong)] backdrop-blur-xl">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_auto] lg:items-end lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.5fr_.75fr_.75fr_.75fr] lg:px-8">
           <div>
-            <BrandLogo />
-            <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              One connected match-day guide for routes, venue help, travel, and
-              human-reviewed operations.
+            <BrandLogo tagline />
+            <p className="mt-4 max-w-lg text-sm leading-6 text-muted-foreground">
+              StadiumPulse is a GenAI-powered match-day intelligence platform
+              for FIFA World Cup 2026 venues — helping fans navigate confidently
+              and operators run venues safely, accessibly, and efficiently.
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Demo signals are clearly labelled synthetic. No physical sensor
-              claims.
+            <p className="mt-4 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-muted-foreground">
+              Connected demo · Synthetic venue signals · Human-approved ops
             </p>
-            <nav
-              aria-label="Footer navigation"
-              className="mt-6 grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4"
-            >
-              {[
-                ["Matches", "/matches"],
-                ["Venues", "/venues"],
-                ["Accessibility", "/accessibility"],
-                ["Amenities", "/amenities"],
-                ["Fan events", "/events"],
-                ["Sustainability", "/sustainability"],
-                ["Alerts", "/alerts"],
-                ["Help", "/help"],
-                ["About", "/about"],
-                ["Contact", "/contact"],
-                ["Privacy", "/privacy"],
-                ["Terms", "/terms"],
-              ].map(([label, href]) => (
-                <Link
-                  className="font-semibold text-muted-foreground hover:text-primary"
-                  key={href}
-                  to={href}
-                >
-                  {label}
-                </Link>
-              ))}
-            </nav>
           </div>
-          <div className="flex items-center gap-4">
+          <nav aria-label="Platform links">
+            <h2 className="font-display text-sm font-bold">Platform</h2>
+            <ul className="mt-4 grid gap-3 text-sm text-muted-foreground">
+              {platformLinks.map(([label, href]) => (
+                <li key={href}>
+                  <Link className="hover:text-primary" to={href}>
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <nav aria-label="Match day links">
+            <h2 className="font-display text-sm font-bold">Match Day</h2>
+            <ul className="mt-4 grid gap-3 text-sm text-muted-foreground">
+              {matchDayLinks.map(([label, href]) => (
+                <li key={href}>
+                  <Link className="hover:text-primary" to={href}>
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <nav aria-label="More StadiumPulse links">
+            <h2 className="font-display text-sm font-bold">More</h2>
+            <ul className="mt-4 grid grid-cols-2 gap-3 text-sm text-muted-foreground lg:grid-cols-1">
+              {additionalLinks.map(([label, href]) => (
+                <li key={href}>
+                  <Link className="hover:text-primary" to={href}>
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+        <div className="border-t border-border px-4 py-5">
+          <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-mono text-[0.58rem] uppercase tracking-[0.16em] text-muted-foreground">
+              © 2026 StadiumPulse · Match-day intelligence · Unofficial demo
+            </p>
             <AccessibilityToggle />
           </div>
         </div>
-        {/* Bottom rule */}
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
       </footer>
 
+      <PulseConciergeDock />
       <Toaster />
     </div>
   );

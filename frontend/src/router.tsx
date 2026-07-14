@@ -25,6 +25,7 @@ const PublicExperiencePage = lazy(
 );
 const SupportPage = lazy(() => import("./pages/SupportPage"));
 const RolePortalPage = lazy(() => import("./pages/ops/RolePortalPage"));
+const CockpitPage = lazy(() => import("./pages/CockpitPage"));
 
 function RouteFrame({ children }: { children: ReactNode }): JSX.Element {
   return (
@@ -90,6 +91,14 @@ function StaffGuard({ children }: { children: ReactNode }): JSX.Element {
 }
 
 const router = createBrowserRouter([
+  {
+    path: "/fan",
+    element: (
+      <RouteFrame>
+        <CockpitPage kind="fan" />
+      </RouteFrame>
+    ),
+  },
   {
     path: "/",
     element: (
@@ -231,11 +240,25 @@ const router = createBrowserRouter([
   {
     path: "/volunteer",
     element: (
-      <OpsGuard>
-        <RouteFrame>
-          <RolePortalPage kind="volunteer" />
-        </RouteFrame>
-      </OpsGuard>
+      <RouteFrame>
+        <CockpitPage kind="volunteer" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/staff",
+    element: (
+      <RouteFrame>
+        <CockpitPage kind="staff" />
+      </RouteFrame>
+    ),
+  },
+  {
+    path: "/organizer",
+    element: (
+      <RouteFrame>
+        <CockpitPage kind="organizer" />
+      </RouteFrame>
     ),
   },
   {

@@ -1,437 +1,391 @@
 import {
-  Accessibility,
   ArrowRight,
-  BotMessageSquare,
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  Languages,
+  Bot,
+  Bus,
+  Check,
+  CircleDot,
   Leaf,
-  Map,
-  Radio,
+  MapPinned,
+  RadioTower,
   ShieldCheck,
   Sparkles,
-  Train,
-  Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { AppShell } from "@/components/layout";
-import { FadeInView } from "@/components/motion/FadeInView";
-import { useMatches } from "@/hooks/useMatches";
-import { usePublicExperience } from "@/hooks/useExperience";
 
-const fanJourneys = [
+const roles = [
   {
-    label: "Find my way",
-    description:
-      "Choose your gate or seat and get a calmer route with step-free preferences.",
-    href: "/wayfinding",
-    action: "Plan a route",
-    icon: Map,
+    eyebrow: "MATCH DAY, EFFORTLESS",
+    title: "Fans",
+    href: "/fan",
+    color: "primary",
+    features: [
+      "Tickets & QR gates",
+      "Crowd-aware navigation",
+      "Transport & parking",
+      "Multilingual PulseAI",
+    ],
   },
   {
-    label: "Ask StadiumPulse",
-    description:
-      "Get venue answers in your language by text or voice, with read-aloud replies.",
-    href: "/concierge",
-    action: "Ask for help",
-    icon: BotMessageSquare,
+    eyebrow: "SHIFT-READY",
+    title: "Volunteers",
+    href: "/volunteer",
+    color: "secondary",
+    features: [
+      "Assigned zones & tasks",
+      "Training modules",
+      "Real-time guidance",
+      "Live comms",
+    ],
   },
   {
-    label: "Plan my arrival",
-    description:
-      "Compare rail, shuttle, and shared travel around match-day congestion.",
-    href: "/travel",
-    action: "View travel options",
-    icon: Train,
+    eyebrow: "OPERATE SAFELY",
+    title: "Venue Staff",
+    href: "/staff",
+    color: "accent",
+    features: [
+      "Crowd monitoring",
+      "Incident triage",
+      "Medical / security / cleaning",
+      "Ops coordination",
+    ],
+  },
+  {
+    eyebrow: "COMMAND CENTER",
+    title: "Organizers",
+    href: "/organizer",
+    color: "violet",
+    features: [
+      "Predictive crowd insights",
+      "AI briefings",
+      "Sustainability KPIs",
+      "Real-time decisions",
+    ],
   },
 ] as const;
 
-const systemSteps = [
+const highlights = [
   {
-    label: "Sense",
-    detail: "Synthetic crowd readings update six venue zones.",
-    icon: Radio,
+    icon: Bot,
+    title: "Multilingual GenAI Concierge",
+    body: "Groq-powered natural chat across 10 supported languages. Ask about tickets, gates, parking, food, or accessibility — instantly.",
   },
   {
-    label: "Reason",
-    detail: "Deterministic rules calculate routes, bands, and forecasts.",
+    icon: RadioTower,
+    title: "Predictive Crowd Intelligence",
+    body: "Live density, arrival curves, and gate throughput become forecasts operators can review before pressure turns into an incident.",
+  },
+  {
+    icon: MapPinned,
+    title: "Crowd-Aware Navigation",
+    body: "The shortest route is not always the calmest. StadiumPulse compares congestion and accessibility before guiding each fan.",
+  },
+  {
     icon: ShieldCheck,
+    title: "Unified Incident Ops",
+    body: "Security, medical, and cleaning teams share one incident picture with approval-gated drafts and shift briefings.",
   },
   {
-    label: "Explain",
-    detail: "GenAI translates the result into useful, multilingual guidance.",
-    icon: Languages,
+    icon: Bus,
+    title: "Transport & Parking Sync",
+    body: "Fans compare lower-congestion arrivals while operations teams see the same match and transit-load context.",
   },
   {
-    label: "Approve",
-    detail:
-      "Staff make every operational decision; the system never acts alone.",
-    icon: Users,
+    icon: Leaf,
+    title: "Sustainability Signal",
+    body: "Shared transport, refill, waste, and energy indicators remain visible to fans and organizer teams.",
   },
 ] as const;
 
-function formatMatchDate(value: string): string {
-  if (!value) return "Schedule time to be confirmed";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Schedule time to be confirmed";
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
+function NetworkGlobe(): JSX.Element {
+  return (
+    <div className="pulse-network relative aspect-square overflow-hidden rounded-2xl border border-border bg-card/55 p-5 shadow-[var(--shadow-card)] sm:p-7">
+      <div className="flex justify-between font-mono text-[0.58rem] uppercase tracking-[0.2em] text-muted-foreground">
+        <span>· Network · WC26</span>
+        <span className="text-primary">◆ Live 16 venues</span>
+      </div>
+      <svg
+        aria-label="Connected host-city network illustration"
+        className="mx-auto mt-2 h-[78%] w-[92%]"
+        fill="none"
+        role="img"
+        viewBox="0 0 520 420"
+      >
+        <defs>
+          <linearGradient id="globe-stroke" x1="0" x2="1">
+            <stop stopColor="var(--brand-cyan)" />
+            <stop offset="0.62" stopColor="var(--brand-magenta)" />
+            <stop offset="1" stopColor="var(--brand-amber)" />
+          </linearGradient>
+          <radialGradient id="globe-fill">
+            <stop stopColor="var(--glow-primary)" />
+            <stop offset="1" stopColor="transparent" />
+          </radialGradient>
+        </defs>
+        <ellipse cx="260" cy="214" fill="url(#globe-fill)" rx="185" ry="174" />
+        <circle
+          cx="260"
+          cy="214"
+          r="164"
+          stroke="var(--border-bright)"
+          strokeWidth="1.5"
+        />
+        {[42, 78, 116, 146].map((radius) => (
+          <ellipse
+            cx="260"
+            cy="214"
+            key={radius}
+            rx={radius}
+            ry="164"
+            stroke="var(--border-bright)"
+            strokeOpacity=".8"
+          />
+        ))}
+        {[-112, -72, -34, 0, 34, 72, 112].map((offset) => (
+          <ellipse
+            cx="260"
+            cy={214 + offset / 3}
+            key={offset}
+            rx={Math.sqrt(Math.max(1, 164 ** 2 - offset ** 2))}
+            ry={34 + Math.abs(offset) / 6}
+            stroke="var(--border-bright)"
+            strokeOpacity=".8"
+          />
+        ))}
+        <ellipse
+          cx="260"
+          cy="214"
+          rx="242"
+          ry="48"
+          stroke="url(#globe-stroke)"
+          strokeWidth="2"
+          transform="rotate(7 260 214)"
+        />
+        <ellipse
+          cx="260"
+          cy="214"
+          rx="226"
+          ry="70"
+          stroke="var(--brand-magenta)"
+          strokeOpacity=".65"
+          transform="rotate(-16 260 214)"
+        />
+        {["98 239", "177 92", "337 104", "418 226", "291 370"].map(
+          (position) => {
+            const [cx, cy] = position.split(" ").map(Number);
+            return (
+              <circle
+                cx={cx}
+                cy={cy}
+                fill="var(--brand-magenta)"
+                key={position}
+                r="5"
+              />
+            );
+          },
+        )}
+      </svg>
+      <div className="flex justify-between font-mono text-[0.55rem] uppercase tracking-[0.16em] text-muted-foreground">
+        <span>Lat 40.81 · Lng -74.07</span>
+        <span>Pulse-ok ▮▮▮▮▮▮▮▯▯</span>
+      </div>
+    </div>
+  );
 }
 
-/** Task-first fan landing page that explains and demonstrates the connected match-day system. */
+/** Reference-faithful StadiumPulse landing page. */
 export default function HomePage(): JSX.Element {
-  const { matches, loading } = useMatches();
-  const { data: experience } = usePublicExperience();
-  const nextMatch = matches[0];
-
   return (
-    <AppShell shader="vivid">
-      <div className="grid gap-16 md:gap-24">
-        <section className="pulse-beam relative overflow-hidden rounded-3xl px-5 py-8 shadow-[var(--shadow-card)] sm:px-8 sm:py-12 lg:grid lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:gap-12 lg:px-12 lg:py-16">
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,var(--glow-primary),transparent_45%)]"
-          />
-          <div className="relative z-10">
-            <p className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-primary">
-              <span className="size-2 rounded-full bg-primary" />
-              FIFA World Cup 2026 · Connected demo
+    <AppShell flush>
+      <div className="grid gap-24 py-16 md:gap-28 md:py-20">
+        <section className="grid items-center gap-12 lg:grid-cols-[1fr_.95fr]">
+          <div>
+            <p className="cockpit-kicker text-primary">
+              <CircleDot aria-hidden="true" className="size-3" /> FIFA World Cup
+              2026 · Match-Day OS
             </p>
-            <h1 className="mt-6 max-w-3xl font-display text-[clamp(2.7rem,8vw,6.4rem)] font-bold leading-[0.94] tracking-[-0.055em] text-foreground">
-              Know where to go.{" "}
-              <span className="text-gradient">Before the crowd does.</span>
+            <h1 className="mt-6 max-w-2xl font-display text-[clamp(3.25rem,7vw,6.2rem)] font-black leading-[0.88] tracking-[-0.06em]">
+              Every venue, <br />
+              in one <span className="text-gradient">pulse.</span>
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-              StadiumPulse turns one shared venue signal into calmer fan routes,
-              multilingual help, smarter arrivals, and human-reviewed
-              operations.
+            <p className="mt-7 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+              StadiumPulse is the GenAI-powered match-day intelligence platform
+              for World Cup 2026 venues. Fans navigate with confidence.
+              Volunteers, staff, and organizers run venues safely, accessibly,
+              efficiently.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                className="brand-gradient-surface inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-6 font-extrabold shadow-[0_12px_32px_var(--glow-primary)] transition-transform hover:-translate-y-0.5"
-                to="/demo"
+                className="brand-gradient-surface inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 font-extrabold shadow-[0_0_28px_var(--glow-primary)]"
+                to="/fan"
               >
-                <Sparkles aria-hidden="true" className="size-4" />
-                Explore the live demo
-              </Link>
-              <Link
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-background/60 px-6 font-bold text-foreground transition-colors hover:bg-muted"
-                to="/wayfinding"
-              >
-                Plan my route
+                Enter as Fan{" "}
                 <ArrowRight aria-hidden="true" className="size-4" />
               </Link>
-            </div>
-            <p className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
-              <CheckCircle2
-                aria-hidden="true"
-                className="mt-0.5 size-4 shrink-0 text-primary"
-              />
-              No account needed for the read-only demo. All scenario data is
-              clearly labelled synthetic.
-            </p>
-          </div>
-
-          <div className="relative z-10 mt-10 lg:mt-0">
-            <div className="rounded-2xl border border-border bg-background/80 p-4 shadow-xl backdrop-blur-xl sm:p-5">
-              <div className="flex items-center justify-between border-b border-border pb-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                    Demo scenario
-                  </p>
-                  <p className="mt-1 font-display text-xl font-bold">
-                    Venue pulse
-                  </p>
-                </div>
-                <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                  <span className="size-2 rounded-full bg-primary" /> Ready
-                </span>
-              </div>
-              <dl className="grid gap-3 py-4">
-                <div className="flex items-center justify-between gap-4 rounded-xl bg-muted p-3">
-                  <dt className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Radio aria-hidden="true" className="size-4" /> Crowd view
-                  </dt>
-                  <dd className="text-sm font-bold text-foreground">
-                    6 selectable zones
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between gap-4 rounded-xl bg-muted p-3">
-                  <dt className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Accessibility aria-hidden="true" className="size-4" />{" "}
-                    Route mode
-                  </dt>
-                  <dd className="text-sm font-bold text-foreground">
-                    Step-free aware
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between gap-4 rounded-xl bg-muted p-3">
-                  <dt className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock3 aria-hidden="true" className="size-4" /> Forecast
-                  </dt>
-                  <dd className="text-sm font-bold text-foreground">
-                    15-minute window
-                  </dd>
-                </div>
-              </dl>
               <Link
-                className="flex min-h-11 items-center justify-between rounded-xl border border-border px-4 text-sm font-bold text-foreground transition-colors hover:bg-muted"
-                to="/demo"
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--border-bright)] bg-card/50 px-6 font-bold hover:border-primary/60"
+                to="/organizer"
               >
-                See the whole match-day story
-                <ArrowRight
-                  aria-hidden="true"
-                  className="size-4 text-primary"
-                />
+                Open Command Center
               </Link>
+            </div>
+            <dl className="mt-10 grid max-w-xl grid-cols-3 gap-4">
+              {[
+                ["16", "Host Cities"],
+                ["104", "Matches"],
+                ["3.7M+", "Fans"],
+              ].map(([value, label]) => (
+                <div key={label}>
+                  <dd className="font-mono text-2xl font-bold sm:text-3xl">
+                    {value}
+                  </dd>
+                  <dt className="mt-1 font-mono text-[0.55rem] uppercase tracking-[0.18em] text-muted-foreground">
+                    {label}
+                  </dt>
+                </div>
+              ))}
+            </dl>
+          </div>
+          <NetworkGlobe />
+        </section>
+
+        <section aria-labelledby="roles-heading">
+          <p className="cockpit-kicker w-fit text-secondary">
+            <CircleDot aria-hidden="true" className="size-3" /> Built for four
+            match-day tribes
+          </p>
+          <h2
+            className="mt-5 font-display text-4xl font-black tracking-tight sm:text-5xl"
+            id="roles-heading"
+          >
+            One platform. Four missions.
+          </h2>
+          <p className="mt-3 max-w-2xl text-muted-foreground">
+            Each role gets a purpose-built cockpit — fed by the same real-time
+            venue nervous system.
+          </p>
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {roles.map((role, index) => (
+              <Link
+                className="group rounded-xl border border-border bg-card/75 p-6 transition-all hover:-translate-y-1 hover:border-primary/50 hover:shadow-[var(--shadow-card)]"
+                key={role.href}
+                to={role.href}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[0.58rem] uppercase tracking-[0.18em] text-primary">
+                    {role.eyebrow}
+                  </span>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    0{index + 1}
+                  </span>
+                </div>
+                <h3 className="mt-7 font-display text-2xl font-extrabold">
+                  {role.title}
+                </h3>
+                <ul className="mt-5 grid gap-3 text-sm text-muted-foreground">
+                  {role.features.map((feature) => (
+                    <li className="flex items-start gap-2" key={feature}>
+                      <Check
+                        aria-hidden="true"
+                        className="mt-0.5 size-4 shrink-0 text-primary"
+                      />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <span className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-foreground group-hover:text-primary">
+                  Open cockpit{" "}
+                  <ArrowRight aria-hidden="true" className="size-4" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section aria-labelledby="stack-heading">
+          <p className="cockpit-kicker w-fit text-primary">
+            <Sparkles aria-hidden="true" className="size-3" /> Stack highlights
+          </p>
+          <h2
+            className="mt-5 max-w-3xl font-display text-4xl font-black tracking-tight sm:text-5xl"
+            id="stack-heading"
+          >
+            Real-time intelligence, from gate to grid.
+          </h2>
+          <div className="mt-9 grid overflow-hidden rounded-xl border border-border bg-card/65 md:grid-cols-2 lg:grid-cols-3">
+            {highlights.map(({ icon: Icon, title, body }) => (
+              <article
+                className="border-b border-r border-border p-6"
+                key={title}
+              >
+                <Icon aria-hidden="true" className="size-5 text-primary" />
+                <h3 className="mt-5 font-display text-lg font-bold">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {body}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="pulse-beam grid gap-8 rounded-2xl p-6 sm:p-9 lg:grid-cols-[1fr_.9fr] lg:items-center">
+          <div>
+            <p className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-primary">
+              PulseAI · Groq-powered
+            </p>
+            <h2 className="mt-4 max-w-xl font-display text-3xl font-black sm:text-4xl">
+              A multilingual concierge in every fan&apos;s pocket.
+            </h2>
+            <p className="mt-4 max-w-xl leading-7 text-muted-foreground">
+              Ask in Spanish, English, French, Arabic, Portuguese, Japanese,
+              Chinese, German, Hindi, or Korean — get grounded answers backed by
+              venue data and clear safety boundaries.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {["EN", "ES", "FR", "AR", "PT", "JP", "ZH", "DE"].map(
+                (language) => (
+                  <span
+                    className="rounded-md border border-border bg-background px-3 py-2 font-mono text-xs text-muted-foreground"
+                    key={language}
+                  >
+                    {language}
+                  </span>
+                ),
+              )}
+            </div>
+          </div>
+          <div className="grid gap-3 rounded-xl border border-border bg-background/75 p-4">
+            <div className="rounded-xl border border-border p-4 text-sm">
+              Where&apos;s the least-crowded route to my section?
+            </div>
+            <div className="ml-6 rounded-xl bg-muted p-4 text-sm leading-6 text-muted-foreground">
+              I&apos;ll compare the current demo zones and keep step-free needs
+              in the route. For urgent help, contact on-site staff.
+            </div>
+            <div className="rounded-xl border border-border p-4 text-sm">
+              ¿Dónde está la entrada accesible?
             </div>
           </div>
         </section>
 
-        {experience && (
-          <section
-            aria-labelledby="ticker-heading"
-            className="-mt-8 rounded-2xl border border-border bg-card p-5 md:-mt-14"
+        <section className="flex flex-col gap-6 border-t border-border py-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-primary">
+              Ready for kickoff
+            </p>
+            <h2 className="mt-3 max-w-2xl font-display text-3xl font-black sm:text-4xl">
+              Turn 16 host cities into one intelligent network.
+            </h2>
+          </div>
+          <Link
+            className="brand-gradient-surface inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full px-6 font-extrabold"
+            to="/organizer"
           >
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                  Live match ticker · simulated
-                </p>
-                <h2
-                  className="mt-2 font-display text-2xl font-bold"
-                  id="ticker-heading"
-                >
-                  Tournament pulse
-                </h2>
-              </div>
-              <Link
-                className="inline-flex min-h-11 items-center gap-2 font-bold text-primary"
-                to="/matches"
-              >
-                Full schedule & tickets{" "}
-                <ArrowRight aria-hidden="true" className="size-4" />
-              </Link>
-            </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {experience.matchTicker.map((match) => (
-                <article
-                  className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background/60 p-4"
-                  key={match.matchId}
-                >
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-accent">
-                      {match.status}
-                    </p>
-                    <h3 className="mt-1 font-bold">
-                      {match.homeTeam} vs {match.awayTeam}
-                    </h3>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {match.venueName}
-                    </p>
-                  </div>
-                  <p className="shrink-0 font-mono text-xl font-bold">
-                    {match.score ?? formatMatchDate(match.kickoffAt)}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <FadeInView>
-          <section aria-labelledby="start-heading">
-            <div className="max-w-2xl">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
-                Start with what you need
-              </p>
-              <h2
-                className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl"
-                id="start-heading"
-              >
-                Three match-day tasks. One shared picture.
-              </h2>
-              <p className="mt-3 leading-7 text-muted-foreground">
-                No dashboard training. Choose a task and StadiumPulse uses the
-                same venue context throughout your journey.
-              </p>
-            </div>
-            <div className="mt-8 grid gap-4 lg:grid-cols-3">
-              {fanJourneys.map((journey, index) => {
-                const Icon = journey.icon;
-                return (
-                  <Link
-                    className="group rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl sm:p-6"
-                    key={journey.href}
-                    to={journey.href}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="grid size-11 place-content-center rounded-xl bg-primary/10 text-primary">
-                        <Icon aria-hidden="true" className="size-5" />
-                      </span>
-                      <span className="font-mono text-xs font-bold text-muted-foreground">
-                        0{index + 1}
-                      </span>
-                    </div>
-                    <h3 className="mt-6 font-display text-xl font-bold">
-                      {journey.label}
-                    </h3>
-                    <p className="mt-2 min-h-20 text-sm leading-6 text-muted-foreground">
-                      {journey.description}
-                    </p>
-                    <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary">
-                      {journey.action}
-                      <ArrowRight
-                        aria-hidden="true"
-                        className="size-4 transition-transform group-hover:translate-x-1"
-                      />
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        </FadeInView>
-
-        <FadeInView>
-          <section
-            aria-labelledby="match-heading"
-            className="grid overflow-hidden rounded-3xl border border-border bg-card lg:grid-cols-[.8fr_1.2fr]"
-          >
-            <div className="bg-foreground p-6 text-background sm:p-8 lg:p-10">
-              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-background/75">
-                <CalendarDays aria-hidden="true" className="size-4" /> Next
-                scenario match
-              </p>
-              {loading ? (
-                <div className="mt-8">
-                  <h2
-                    className="font-display text-3xl font-bold"
-                    id="match-heading"
-                  >
-                    Match schedule
-                  </h2>
-                  <p className="mt-3" role="status">
-                    Loading match schedule…
-                  </p>
-                </div>
-              ) : nextMatch ? (
-                <div className="mt-8">
-                  <h2
-                    className="font-display text-3xl font-bold sm:text-4xl"
-                    id="match-heading"
-                  >
-                    {nextMatch.homeTeam}
-                    <span className="my-2 block text-lg font-medium text-background/70">
-                      vs.
-                    </span>
-                    {nextMatch.awayTeam}
-                  </h2>
-                  <p className="mt-6 border-t border-background/20 pt-5 text-sm leading-6 text-background/80">
-                    {formatMatchDate(nextMatch.kickoffAt)}
-                  </p>
-                  <p className="mt-2 text-sm text-background/80">
-                    Transit load:{" "}
-                    <span className="font-bold capitalize text-background">
-                      {nextMatch.transitLoadEstimate}
-                    </span>
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-8">
-                  <h2
-                    className="font-display text-3xl font-bold"
-                    id="match-heading"
-                  >
-                    Match schedule pending
-                  </h2>
-                  <p className="mt-3 text-background/80">
-                    The tools remain available for the synthetic demo scenario.
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="p-6 sm:p-8 lg:p-10">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">
-                One signal, four safeguards
-              </p>
-              <h2 className="mt-3 font-display text-3xl font-bold">
-                Useful AI without handing it the keys.
-              </h2>
-              <div className="mt-7 grid gap-5 sm:grid-cols-2">
-                {systemSteps.map((step) => {
-                  const Icon = step.icon;
-                  return (
-                    <div className="flex gap-3" key={step.label}>
-                      <span className="grid size-10 shrink-0 place-content-center rounded-xl bg-accent/10 text-accent">
-                        <Icon aria-hidden="true" className="size-5" />
-                      </span>
-                      <div>
-                        <h3 className="font-bold">{step.label}</h3>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                          {step.detail}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        </FadeInView>
-
-        <FadeInView>
-          <section
-            aria-labelledby="roles-heading"
-            className="grid gap-5 lg:grid-cols-2"
-          >
-            <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-              <span className="grid size-11 place-content-center rounded-xl bg-primary/10 text-primary">
-                <Leaf aria-hidden="true" className="size-5" />
-              </span>
-              <h2
-                className="mt-5 font-display text-2xl font-bold"
-                id="roles-heading"
-              >
-                For fans
-              </h2>
-              <p className="mt-2 leading-7 text-muted-foreground">
-                Route, language, accessibility, and arrival guidance stay in one
-                calm experience instead of four disconnected tools.
-              </p>
-              <Link
-                className="mt-5 inline-flex min-h-11 items-center gap-2 font-bold text-primary"
-                to="/wayfinding"
-              >
-                Plan a route{" "}
-                <ArrowRight aria-hidden="true" className="size-4" />
-              </Link>
-            </div>
-            <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-              <span className="grid size-11 place-content-center rounded-xl bg-accent/10 text-accent">
-                <Users aria-hidden="true" className="size-5" />
-              </span>
-              <h2 className="mt-5 font-display text-2xl font-bold">
-                For venue teams
-              </h2>
-              <p className="mt-2 leading-7 text-muted-foreground">
-                Role-protected staff tools turn the same signals into forecasts,
-                incident drafts, and briefings that require human approval.
-              </p>
-              <Link
-                className="mt-5 inline-flex min-h-11 items-center gap-2 font-bold text-accent"
-                to="/login"
-              >
-                Staff sign in{" "}
-                <ArrowRight aria-hidden="true" className="size-4" />
-              </Link>
-            </div>
-          </section>
-        </FadeInView>
+            Explore Command Center
+            <ArrowRight aria-hidden="true" className="size-4" />
+          </Link>
+        </section>
       </div>
     </AppShell>
   );

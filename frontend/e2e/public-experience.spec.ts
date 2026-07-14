@@ -4,7 +4,11 @@ import { expect, test } from "@playwright/test";
 import { installPublicFixtures } from "./fixtures";
 
 const publicRoutes = [
-  ["/", "Know where to go. Before the crowd does."],
+  ["/", "Every venue, in one pulse."],
+  ["/fan", "Your match day, one tap away."],
+  ["/volunteer", "Shift-ready. Zone-aware."],
+  ["/staff", "Operate safely. See everything."],
+  ["/organizer", "Command every venue, in real time."],
   ["/demo", "One connected match-day story."],
   ["/matches", "Matches & Tickets"],
   ["/venues", "Venues, Gates & Seating"],
@@ -153,7 +157,6 @@ test("account and role portals send signed-out visitors to sign in", async ({
 }) => {
   for (const path of [
     "/account",
-    "/volunteer",
     "/ops/organizer",
     "/ops/venue-staff",
     "/ops/command",

@@ -66,6 +66,7 @@ html[data-theme="light"] {
   --glow-accent: rgb(255 0 127 / 0.13);
   --glow-spread: 30px;
   --surface-noise: rgb(15 23 42 / 0.025);
+  --grid-line: rgb(51 65 85 / 0.1);
   --glass: rgb(255 255 255 / 0.82);
   --glass-strong: rgb(255 255 255 / 0.94);
   --border-bright: #94a3b8;
@@ -136,6 +137,7 @@ html[data-theme="dark"] {
   --glow-accent: rgb(255 0 127 / 0.16);
   --glow-spread: 40px;
   --surface-noise: rgb(255 255 255 / 0.015);
+  --grid-line: rgb(51 65 85 / 0.2);
   --glass: rgb(15 23 42 / 0.68);
   --glass-strong: rgb(11 17 33 / 0.88);
   --border-bright: #334155;
@@ -308,6 +310,51 @@ textarea {
 .brand-gradient-surface {
   background: var(--brand-gradient);
   color: var(--brand-deep);
+}
+
+.cockpit-kicker {
+  display: inline-flex;
+  min-height: 1.65rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-width: 1px;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.panel-label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.pulse-network::after {
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 120deg,
+    transparent,
+    var(--brand-cyan),
+    transparent 35%,
+    var(--brand-magenta),
+    transparent 68%,
+    var(--brand-amber),
+    transparent
+  );
+  content: "";
+  opacity: 0.75;
 }
 
 .pulse-panel {

@@ -1,59 +1,37 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import type { User } from "@supabase/supabase-js";
 import { MemoryRouter } from "react-router-dom";
-
-import { AuthContext, type AuthContextValue } from "@/contexts/AuthContext";
 
 import { Navbar } from "./Navbar";
 
-const fanAuth: AuthContextValue = {
-  user: null,
-  profile: null,
-  role: "fan",
-  loading: false,
-  signInGuest: vi.fn(),
-  signOut: vi.fn(),
-  refreshRole: vi.fn(),
-};
-
 describe("Navbar", () => {
-  it("replaces sign in with an account destination for authenticated users", () => {
+  it("exposes every copied reference route on desktop", () => {
     render(
       <MemoryRouter>
-        <AuthContext.Provider
-          value={{
-            ...fanAuth,
-            user: {
-              id: "fan-1",
-              email: "fan@example.com",
-              user_metadata: {},
-            } as User,
-          }}
-        >
-          <Navbar />
-        </AuthContext.Provider>
+        <Navbar />
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("link", { name: "Account" })).toHaveAttribute(
-      "href",
-      "/account",
-    );
+    const navigation = screen.getByRole("navigation", {
+      name: "Primary navigation",
+    });
+    for (const label of ["Home", "Fan", "Volunteer", "Staff", "Organizer"]) {
+      expect(
+        within(navigation).getByRole("link", { name: label }),
+      ).toBeVisible();
+    }
     expect(
-      screen.queryByRole("link", { name: "Sign in" }),
-    ).not.toBeInTheDocument();
+      within(navigation).getByRole("link", { name: "Get Tickets" }),
+    ).toHaveAttribute("href", "https://www.fifa.com/tickets");
   });
 
-  it("opens a labelled, task-first mobile menu", () => {
+  it("opens the reference-style mobile menu and closes after navigation", () => {
     render(
-      <MemoryRouter>
-        <AuthContext.Provider value={fanAuth}>
-          <Navbar />
-        </AuthContext.Provider>
+      <MemoryRouter initialEntries={["/volunteer"]}>
+        <Navbar />
       </MemoryRouter>,
     );
 
-    const menuButton = screen.getByRole("button", { name: "Menu" });
+    const menuButton = screen.getByRole("button", { name: "Toggle menu" });
     expect(menuButton).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(menuButton);
 
@@ -62,33 +40,12 @@ describe("Navbar", () => {
     });
     expect(menuButton).toHaveAttribute("aria-expanded", "true");
     expect(
-      within(mobileNavigation).getByRole("link", { name: /Plan a route/ }),
-    ).toBeInTheDocument();
-    expect(
-      within(mobileNavigation).getByRole("link", { name: /Ask for help/ }),
-    ).toBeInTheDocument();
-    expect(
-      within(mobileNavigation).getByRole("link", { name: /Travel/ }),
-    ).toBeInTheDocument();
-  });
+      within(mobileNavigation).getByRole("link", { name: "Volunteer" }),
+    ).toHaveAttribute("aria-current", "page");
 
-  it("closes the menu when a destination is selected", () => {
-    render(
-      <MemoryRouter>
-        <AuthContext.Provider value={fanAuth}>
-          <Navbar />
-        </AuthContext.Provider>
-      </MemoryRouter>,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    const mobileNavigation = screen.getByRole("navigation", {
-      name: "Mobile navigation",
-    });
     fireEvent.click(
-      within(mobileNavigation).getByRole("link", { name: /Live demo/ }),
+      within(mobileNavigation).getByRole("link", { name: "Organizer" }),
     );
-
     expect(
       screen.queryByRole("navigation", { name: "Mobile navigation" }),
     ).not.toBeInTheDocument();
