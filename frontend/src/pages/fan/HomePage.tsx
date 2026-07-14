@@ -13,6 +13,7 @@ import {
 import { Link } from "react-router-dom";
 
 import { AppShell } from "@/components/layout";
+import { VenueNetworkGlobe } from "@/components/visuals/VenueNetworkGlobe";
 
 const roles = [
   {
@@ -98,102 +99,6 @@ const highlights = [
   },
 ] as const;
 
-function NetworkGlobe(): JSX.Element {
-  return (
-    <div className="pulse-network relative aspect-square overflow-hidden rounded-2xl border border-border bg-card/55 p-5 shadow-[var(--shadow-card)] sm:p-7">
-      <div className="flex justify-between font-mono text-[0.58rem] uppercase tracking-[0.2em] text-muted-foreground">
-        <span>· Network · WC26</span>
-        <span className="text-primary">◆ Live 16 venues</span>
-      </div>
-      <svg
-        aria-label="Connected host-city network illustration"
-        className="mx-auto mt-2 h-[78%] w-[92%]"
-        fill="none"
-        role="img"
-        viewBox="0 0 520 420"
-      >
-        <defs>
-          <linearGradient id="globe-stroke" x1="0" x2="1">
-            <stop stopColor="var(--brand-cyan)" />
-            <stop offset="0.62" stopColor="var(--brand-magenta)" />
-            <stop offset="1" stopColor="var(--brand-amber)" />
-          </linearGradient>
-          <radialGradient id="globe-fill">
-            <stop stopColor="var(--glow-primary)" />
-            <stop offset="1" stopColor="transparent" />
-          </radialGradient>
-        </defs>
-        <ellipse cx="260" cy="214" fill="url(#globe-fill)" rx="185" ry="174" />
-        <circle
-          cx="260"
-          cy="214"
-          r="164"
-          stroke="var(--border-bright)"
-          strokeWidth="1.5"
-        />
-        {[42, 78, 116, 146].map((radius) => (
-          <ellipse
-            cx="260"
-            cy="214"
-            key={radius}
-            rx={radius}
-            ry="164"
-            stroke="var(--border-bright)"
-            strokeOpacity=".8"
-          />
-        ))}
-        {[-112, -72, -34, 0, 34, 72, 112].map((offset) => (
-          <ellipse
-            cx="260"
-            cy={214 + offset / 3}
-            key={offset}
-            rx={Math.sqrt(Math.max(1, 164 ** 2 - offset ** 2))}
-            ry={34 + Math.abs(offset) / 6}
-            stroke="var(--border-bright)"
-            strokeOpacity=".8"
-          />
-        ))}
-        <ellipse
-          cx="260"
-          cy="214"
-          rx="242"
-          ry="48"
-          stroke="url(#globe-stroke)"
-          strokeWidth="2"
-          transform="rotate(7 260 214)"
-        />
-        <ellipse
-          cx="260"
-          cy="214"
-          rx="226"
-          ry="70"
-          stroke="var(--brand-magenta)"
-          strokeOpacity=".65"
-          transform="rotate(-16 260 214)"
-        />
-        {["98 239", "177 92", "337 104", "418 226", "291 370"].map(
-          (position) => {
-            const [cx, cy] = position.split(" ").map(Number);
-            return (
-              <circle
-                cx={cx}
-                cy={cy}
-                fill="var(--brand-magenta)"
-                key={position}
-                r="5"
-              />
-            );
-          },
-        )}
-      </svg>
-      <div className="flex justify-between font-mono text-[0.55rem] uppercase tracking-[0.16em] text-muted-foreground">
-        <span>Lat 40.81 · Lng -74.07</span>
-        <span>Pulse-ok ▮▮▮▮▮▮▮▯▯</span>
-      </div>
-    </div>
-  );
-}
-
 /** Reference-faithful StadiumPulse landing page. */
 export default function HomePage(): JSX.Element {
   return (
@@ -247,7 +152,7 @@ export default function HomePage(): JSX.Element {
               ))}
             </dl>
           </div>
-          <NetworkGlobe />
+          <VenueNetworkGlobe />
         </section>
 
         <section aria-labelledby="roles-heading">
