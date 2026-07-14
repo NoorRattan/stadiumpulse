@@ -180,12 +180,15 @@ test("full motion works across browsers and the app opt-out stops it", async ({
   await expect(page.locator("#main-content")).toBeFocused();
 
   await expect(page.locator("html")).toHaveAttribute("data-motion", "full");
-  await expect(
-    page.getByLabel(
-      "Interactive 3D World Cup host-city network. Drag to rotate and use arrow keys to select venues.",
-    ),
-  ).toBeVisible();
+  const animatedGlobe = page.getByLabel(
+    "Interactive 3D World Cup host-city network. Drag to rotate and use arrow keys to select venues.",
+  );
+  await expect(animatedGlobe).toBeVisible();
   await expect(page.locator("canvas")).not.toHaveCount(0);
+  const firstGlobeFrame = await animatedGlobe.screenshot();
+  await page.waitForTimeout(500);
+  const nextGlobeFrame = await animatedGlobe.screenshot();
+  expect(nextGlobeFrame.equals(firstGlobeFrame)).toBe(false);
 
   await page.getByLabel("Reduce motion").check();
   await expect(page.locator("html")).toHaveAttribute("data-motion", "reduced");
