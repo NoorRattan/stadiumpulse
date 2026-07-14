@@ -173,6 +173,15 @@ function readColor(name: string, fallback: string): string {
   );
 }
 
+// Seeded pseudo-random for deterministic star positions
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
 /** Lightweight real-time 3D projection with drag, keyboard, and venue selection. */
 export function VenueNetworkGlobe(): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -183,8 +192,20 @@ export function VenueNetworkGlobe(): JSX.Element {
   const projectedRef = useRef<ProjectedNode[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(12);
   const [dragging, setDragging] = useState(false);
+  const pulseRef = useRef(0); // for pulsing animation
   const reducedMotion = useReducedMotionSafe();
   const selected = venues[selectedIndex];
+
+  // Stable star positions
+  const stars = useMemo(() => {
+    const rand = seededRandom(42);
+    return Array.from({ length: 120 }, () => ({
+      x: rand(),
+      y: rand(),
+      r: rand() * 1.4 + 0.3,
+      opacity: rand() * 0.6 + 0.15,
+    }));
+  }, []);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -212,39 +233,98 @@ export function VenueNetworkGlobe(): JSX.Element {
     const magenta = readColor("--brand-magenta", "#ff007f");
     const amber = readColor("--brand-amber", "#fbbf24");
     const foreground = readColor("--foreground", "#f1f5f9");
-    const border = readColor("--border-bright", "#334155");
-    const centerX = width / 2;
-    const centerY = height * 0.49;
-    const radius = Math.min(width * 0.35, height * 0.35);
+    const background = readColor("--background", "#0b1121");
+    // Dark mode has a very dark background starting with #0
+    const bgRaw = background.replace(/\s/g, "");
+    const isDark =
+      bgRaw.startsWith("#0") ||
+      bgRaw.startsWith("#1") ||
+      bgRaw.startsWith("rgb(1") ||
+      bgRaw.startsWith("rgb(0");
 
+    const centerX = width / 2;
+    const centerY = height * 0.47;
+    const radius = Math.min(width * 0.36, height * 0.36);
+
+    // ── Background (respect the card bg, not re-fill) ──────────────────────────
+    // Draw stars
+    for (const star of stars) {
+      const sx = star.x * width;
+      const sy = star.y * (height * 0.88);
+      const distFromCenter = Math.hypot(sx - centerX, sy - centerY);
+      // Fade stars near the globe
+      const starOpacity =
+        star.opacity * Math.min(1, distFromCenter / (radius * 0.7));
+      if (starOpacity < 0.02) continue;
+      context.beginPath();
+      context.arc(sx, sy, star.r, 0, Math.PI * 2);
+      context.fillStyle = isDark
+        ? `rgba(200,230,255,${starOpacity})`
+        : `rgba(0,100,140,${starOpacity * 0.35})`;
+      context.fill();
+    }
+
+    // ── Atmospheric radial glow — centered on the sphere ─────────────────────
     const glow = context.createRadialGradient(
       centerX,
       centerY,
-      radius * 0.1,
+      radius * 0.2,
       centerX,
       centerY,
       radius * 1.45,
     );
-    glow.addColorStop(0, `${cyan}22`);
-    glow.addColorStop(0.55, `${magenta}0d`);
-    glow.addColorStop(1, "transparent");
+    if (isDark) {
+      glow.addColorStop(0, `${magenta}1a`);
+      glow.addColorStop(0.45, `${cyan}12`);
+      glow.addColorStop(0.75, `${amber}08`);
+      glow.addColorStop(1, "transparent");
+    } else {
+      glow.addColorStop(0, `${magenta}12`);
+      glow.addColorStop(0.5, `${cyan}0a`);
+      glow.addColorStop(1, "transparent");
+    }
     context.fillStyle = glow;
     context.fillRect(0, 0, width, height);
 
+    // ── Sphere fill with volumetric shading ───────────────────────────────────
     const sphere = context.createRadialGradient(
-      centerX - radius * 0.28,
-      centerY - radius * 0.3,
-      radius * 0.08,
+      centerX - radius * 0.32,
+      centerY - radius * 0.34,
+      radius * 0.04,
       centerX,
       centerY,
-      radius,
+      radius * 1.05,
     );
-    sphere.addColorStop(0, `${cyan}24`);
-    sphere.addColorStop(0.52, `${border}18`);
-    sphere.addColorStop(1, `${magenta}08`);
+    if (isDark) {
+      sphere.addColorStop(0, `${cyan}30`);
+      sphere.addColorStop(0.28, `${magenta}18`);
+      sphere.addColorStop(0.62, `rgba(8,20,50,0.55)`);
+      sphere.addColorStop(1, `${magenta}10`);
+    } else {
+      sphere.addColorStop(0, `${cyan}22`);
+      sphere.addColorStop(0.35, `${magenta}12`);
+      sphere.addColorStop(0.72, `rgba(200,230,245,0.3)`);
+      sphere.addColorStop(1, `${amber}08`);
+    }
     context.beginPath();
     context.arc(centerX, centerY, radius, 0, Math.PI * 2);
     context.fillStyle = sphere;
+    context.fill();
+
+    // Sphere rim highlight (specular top-left)
+    const specular = context.createRadialGradient(
+      centerX - radius * 0.38,
+      centerY - radius * 0.42,
+      0,
+      centerX - radius * 0.38,
+      centerY - radius * 0.42,
+      radius * 0.55,
+    );
+    specular.addColorStop(0, `rgba(255,255,255,${isDark ? 0.12 : 0.22})`);
+    specular.addColorStop(1, "transparent");
+    context.beginPath();
+    context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    context.fillStyle = specular;
     context.fill();
 
     const project = (latitude: number, longitude: number) => {
@@ -278,8 +358,15 @@ export function VenueNetworkGlobe(): JSX.Element {
         context.beginPath();
         context.moveTo(previous.x, previous.y);
         context.lineTo(current.x, current.y);
-        context.strokeStyle = depth > 0 ? `${cyan}7a` : `${border}42`;
-        context.lineWidth = depth > 0 ? 1.15 : 0.7;
+        if (depth > 0) {
+          context.strokeStyle = isDark ? `${cyan}85` : `${cyan}60`;
+          context.lineWidth = 1.1;
+        } else {
+          context.strokeStyle = isDark
+            ? `rgba(50,80,100,0.45)`
+            : `rgba(0,120,160,0.22)`;
+          context.lineWidth = 0.65;
+        }
         context.stroke();
       }
     };
@@ -301,26 +388,47 @@ export function VenueNetworkGlobe(): JSX.Element {
       );
     }
 
+    // ── Orbit ring 1 – cyan→magenta→amber (main equatorial) ──────────────────
     context.save();
     context.translate(centerX, centerY);
     context.rotate(radians(-11));
-    context.scale(1, 0.23);
-    const orbit = context.createLinearGradient(
-      -radius * 1.45,
+    context.scale(1, 0.22);
+    const orbit1 = context.createLinearGradient(
+      -radius * 1.48,
       0,
-      radius * 1.45,
+      radius * 1.48,
       0,
     );
-    orbit.addColorStop(0, cyan);
-    orbit.addColorStop(0.55, magenta);
-    orbit.addColorStop(1, amber);
+    orbit1.addColorStop(0, cyan);
+    orbit1.addColorStop(0.45, magenta);
+    orbit1.addColorStop(1, amber);
     context.beginPath();
-    context.ellipse(0, 0, radius * 1.45, radius * 1.45, 0, 0, Math.PI * 2);
-    context.strokeStyle = orbit;
-    context.lineWidth = 3;
+    context.ellipse(0, 0, radius * 1.48, radius * 1.48, 0, 0, Math.PI * 2);
+    context.strokeStyle = orbit1;
+    context.lineWidth = 2.8;
+    context.shadowBlur = isDark ? 18 : 8;
+    context.shadowColor = magenta;
     context.stroke();
+    context.shadowBlur = 0;
     context.restore();
 
+    // ── Orbit ring 2 – cyan only, different angle ─────────────────────────────
+    context.save();
+    context.translate(centerX, centerY);
+    context.rotate(radians(22));
+    context.scale(1, 0.18);
+    context.beginPath();
+    context.ellipse(0, 0, radius * 1.35, radius * 1.35, 0, 0, Math.PI * 2);
+    context.strokeStyle = isDark ? `${cyan}90` : `${cyan}70`;
+    context.lineWidth = 1.8;
+    context.shadowBlur = isDark ? 10 : 4;
+    context.shadowColor = cyan;
+    context.stroke();
+    context.shadowBlur = 0;
+    context.restore();
+
+    // ── Venue nodes ───────────────────────────────────────────────────────────
+    const pulse = pulseRef.current;
     const projected = venues
       .map((venue) => {
         const point = project(venue.latitude, venue.longitude);
@@ -338,32 +446,95 @@ export function VenueNetworkGlobe(): JSX.Element {
       const active = node.code === selected.code;
       const visible = node.depth > -0.15;
       if (!visible && !active) continue;
-      const size = active ? 7 : 3.5 + Math.max(0, node.depth) * 2;
+      const depthFactor = Math.max(0, node.depth);
+      const size = active ? 7.5 : 3 + depthFactor * 2.5;
+
+      // Outer halo (pulsing for active)
+      const haloScale = active ? 1 + 0.35 * Math.sin(pulse * 0.06) : 1;
       context.beginPath();
       context.arc(
         node.screenX,
         node.screenY,
-        active ? size * 2.4 : size * 1.8,
+        (active ? size * 2.8 : size * 2) * haloScale,
         0,
         Math.PI * 2,
       );
-      context.fillStyle = active ? `${magenta}28` : `${cyan}18`;
+      const haloGrad = context.createRadialGradient(
+        node.screenX,
+        node.screenY,
+        0,
+        node.screenX,
+        node.screenY,
+        (active ? size * 2.8 : size * 2) * haloScale,
+      );
+      haloGrad.addColorStop(0, active ? `${magenta}40` : `${cyan}28`);
+      haloGrad.addColorStop(1, "transparent");
+      context.fillStyle = haloGrad;
       context.fill();
+
+      // Node core
       context.beginPath();
       context.arc(node.screenX, node.screenY, size, 0, Math.PI * 2);
-      context.fillStyle = active ? magenta : cyan;
-      context.shadowBlur = active ? 22 : 10;
+      context.fillStyle = active ? magenta : isDark ? cyan : `${cyan}cc`;
+      context.shadowBlur = active ? 28 : 14;
       context.shadowColor = active ? magenta : cyan;
       context.fill();
       context.shadowBlur = 0;
+
+      // Active node label
       if (active) {
         context.font = "700 11px 'JetBrains Mono Variable', monospace";
         context.fillStyle = foreground;
         context.textAlign = "center";
-        context.fillText(node.code, node.screenX, node.screenY - 18);
+        context.shadowBlur = 8;
+        context.shadowColor = magenta;
+        context.fillText(node.code, node.screenX, node.screenY - 20);
+        context.shadowBlur = 0;
       }
     }
-  }, [selected.code]);
+
+    // ── Bottom HUD: LAT / LNG / PULSE-OK ─────────────────────────────────────
+    const hudY = height - 14;
+    const hudOpacity = isDark ? 0.55 : 0.5;
+    context.font = "700 9px 'JetBrains Mono Variable', monospace";
+    context.fillStyle = isDark
+      ? `rgba(148,163,184,${hudOpacity})`
+      : `rgba(71,85,105,${hudOpacity})`;
+    context.textAlign = "left";
+    context.fillText(
+      `LAT ${selected.latitude.toFixed(2)} · LNG ${selected.longitude.toFixed(2)}`,
+      18,
+      hudY,
+    );
+
+    // PULSE-OK with segments
+    const segCount = 8;
+    const segW = 6;
+    const segH = 10;
+    const segGap = 2;
+    const pulseOkX = width - 18 - segCount * (segW + segGap) - 56;
+    context.textAlign = "right";
+    context.fillStyle = isDark
+      ? `rgba(0,240,255,${hudOpacity + 0.1})`
+      : `rgba(0,108,117,${hudOpacity + 0.1})`;
+    context.fillText("PULSE-OK", pulseOkX, hudY);
+    // Draw LED segments
+    for (let seg = 0; seg < segCount; seg++) {
+      const sx = pulseOkX + 8 + seg * (segW + segGap);
+      const active2 = seg < 6;
+      const sy = hudY - segH + 2;
+      context.fillStyle = active2
+        ? isDark
+          ? `rgba(0,240,255,0.75)`
+          : `rgba(0,108,117,0.75)`
+        : isDark
+          ? `rgba(0,240,255,0.18)`
+          : `rgba(0,108,117,0.18)`;
+      context.beginPath();
+      context.roundRect(sx, sy, segW, segH, 1.5);
+      context.fill();
+    }
+  }, [selected.code, selected.latitude, selected.longitude, stars]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -387,6 +558,7 @@ export function VenueNetworkGlobe(): JSX.Element {
       if (!reducedMotion && !dragging) {
         const delta = Math.min(now - previous, 40);
         rotationRef.current.y += delta * 0.00013;
+        pulseRef.current += 1;
       }
       previous = now;
       draw();
@@ -480,10 +652,15 @@ export function VenueNetworkGlobe(): JSX.Element {
       className="pulse-network relative aspect-square min-h-[390px] overflow-hidden rounded-2xl border border-border bg-card/55 shadow-[var(--shadow-card)]"
       ref={containerRef}
     >
+      {/* Top HUD */}
       <div className="pointer-events-none absolute inset-x-5 top-5 z-10 flex justify-between font-mono text-[0.58rem] uppercase tracking-[0.2em] text-muted-foreground sm:inset-x-7 sm:top-7">
         <span>· Network · WC26</span>
-        <span className="text-primary">◆ Live 16 venues</span>
+        <span className="flex items-center gap-1.5 text-primary">
+          <span className="inline-block h-1.5 w-1.5 animate-[live-pulse_2s_ease-in-out_infinite] rounded-full bg-primary" />
+          Live 16 venues
+        </span>
       </div>
+
       {reducedMotion ? (
         <div
           aria-describedby={detailId}
@@ -601,6 +778,8 @@ export function VenueNetworkGlobe(): JSX.Element {
           tabIndex={0}
         />
       )}
+
+      {/* Bottom node info panel */}
       <div className="absolute inset-x-4 bottom-4 z-10 flex items-end justify-between gap-3 rounded-xl border border-border bg-background/80 p-3 backdrop-blur-md sm:inset-x-6 sm:bottom-6 sm:p-4">
         <div className="min-w-0">
           <p className="flex items-center gap-2 font-mono text-[0.55rem] uppercase tracking-[0.18em] text-primary">
@@ -620,7 +799,7 @@ export function VenueNetworkGlobe(): JSX.Element {
         <div className="flex shrink-0 gap-2 sm:mr-32">
           <button
             aria-label="Select previous host city"
-            className="grid size-10 place-content-center rounded-lg border border-border bg-card hover:border-primary/60"
+            className="grid size-10 place-content-center rounded-lg border border-border bg-card transition-colors hover:border-primary/60 hover:bg-primary/10"
             onClick={() => selectRelative(-1)}
             type="button"
           >
@@ -628,7 +807,7 @@ export function VenueNetworkGlobe(): JSX.Element {
           </button>
           <button
             aria-label="Select next host city"
-            className="grid size-10 place-content-center rounded-lg border border-border bg-card hover:border-primary/60"
+            className="grid size-10 place-content-center rounded-lg border border-border bg-card transition-colors hover:border-primary/60 hover:bg-primary/10"
             onClick={() => selectRelative(1)}
             type="button"
           >

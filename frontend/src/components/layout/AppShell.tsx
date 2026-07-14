@@ -1,5 +1,6 @@
 import { memo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { LogIn } from "lucide-react";
 
 import { AccessibilityToggle } from "@/components/accessibility";
 import { BrandLogo } from "@/components/brand/BrandLogo";
@@ -67,6 +68,14 @@ export const AppShell = memo(function AppShell({
           <div className="flex items-center gap-2">
             <Navbar />
             <ThemeToggle />
+            <Link
+              to="/login"
+              className="navbar-login-btn"
+              aria-label="Sign in to your account"
+            >
+              <LogIn aria-hidden="true" className="size-3.5" />
+              <span>Login</span>
+            </Link>
           </div>
         </div>
       </header>

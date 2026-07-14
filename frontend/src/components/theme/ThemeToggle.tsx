@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Moon, Sun } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -32,7 +31,8 @@ export function ThemeToggle(): JSX.Element {
   const reducedMotion = useReducedMotionSafe();
   const animationFrame = useRef<number>();
   const overlay = useRef<HTMLCanvasElement | null>(null);
-  const next = theme === "dark" ? "light" : "dark";
+  const isDark = theme === "dark";
+  const next = isDark ? "light" : "dark";
 
   const removeOverlay = () => {
     if (animationFrame.current !== undefined) {
@@ -77,17 +77,15 @@ export function ThemeToggle(): JSX.Element {
       return;
     }
     context.scale(pixelRatio, pixelRatio);
-    context.fillStyle = window
-      .getComputedStyle(document.documentElement)
-      .getPropertyValue(`--theme-background-${incomingTheme}`)
-      .trim();
+    context.fillStyle = incomingTheme === "dark" ? "#0b1121" : "#f0f4f8";
+
     const originX = event.clientX;
     const originY = event.clientY;
     const farthestX = Math.max(originX, window.innerWidth - originX);
     const farthestY = Math.max(originY, window.innerHeight - originY);
     const maxRadius = Math.hypot(farthestX, farthestY) + 72;
     const startedAt = performance.now();
-    const duration = 620;
+    const duration = 680;
 
     const animate = (now: number) => {
       const progress = Math.min((now - startedAt) / duration, 1);
@@ -98,40 +96,46 @@ export function ThemeToggle(): JSX.Element {
         originX,
         originY,
         maxRadius * eased,
-        16 * (1 - progress) + 4,
-        progress * Math.PI * 4,
+        18 * (1 - progress) + 3,
+        progress * Math.PI * 5,
       );
       if (progress < 1) {
         animationFrame.current = window.requestAnimationFrame(animate);
         return;
       }
       setTheme(incomingTheme);
-      canvas.style.transition = "opacity 120ms ease-out";
+      canvas.style.transition = "opacity 140ms ease-out";
       animationFrame.current = window.requestAnimationFrame(() => {
         canvas.style.opacity = "0";
-        window.setTimeout(removeOverlay, 140);
+        window.setTimeout(removeOverlay, 160);
       });
     };
     animationFrame.current = window.requestAnimationFrame(animate);
   };
 
   return (
-    <Button
+    <button
       aria-label={`Switch to ${next} theme`}
-      className="relative h-11 shrink-0 overflow-hidden rounded-full border-border bg-card/80 px-3 text-foreground shadow-[var(--shadow-popover)] hover:border-primary/50 hover:bg-muted"
       onClick={handleThemeChange}
       title={`Switch to ${next} theme`}
       type="button"
-      variant="outline"
+      className="theme-toggle-pill"
     >
-      {theme === "dark" ? (
-        <Sun aria-hidden="true" className="relative z-10 size-4" />
-      ) : (
-        <Moon aria-hidden="true" className="relative z-10 size-4" />
-      )}
-      <span aria-hidden="true" className="relative z-10 hidden 2xl:inline">
-        {next === "dark" ? "Dark" : "Light"}
+      {/* Sliding thumb */}
+      <span
+        className={`theme-toggle-thumb ${isDark ? "theme-toggle-thumb--dark" : "theme-toggle-thumb--light"}`}
+        aria-hidden="true"
+      >
+        {isDark ? (
+          <Moon className="size-3.5" strokeWidth={2} />
+        ) : (
+          <Sun className="size-3.5" strokeWidth={2} />
+        )}
       </span>
-    </Button>
+      {/* Label */}
+      <span className="theme-toggle-text" aria-hidden="true">
+        {isDark ? "Dark" : "Light"}
+      </span>
+    </button>
   );
 }
