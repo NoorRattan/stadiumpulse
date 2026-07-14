@@ -61,6 +61,7 @@ test("public routes have no serious or critical axe violations", async ({
   await page.emulateMedia({ reducedMotion: "reduce" });
   for (const [path] of publicRoutes) {
     await page.goto(path, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1_200);
     const results = await new AxeBuilder({ page }).analyze();
     expect(
       results.violations.filter((violation) =>
@@ -167,7 +168,7 @@ test("account and role portals send signed-out visitors to sign in", async ({
   }
 });
 
-test("skip navigation moves focus and reduced motion stops animation", async ({
+test("full motion works across browsers and the app opt-out stops it", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -178,6 +179,16 @@ test("skip navigation moves focus and reduced motion stops animation", async ({
   await skipLink.press("Enter");
   await expect(page.locator("#main-content")).toBeFocused();
 
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "full");
+  await expect(
+    page.getByLabel(
+      "Interactive 3D World Cup host-city network. Drag to rotate and use arrow keys to select venues.",
+    ),
+  ).toBeVisible();
+  await expect(page.locator("canvas")).not.toHaveCount(0);
+
+  await page.getByLabel("Reduce motion").check();
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "reduced");
   await expect(page.locator("canvas")).toHaveCount(0);
   const motionStyles = await page
     .locator(".reveal-frame, button, a")
@@ -201,6 +212,8 @@ test("theme control is persistent, labelled, and motion-safe", async ({
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/", { waitUntil: "domcontentloaded" });
+
+  await page.getByLabel("Reduce motion").check();
 
   const toggle = page.getByRole("button", { name: "Switch to light theme" });
   await expect(toggle).toBeVisible();

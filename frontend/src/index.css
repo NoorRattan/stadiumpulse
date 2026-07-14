@@ -821,22 +821,21 @@ textarea {
 /* -------------------------------------------------
    Reduced motion
 ------------------------------------------------- */
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+html[data-motion="reduced"] {
+  scroll-behavior: auto;
+}
 
-  .reveal-frame {
-    opacity: 1;
-    transform: none;
-  }
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+html[data-motion="reduced"] .reveal-frame {
+  opacity: 1;
+  transform: none;
 }
 
 /* -------------------------------------------------

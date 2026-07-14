@@ -27,11 +27,7 @@ export interface AccessibilityContextValue {
 export const AccessibilityContext =
   createContext<AccessibilityContextValue | null>(null);
 
-function readPrefersReducedMotion(): boolean {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-/** Provides high-contrast, reduced-motion, and screen-reader preference state. */
+/** Provides high-contrast, explicit reduced-motion, and screen-reader state. */
 export function AccessibilityProvider({
   children,
 }: {
@@ -39,12 +35,9 @@ export function AccessibilityProvider({
 }): JSX.Element {
   const auth = useContext(AuthContext);
   const [highContrast, setHighContrast] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
-    readPrefersReducedMotion,
-  );
   const [reducedMotionOverride, setReducedMotionOverride] = useState<
     boolean | null
-  >(null);
+  >(false);
   const [screenReaderMode, setScreenReaderMode] = useState(false);
 
   useEffect(() => {
@@ -75,20 +68,13 @@ export function AccessibilityProvider({
         method: "PUT",
         body: {
           highContrast: next.highContrast ?? highContrast,
-          reducedMotion:
-            next.reducedMotion ?? reducedMotionOverride ?? prefersReducedMotion,
+          reducedMotion: next.reducedMotion ?? reducedMotionOverride ?? false,
           screenReaderMode: next.screenReaderMode ?? screenReaderMode,
           preferredLanguage: auth.profile?.preferredLanguage ?? "en",
         },
       }).catch(() => undefined);
     },
-    [
-      auth,
-      highContrast,
-      prefersReducedMotion,
-      reducedMotionOverride,
-      screenReaderMode,
-    ],
+    [auth, highContrast, reducedMotionOverride, screenReaderMode],
   );
 
   const updateHighContrast = useCallback(
@@ -101,9 +87,9 @@ export function AccessibilityProvider({
   const updateReducedMotion = useCallback(
     (enabled: boolean | null) => {
       setReducedMotionOverride(enabled);
-      persist({ reducedMotion: enabled ?? prefersReducedMotion });
+      persist({ reducedMotion: enabled ?? false });
     },
-    [persist, prefersReducedMotion],
+    [persist],
   );
   const updateScreenReaderMode = useCallback(
     (enabled: boolean) => {
@@ -112,13 +98,6 @@ export function AccessibilityProvider({
     },
     [persist],
   );
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handleChange = (): void => setPrefersReducedMotion(media.matches);
-    media.addEventListener("change", handleChange);
-    return () => media.removeEventListener("change", handleChange);
-  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.contrast = highContrast
@@ -132,7 +111,12 @@ export function AccessibilityProvider({
       : "standard";
   }, [screenReaderMode]);
 
-  const reducedMotion = reducedMotionOverride ?? prefersReducedMotion;
+  const reducedMotion = reducedMotionOverride ?? false;
+
+  useEffect(() => {
+    document.documentElement.dataset.motion =
+      reducedMotion || screenReaderMode ? "reduced" : "full";
+  }, [reducedMotion, screenReaderMode]);
   const value = useMemo<AccessibilityContextValue>(
     () => ({
       highContrast,
