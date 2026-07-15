@@ -113,7 +113,9 @@ jobs:
             "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
 
   deploy-frontend:
-    needs: [frontend-test, deploy-backend]
+    # Frontend deployment is independently verified and must not be blocked by
+    # a Render control-plane outage affecting the backend deploy hook.
+    needs: frontend-test
     runs-on: ubuntu-latest
     permissions:
       contents: read
