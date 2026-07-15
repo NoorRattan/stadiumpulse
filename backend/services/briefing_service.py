@@ -5,24 +5,10 @@ import asyncpg
 from models.briefing import Briefing
 from models.incident import IncidentReport
 from models.zone import Zone
-from services.crowd_service import zone_from_row
 from services.db import get_pool
-from services.exceptions import AIServiceError, ResourceNotFoundError
+from services.exceptions import AIServiceError
 from services.genkit_flows import briefingFlow
-
-
-async def load_zone(db: asyncpg.Pool, zone_id: str) -> Zone:
-    row = await db.fetchrow(
-        """
-        select zone_id, name, type, capacity, current_density_pct, last_updated, lat, lng
-        from public.zones
-        where zone_id = $1
-        """,
-        zone_id,
-    )
-    if row is None:
-        raise ResourceNotFoundError(f"Zone not found: {zone_id}")
-    return zone_from_row(row)
+from services.zone_service import load_zone
 
 
 def incident_from_row(row: object) -> IncidentReport:

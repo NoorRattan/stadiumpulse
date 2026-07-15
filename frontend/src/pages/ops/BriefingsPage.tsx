@@ -14,21 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useZoneOptions } from "@/hooks/useZoneOptions";
+import { zoneSummaryToZone } from "@/lib/zoneUtils";
 import { apiRequest } from "@/services/apiClient";
 import type { BriefingGenerateRequest } from "@/types/api";
-import type { Briefing, Zone, ZoneSummary } from "@/types/domain";
-
-function zoneSummaryToZone(zone: ZoneSummary): Zone {
-  return {
-    zoneId: zone.zoneId,
-    name: zone.name,
-    type: zone.type,
-    capacity: 1,
-    currentDensityPct: 0,
-    lastUpdated: "",
-    coordinates: { lat: 0, lng: 0 },
-  };
-}
+import type { Briefing } from "@/types/domain";
 
 /** Volunteer briefings page - shift intelligence with read-only access control. */
 export default function BriefingsPage(): JSX.Element {

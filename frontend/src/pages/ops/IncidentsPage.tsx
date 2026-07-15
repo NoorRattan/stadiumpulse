@@ -6,25 +6,14 @@ import { IncidentCopilotForm, IncidentList } from "@/components/incidents";
 import { AppShell } from "@/components/layout";
 import { FadeInView } from "@/components/motion/FadeInView";
 import { useZoneOptions } from "@/hooks/useZoneOptions";
+import { zoneSummaryToZone } from "@/lib/zoneUtils";
 import { apiRequest } from "@/services/apiClient";
 import type {
   IncidentCreateRequest,
   IncidentListResponse,
   IncidentUpdateRequest,
 } from "@/types/api";
-import type { IncidentReport, Zone, ZoneSummary } from "@/types/domain";
-
-function zoneSummaryToZone(zone: ZoneSummary): Zone {
-  return {
-    zoneId: zone.zoneId,
-    name: zone.name,
-    type: zone.type,
-    capacity: 1,
-    currentDensityPct: 0,
-    lastUpdated: "",
-    coordinates: { lat: 0, lng: 0 },
-  };
-}
+import type { IncidentReport } from "@/types/domain";
 
 /** Ops incident page with AI draft generation and separate submission. */
 export default function IncidentsPage(): JSX.Element {

@@ -6,11 +6,19 @@ import { useTheme } from "@/hooks/useTheme";
 
 function drawWave(
   context: CanvasRenderingContext2D,
-  originX: number,
-  originY: number,
-  radius: number,
-  amplitude: number,
-  phase: number,
+  {
+    amplitude,
+    originX,
+    originY,
+    phase,
+    radius,
+  }: {
+    amplitude: number;
+    originX: number;
+    originY: number;
+    phase: number;
+    radius: number;
+  },
 ): void {
   const points = 96;
   context.beginPath();
@@ -91,14 +99,13 @@ export function ThemeToggle(): JSX.Element {
       const progress = Math.min((now - startedAt) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       context.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      drawWave(
-        context,
+      drawWave(context, {
+        amplitude: 18 * (1 - progress) + 3,
         originX,
         originY,
-        maxRadius * eased,
-        18 * (1 - progress) + 3,
-        progress * Math.PI * 5,
-      );
+        phase: progress * Math.PI * 5,
+        radius: maxRadius * eased,
+      });
       if (progress < 1) {
         animationFrame.current = window.requestAnimationFrame(animate);
         return;

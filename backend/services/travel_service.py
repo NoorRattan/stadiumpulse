@@ -121,6 +121,35 @@ async def cache_suggestions(db: asyncpg.Pool, match_id: str, suggestions: list[T
     )
 
 
+def travel_context(match_id: str, match: dict[str, Any]) -> tuple[list[str], TransitLoad]:
+    load_estimate = match.get("transitLoadEstimate")
+    if load_estimate not in {"low", "medium", "high"}:
+        raise ValueError(f"Unsupported transitLoadEstimate for match {match_id}.")
+
+    venue_zone_ids = match.get("venueZoneIds")
+    if not isinstance(venue_zone_ids, list) or not all(isinstance(item, str) for item in venue_zone_ids):
+        raise ValueError(f"Match {match_id} has invalid venueZoneIds.")
+    return venue_zone_ids, load_estimate
+
+
+def describe_options(
+    options: list[TransitOption],
+    load_estimate: TransitLoad,
+    use_ai: bool,
+) -> tuple[list[str], bool]:
+    fallback = [option.note for option in options]
+    if not use_ai:
+        return fallback, False
+    try:
+        descriptions = describe_travel_options(
+            [{"mode": option.mode, "note": option.note} for option in options],
+            load_estimate,
+        )
+    except AIServiceError:
+        return fallback, False
+    return descriptions, True
+
+
 async def get_travel_suggestions(
     match_id: str,
     db: asyncpg.Pool | None = None,
@@ -132,26 +161,9 @@ async def get_travel_suggestions(
         return TravelSuggestionsResponse(matchId=match_id, suggestions=cached)
 
     match = await load_match(pool, match_id)
-    load_estimate = match.get("transitLoadEstimate")
-    if load_estimate not in {"low", "medium", "high"}:
-        raise ValueError(f"Unsupported transitLoadEstimate for match {match_id}.")
-
-    venue_zone_ids = match.get("venueZoneIds")
-    if not isinstance(venue_zone_ids, list) or not all(isinstance(item, str) for item in venue_zone_ids):
-        raise ValueError(f"Match {match_id} has invalid venueZoneIds.")
-
+    venue_zone_ids, load_estimate = travel_context(match_id, match)
     top_options = rank_by_load(static_transit_options_for_venue(venue_zone_ids), load_estimate)[:3]
-    descriptions = [option.note for option in top_options]
-    used_ai_descriptions = False
-    if use_ai:
-        try:
-            descriptions = describe_travel_options(
-                [{"mode": option.mode, "note": option.note} for option in top_options],
-                load_estimate,
-            )
-            used_ai_descriptions = True
-        except AIServiceError:
-            descriptions = [option.note for option in top_options]
+    descriptions, used_ai_descriptions = describe_options(top_options, load_estimate, use_ai)
     suggestions = [
         TravelSuggestion(mode=option.mode, description=description)
         for option, description in zip(top_options, descriptions, strict=False)

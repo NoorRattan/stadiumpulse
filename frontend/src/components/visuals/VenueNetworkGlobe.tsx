@@ -11,176 +11,13 @@ import { ChevronLeft, ChevronRight, Rotate3D } from "lucide-react";
 
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 
-interface VenueNode {
-  city: string;
-  code: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-}
-
-interface ProjectedNode extends VenueNode {
-  screenX: number;
-  screenY: number;
-  depth: number;
-}
-
-const venues: VenueNode[] = [
-  {
-    city: "Vancouver",
-    code: "YVR",
-    country: "Canada",
-    latitude: 49.28,
-    longitude: -123.12,
-  },
-  {
-    city: "Toronto",
-    code: "YYZ",
-    country: "Canada",
-    latitude: 43.65,
-    longitude: -79.38,
-  },
-  {
-    city: "Mexico City",
-    code: "MEX",
-    country: "Mexico",
-    latitude: 19.43,
-    longitude: -99.13,
-  },
-  {
-    city: "Guadalajara",
-    code: "GDL",
-    country: "Mexico",
-    latitude: 20.67,
-    longitude: -103.35,
-  },
-  {
-    city: "Monterrey",
-    code: "MTY",
-    country: "Mexico",
-    latitude: 25.69,
-    longitude: -100.32,
-  },
-  {
-    city: "Atlanta",
-    code: "ATL",
-    country: "United States",
-    latitude: 33.75,
-    longitude: -84.39,
-  },
-  {
-    city: "Boston",
-    code: "BOS",
-    country: "United States",
-    latitude: 42.36,
-    longitude: -71.06,
-  },
-  {
-    city: "Dallas",
-    code: "DFW",
-    country: "United States",
-    latitude: 32.78,
-    longitude: -96.8,
-  },
-  {
-    city: "Houston",
-    code: "HOU",
-    country: "United States",
-    latitude: 29.76,
-    longitude: -95.37,
-  },
-  {
-    city: "Kansas City",
-    code: "KC",
-    country: "United States",
-    latitude: 39.1,
-    longitude: -94.58,
-  },
-  {
-    city: "Los Angeles",
-    code: "LA",
-    country: "United States",
-    latitude: 34.05,
-    longitude: -118.24,
-  },
-  {
-    city: "Miami",
-    code: "MIA",
-    country: "United States",
-    latitude: 25.76,
-    longitude: -80.19,
-  },
-  {
-    city: "New York / New Jersey",
-    code: "NYNJ",
-    country: "United States",
-    latitude: 40.81,
-    longitude: -74.07,
-  },
-  {
-    city: "Philadelphia",
-    code: "PHL",
-    country: "United States",
-    latitude: 39.95,
-    longitude: -75.17,
-  },
-  {
-    city: "San Francisco Bay Area",
-    code: "SF",
-    country: "United States",
-    latitude: 37.77,
-    longitude: -122.42,
-  },
-  {
-    city: "Seattle",
-    code: "SEA",
-    country: "United States",
-    latitude: 47.61,
-    longitude: -122.33,
-  },
-];
-
-const radians = (degrees: number) => (degrees * Math.PI) / 180;
-
-function rotatePoint(
-  latitude: number,
-  longitude: number,
-  rotationX: number,
-  rotationY: number,
-): { x: number; y: number; z: number } {
-  const lat = radians(latitude);
-  const lon = radians(longitude);
-  const x = Math.cos(lat) * Math.sin(lon);
-  const y = Math.sin(lat);
-  const z = Math.cos(lat) * Math.cos(lon);
-  const cosY = Math.cos(rotationY);
-  const sinY = Math.sin(rotationY);
-  const rotatedX = x * cosY + z * sinY;
-  const rotatedZ = z * cosY - x * sinY;
-  const cosX = Math.cos(rotationX);
-  const sinX = Math.sin(rotationX);
-  return {
-    x: rotatedX,
-    y: y * cosX - rotatedZ * sinX,
-    z: y * sinX + rotatedZ * cosX,
-  };
-}
-
-function readColor(name: string, fallback: string): string {
-  return (
-    getComputedStyle(document.documentElement).getPropertyValue(name).trim() ||
-    fallback
-  );
-}
-
-// Seeded pseudo-random for deterministic star positions
-function seededRandom(seed: number): () => number {
-  let s = seed;
-  return () => {
-    s = (s * 16807 + 0) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
+import {
+  createVenueStars,
+  radians,
+  renderVenueScene,
+  venueNodes,
+  type ProjectedNode,
+} from "./venueNetworkScene";
 
 /** Lightweight real-time 3D projection with drag, keyboard, and venue selection. */
 export function VenueNetworkGlobe(): JSX.Element {
@@ -194,347 +31,23 @@ export function VenueNetworkGlobe(): JSX.Element {
   const [dragging, setDragging] = useState(false);
   const pulseRef = useRef(0); // for pulsing animation
   const reducedMotion = useReducedMotionSafe();
-  const selected = venues[selectedIndex];
+  const selected = venueNodes[selectedIndex];
 
-  // Stable star positions
-  const stars = useMemo(() => {
-    const rand = seededRandom(42);
-    return Array.from({ length: 120 }, () => ({
-      x: rand(),
-      y: rand(),
-      r: rand() * 1.4 + 0.3,
-      opacity: rand() * 0.6 + 0.15,
-    }));
-  }, []);
+  const stars = useMemo(() => createVenueStars(), []);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
-    const rect = container.getBoundingClientRect();
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    const width = Math.max(320, rect.width);
-    const height = Math.max(390, rect.height);
-    if (
-      canvas.width !== Math.round(width * ratio) ||
-      canvas.height !== Math.round(height * ratio)
-    ) {
-      canvas.width = Math.round(width * ratio);
-      canvas.height = Math.round(height * ratio);
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-    }
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    context.clearRect(0, 0, width, height);
-
-    const cyan = readColor("--brand-cyan", "#00f0ff");
-    const magenta = readColor("--brand-magenta", "#ff007f");
-    const amber = readColor("--brand-amber", "#fbbf24");
-    const foreground = readColor("--foreground", "#f1f5f9");
-    const background = readColor("--background", "#0b1121");
-    // Dark mode has a very dark background starting with #0
-    const bgRaw = background.replace(/\s/g, "");
-    const isDark =
-      bgRaw.startsWith("#0") ||
-      bgRaw.startsWith("#1") ||
-      bgRaw.startsWith("rgb(1") ||
-      bgRaw.startsWith("rgb(0");
-
-    const centerX = width / 2;
-    const centerY = height * 0.47;
-    const radius = Math.min(width * 0.36, height * 0.36);
-
-    // ── Background (respect the card bg, not re-fill) ──────────────────────────
-    // Draw stars
-    for (const star of stars) {
-      const sx = star.x * width;
-      const sy = star.y * (height * 0.88);
-      const distFromCenter = Math.hypot(sx - centerX, sy - centerY);
-      // Fade stars near the globe
-      const starOpacity =
-        star.opacity * Math.min(1, distFromCenter / (radius * 0.7));
-      if (starOpacity < 0.02) continue;
-      context.beginPath();
-      context.arc(sx, sy, star.r, 0, Math.PI * 2);
-      context.fillStyle = isDark
-        ? `rgba(200,230,255,${starOpacity})`
-        : `rgba(0,100,140,${starOpacity * 0.35})`;
-      context.fill();
-    }
-
-    // ── Atmospheric radial glow — centered on the sphere ─────────────────────
-    const glow = context.createRadialGradient(
-      centerX,
-      centerY,
-      radius * 0.2,
-      centerX,
-      centerY,
-      radius * 1.45,
-    );
-    if (isDark) {
-      glow.addColorStop(0, `${magenta}1a`);
-      glow.addColorStop(0.45, `${cyan}12`);
-      glow.addColorStop(0.75, `${amber}08`);
-      glow.addColorStop(1, "transparent");
-    } else {
-      glow.addColorStop(0, `${magenta}12`);
-      glow.addColorStop(0.5, `${cyan}0a`);
-      glow.addColorStop(1, "transparent");
-    }
-    context.fillStyle = glow;
-    context.fillRect(0, 0, width, height);
-
-    // ── Sphere fill with volumetric shading ───────────────────────────────────
-    const sphere = context.createRadialGradient(
-      centerX - radius * 0.32,
-      centerY - radius * 0.34,
-      radius * 0.04,
-      centerX,
-      centerY,
-      radius * 1.05,
-    );
-    if (isDark) {
-      sphere.addColorStop(0, `${cyan}30`);
-      sphere.addColorStop(0.28, `${magenta}18`);
-      sphere.addColorStop(0.62, `rgba(8,20,50,0.55)`);
-      sphere.addColorStop(1, `${magenta}10`);
-    } else {
-      sphere.addColorStop(0, `${cyan}22`);
-      sphere.addColorStop(0.35, `${magenta}12`);
-      sphere.addColorStop(0.72, `rgba(200,230,245,0.3)`);
-      sphere.addColorStop(1, `${amber}08`);
-    }
-    context.beginPath();
-    context.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    context.fillStyle = sphere;
-    context.fill();
-
-    // Sphere rim highlight (specular top-left)
-    const specular = context.createRadialGradient(
-      centerX - radius * 0.38,
-      centerY - radius * 0.42,
-      0,
-      centerX - radius * 0.38,
-      centerY - radius * 0.42,
-      radius * 0.55,
-    );
-    specular.addColorStop(0, `rgba(255,255,255,${isDark ? 0.12 : 0.22})`);
-    specular.addColorStop(1, "transparent");
-    context.beginPath();
-    context.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    context.fillStyle = specular;
-    context.fill();
-
-    const project = (latitude: number, longitude: number) => {
-      const point = rotatePoint(
-        latitude,
-        longitude,
-        rotationRef.current.x,
-        rotationRef.current.y,
-      );
-      const perspective = 0.9 + point.z * 0.11;
-      return {
-        x: centerX + point.x * radius * perspective,
-        y: centerY - point.y * radius * perspective,
-        z: point.z,
-      };
-    };
-
-    const drawGridLine = (
-      points: Array<{ latitude: number; longitude: number }>,
-    ) => {
-      for (let index = 1; index < points.length; index += 1) {
-        const previous = project(
-          points[index - 1].latitude,
-          points[index - 1].longitude,
-        );
-        const current = project(
-          points[index].latitude,
-          points[index].longitude,
-        );
-        const depth = (previous.z + current.z) / 2;
-        context.beginPath();
-        context.moveTo(previous.x, previous.y);
-        context.lineTo(current.x, current.y);
-        if (depth > 0) {
-          context.strokeStyle = isDark ? `${cyan}85` : `${cyan}60`;
-          context.lineWidth = 1.1;
-        } else {
-          context.strokeStyle = isDark
-            ? `rgba(50,80,100,0.45)`
-            : `rgba(0,120,160,0.22)`;
-          context.lineWidth = 0.65;
-        }
-        context.stroke();
-      }
-    };
-
-    for (let latitude = -75; latitude <= 75; latitude += 15) {
-      drawGridLine(
-        Array.from({ length: 73 }, (_, index) => ({
-          latitude,
-          longitude: -180 + index * 5,
-        })),
-      );
-    }
-    for (let longitude = -180; longitude < 180; longitude += 15) {
-      drawGridLine(
-        Array.from({ length: 37 }, (_, index) => ({
-          latitude: -90 + index * 5,
-          longitude,
-        })),
-      );
-    }
-
-    // ── Orbit ring 1 – cyan→magenta→amber (main equatorial) ──────────────────
-    context.save();
-    context.translate(centerX, centerY);
-    context.rotate(radians(-11));
-    context.scale(1, 0.22);
-    const orbit1 = context.createLinearGradient(
-      -radius * 1.48,
-      0,
-      radius * 1.48,
-      0,
-    );
-    orbit1.addColorStop(0, cyan);
-    orbit1.addColorStop(0.45, magenta);
-    orbit1.addColorStop(1, amber);
-    context.beginPath();
-    context.ellipse(0, 0, radius * 1.48, radius * 1.48, 0, 0, Math.PI * 2);
-    context.strokeStyle = orbit1;
-    context.lineWidth = 2.8;
-    context.shadowBlur = isDark ? 18 : 8;
-    context.shadowColor = magenta;
-    context.stroke();
-    context.shadowBlur = 0;
-    context.restore();
-
-    // ── Orbit ring 2 – cyan only, different angle ─────────────────────────────
-    context.save();
-    context.translate(centerX, centerY);
-    context.rotate(radians(22));
-    context.scale(1, 0.18);
-    context.beginPath();
-    context.ellipse(0, 0, radius * 1.35, radius * 1.35, 0, 0, Math.PI * 2);
-    context.strokeStyle = isDark ? `${cyan}90` : `${cyan}70`;
-    context.lineWidth = 1.8;
-    context.shadowBlur = isDark ? 10 : 4;
-    context.shadowColor = cyan;
-    context.stroke();
-    context.shadowBlur = 0;
-    context.restore();
-
-    // ── Venue nodes ───────────────────────────────────────────────────────────
-    const pulse = pulseRef.current;
-    const projected = venues
-      .map((venue) => {
-        const point = project(venue.latitude, venue.longitude);
-        return {
-          ...venue,
-          screenX: point.x,
-          screenY: point.y,
-          depth: point.z,
-        };
-      })
-      .sort((a, b) => a.depth - b.depth);
-    projectedRef.current = projected;
-
-    for (const node of projected) {
-      const active = node.code === selected.code;
-      const visible = node.depth > -0.15;
-      if (!visible && !active) continue;
-      const depthFactor = Math.max(0, node.depth);
-      const size = active ? 7.5 : 3 + depthFactor * 2.5;
-
-      // Outer halo (pulsing for active)
-      const haloScale = active ? 1 + 0.35 * Math.sin(pulse * 0.06) : 1;
-      context.beginPath();
-      context.arc(
-        node.screenX,
-        node.screenY,
-        (active ? size * 2.8 : size * 2) * haloScale,
-        0,
-        Math.PI * 2,
-      );
-      const haloGrad = context.createRadialGradient(
-        node.screenX,
-        node.screenY,
-        0,
-        node.screenX,
-        node.screenY,
-        (active ? size * 2.8 : size * 2) * haloScale,
-      );
-      haloGrad.addColorStop(0, active ? `${magenta}40` : `${cyan}28`);
-      haloGrad.addColorStop(1, "transparent");
-      context.fillStyle = haloGrad;
-      context.fill();
-
-      // Node core
-      context.beginPath();
-      context.arc(node.screenX, node.screenY, size, 0, Math.PI * 2);
-      context.fillStyle = active ? magenta : isDark ? cyan : `${cyan}cc`;
-      context.shadowBlur = active ? 28 : 14;
-      context.shadowColor = active ? magenta : cyan;
-      context.fill();
-      context.shadowBlur = 0;
-
-      // Active node label
-      if (active) {
-        context.font = "700 11px 'JetBrains Mono Variable', monospace";
-        context.fillStyle = foreground;
-        context.textAlign = "center";
-        context.shadowBlur = 8;
-        context.shadowColor = magenta;
-        context.fillText(node.code, node.screenX, node.screenY - 20);
-        context.shadowBlur = 0;
-      }
-    }
-
-    // ── Bottom HUD: LAT / LNG / PULSE-OK ─────────────────────────────────────
-    const hudY = height - 14;
-    const hudOpacity = isDark ? 0.55 : 0.5;
-    context.font = "700 9px 'JetBrains Mono Variable', monospace";
-    context.fillStyle = isDark
-      ? `rgba(148,163,184,${hudOpacity})`
-      : `rgba(71,85,105,${hudOpacity})`;
-    context.textAlign = "left";
-    context.fillText(
-      `LAT ${selected.latitude.toFixed(2)} · LNG ${selected.longitude.toFixed(2)}`,
-      18,
-      hudY,
-    );
-
-    // PULSE-OK with segments
-    const segCount = 8;
-    const segW = 6;
-    const segH = 10;
-    const segGap = 2;
-    const pulseOkX = width - 18 - segCount * (segW + segGap) - 56;
-    context.textAlign = "right";
-    context.fillStyle = isDark
-      ? `rgba(0,240,255,${hudOpacity + 0.1})`
-      : `rgba(0,108,117,${hudOpacity + 0.1})`;
-    context.fillText("PULSE-OK", pulseOkX, hudY);
-    // Draw LED segments
-    for (let seg = 0; seg < segCount; seg++) {
-      const sx = pulseOkX + 8 + seg * (segW + segGap);
-      const active2 = seg < 6;
-      const sy = hudY - segH + 2;
-      context.fillStyle = active2
-        ? isDark
-          ? `rgba(0,240,255,0.75)`
-          : `rgba(0,108,117,0.75)`
-        : isDark
-          ? `rgba(0,240,255,0.18)`
-          : `rgba(0,108,117,0.18)`;
-      context.beginPath();
-      context.roundRect(sx, sy, segW, segH, 1.5);
-      context.fill();
-    }
-  }, [selected.code, selected.latitude, selected.longitude, stars]);
+    projectedRef.current = renderVenueScene({
+      canvas,
+      container,
+      pulse: pulseRef.current,
+      rotation: rotationRef.current,
+      selected,
+      stars,
+    });
+  }, [selected, stars]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -575,7 +88,7 @@ export function VenueNetworkGlobe(): JSX.Element {
 
   const selectRelative = (offset: number) => {
     setSelectedIndex(
-      (current) => (current + offset + venues.length) % venues.length,
+      (current) => (current + offset + venueNodes.length) % venueNodes.length,
     );
   };
 
@@ -620,7 +133,7 @@ export function VenueNetworkGlobe(): JSX.Element {
         }))
         .sort((a, b) => a.distance - b.distance)[0];
       if (target && target.distance <= 20) {
-        const index = venues.findIndex(
+        const index = venueNodes.findIndex(
           (venue) => venue.code === target.node.code,
         );
         if (index >= 0) setSelectedIndex(index);
@@ -665,7 +178,7 @@ export function VenueNetworkGlobe(): JSX.Element {
         <div
           aria-describedby={detailId}
           aria-label="Static 3D World Cup host-city network. Use arrow keys to select venues."
-          aria-valuemax={venues.length - 1}
+          aria-valuemax={venueNodes.length - 1}
           aria-valuemin={0}
           aria-valuenow={selectedIndex}
           aria-valuetext={`${selected.city}, ${selected.country}`}
@@ -763,7 +276,7 @@ export function VenueNetworkGlobe(): JSX.Element {
         <canvas
           aria-describedby={detailId}
           aria-label="Interactive 3D World Cup host-city network. Drag to rotate and use arrow keys to select venues."
-          aria-valuemax={venues.length - 1}
+          aria-valuemax={venueNodes.length - 1}
           aria-valuemin={0}
           aria-valuenow={selectedIndex}
           aria-valuetext={`${selected.city}, ${selected.country}`}

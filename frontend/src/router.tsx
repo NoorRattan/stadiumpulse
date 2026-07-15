@@ -30,27 +30,23 @@ const CockpitPage = lazy(() => import("./pages/CockpitPage"));
 function RouteFrame({ children }: { children: ReactNode }): JSX.Element {
   return (
     <ErrorBoundary>
-      <Suspense
-        fallback={
-          <div className="grid min-h-[50vh] place-content-center px-6 py-10 text-muted-foreground">
-            <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          </div>
-        }
-      >
-        {children}
-      </Suspense>
+      <Suspense fallback={<RouteLoading />}>{children}</Suspense>
     </ErrorBoundary>
+  );
+}
+
+function RouteLoading(): JSX.Element {
+  return (
+    <div className="grid min-h-[50vh] place-content-center px-6 py-10 text-muted-foreground">
+      <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
   );
 }
 
 function OpsGuard({ children }: { children: ReactNode }): JSX.Element {
   const { user, role, loading } = useAuth();
   if (loading) {
-    return (
-      <div className="grid min-h-[50vh] place-content-center px-6 py-10 text-muted-foreground">
-        <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
+    return <RouteLoading />;
   }
   if (!user) {
     return <Navigate replace to="/login" />;
@@ -64,11 +60,7 @@ function OpsGuard({ children }: { children: ReactNode }): JSX.Element {
 function AccountGuard({ children }: { children: ReactNode }): JSX.Element {
   const { user, loading } = useAuth();
   if (loading) {
-    return (
-      <div className="grid min-h-[50vh] place-content-center px-6 py-10 text-muted-foreground">
-        <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
+    return <RouteLoading />;
   }
   if (!user) {
     return <Navigate replace to="/login" />;
@@ -79,11 +71,7 @@ function AccountGuard({ children }: { children: ReactNode }): JSX.Element {
 function StaffGuard({ children }: { children: ReactNode }): JSX.Element {
   const { user, role, loading } = useAuth();
   if (loading) {
-    return (
-      <div className="grid min-h-[50vh] place-content-center px-6 py-10 text-muted-foreground">
-        <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
+    return <RouteLoading />;
   }
   if (!user) return <Navigate replace to="/login" />;
   if (role !== "staff") return <Navigate replace to="/account" />;

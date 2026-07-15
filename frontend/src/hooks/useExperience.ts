@@ -33,9 +33,8 @@ function errorText(error: unknown): string {
     : "StadiumPulse information is temporarily unavailable.";
 }
 
-/** Loads the shared public tournament and venue information hub once per session. */
-export function usePublicExperience(): ResourceState<PublicExperienceResponse> {
-  const [data, setData] = useState<PublicExperienceResponse | null>(null);
+function useResource<T>(load: () => Promise<T>): ResourceState<T> {
+  const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,71 +42,41 @@ export function usePublicExperience(): ResourceState<PublicExperienceResponse> {
     setLoading(true);
     setError(null);
     try {
-      setData(await loadPublicExperience());
+      setData(await load());
     } catch (caught) {
       setError(errorText(caught));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [load]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
-
   return { data, loading, error, refresh };
+}
+
+/** Loads the shared public tournament and venue information hub once per session. */
+export function usePublicExperience(): ResourceState<PublicExperienceResponse> {
+  return useResource(loadPublicExperience);
 }
 
 /** Loads the authenticated fan account's demo passes and portable preferences. */
 export function useAccountExperience(): ResourceState<AccountExperienceResponse> {
-  const [data, setData] = useState<AccountExperienceResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setData(
-        await apiRequest<AccountExperienceResponse>("/api/account/overview"),
-      );
-    } catch (caught) {
-      setError(errorText(caught));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  return { data, loading, error, refresh };
+  const load = useCallback(
+    () => apiRequest<AccountExperienceResponse>("/api/account/overview"),
+    [],
+  );
+  return useResource(load);
 }
 
 /** Loads a role-scoped workspace; backend authorization remains authoritative. */
 export function useRolePortal(
   kind: PortalKind,
 ): ResourceState<RolePortalResponse> {
-  const [data, setData] = useState<RolePortalResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setData(await apiRequest<RolePortalResponse>(`/api/portals/${kind}`));
-    } catch (caught) {
-      setError(errorText(caught));
-    } finally {
-      setLoading(false);
-    }
-  }, [kind]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  return { data, loading, error, refresh };
+  const load = useCallback(
+    () => apiRequest<RolePortalResponse>(`/api/portals/${kind}`),
+    [kind],
+  );
+  return useResource(load);
 }

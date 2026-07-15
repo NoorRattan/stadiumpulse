@@ -7,6 +7,14 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 Environment = Literal["development", "production", "test"]
 
 
+def normalize_allowed_origins(value: str | list[str]) -> list[str]:
+    origins = value if isinstance(value, list) else [origin.strip() for origin in value.split(",")]
+    origins = [origin.strip().rstrip("/") for origin in origins if origin.strip()]
+    if "*" in origins:
+        raise ValueError("Wildcard CORS origins are not allowed with authenticated requests.")
+    return origins
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -46,11 +54,7 @@ class Settings(BaseSettings):
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def split_allowed_origins(cls: type["Settings"], value: str | list[str]) -> list[str]:
-        origins = value if isinstance(value, list) else [origin.strip() for origin in value.split(",")]
-        origins = [origin.strip().rstrip("/") for origin in origins if origin.strip()]
-        if "*" in origins:
-            raise ValueError("Wildcard CORS origins are not allowed with authenticated requests.")
-        return origins
+        return normalize_allowed_origins(value)
 
 
 class CorsBootstrapSettings(BaseSettings):
@@ -64,11 +68,7 @@ class CorsBootstrapSettings(BaseSettings):
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def split_allowed_origins(cls: type["CorsBootstrapSettings"], value: str | list[str]) -> list[str]:
-        origins = value if isinstance(value, list) else [origin.strip() for origin in value.split(",")]
-        origins = [origin.strip().rstrip("/") for origin in origins if origin.strip()]
-        if "*" in origins:
-            raise ValueError("Wildcard CORS origins are not allowed with authenticated requests.")
-        return origins
+        return normalize_allowed_origins(value)
 
 
 @lru_cache

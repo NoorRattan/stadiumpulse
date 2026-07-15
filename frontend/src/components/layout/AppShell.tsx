@@ -44,6 +44,35 @@ const additionalLinks = [
   ["Sign In", "/login"],
 ] as const;
 
+type FooterLink = readonly [label: string, href: string];
+
+function FooterLinkGroup({
+  label,
+  links,
+  twoColumns = false,
+}: {
+  label: string;
+  links: readonly FooterLink[];
+  twoColumns?: boolean;
+}): JSX.Element {
+  return (
+    <nav aria-label={`${label} links`}>
+      <h2 className="font-display text-sm font-bold">{label}</h2>
+      <ul
+        className={`mt-4 grid gap-3 text-sm text-muted-foreground ${twoColumns ? "grid-cols-2 lg:grid-cols-1" : ""}`}
+      >
+        {links.map(([linkLabel, href]) => (
+          <li key={href}>
+            <Link className="hover:text-primary" to={href}>
+              {linkLabel}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 /** Shared reference-matched shell used by copied and StadiumPulse-only pages. */
 export const AppShell = memo(function AppShell({
   children,
@@ -101,42 +130,13 @@ export const AppShell = memo(function AppShell({
               Connected demo · Synthetic venue signals · Human-approved ops
             </p>
           </div>
-          <nav aria-label="Platform links">
-            <h2 className="font-display text-sm font-bold">Platform</h2>
-            <ul className="mt-4 grid gap-3 text-sm text-muted-foreground">
-              {platformLinks.map(([label, href]) => (
-                <li key={href}>
-                  <Link className="hover:text-primary" to={href}>
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <nav aria-label="Match day links">
-            <h2 className="font-display text-sm font-bold">Match Day</h2>
-            <ul className="mt-4 grid gap-3 text-sm text-muted-foreground">
-              {matchDayLinks.map(([label, href]) => (
-                <li key={href}>
-                  <Link className="hover:text-primary" to={href}>
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <nav aria-label="More StadiumPulse links">
-            <h2 className="font-display text-sm font-bold">More</h2>
-            <ul className="mt-4 grid grid-cols-2 gap-3 text-sm text-muted-foreground lg:grid-cols-1">
-              {additionalLinks.map(([label, href]) => (
-                <li key={href}>
-                  <Link className="hover:text-primary" to={href}>
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <FooterLinkGroup label="Platform" links={platformLinks} />
+          <FooterLinkGroup label="Match day" links={matchDayLinks} />
+          <FooterLinkGroup
+            label="More StadiumPulse"
+            links={additionalLinks}
+            twoColumns
+          />
         </div>
         <div className="border-t border-border px-4 py-5">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
