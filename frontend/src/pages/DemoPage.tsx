@@ -121,7 +121,7 @@ function DemoHero(): JSX.Element {
       >
         <span className="inline-flex items-center gap-2 border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
           <Sparkles aria-hidden="true" className="size-3" />
-          FIFA World Cup 2026 demo
+          Smart Stadiums &amp; Tournament Operations · FIFA World Cup 2026
         </span>
       </motion.div>
       <motion.h1

@@ -2,16 +2,19 @@ from datetime import UTC, datetime
 
 import asyncpg
 
+from models.zone import Zone
 from schemas.responses import (
     CrowdZoneSummary,
     DemoCapability,
     DemoConciergeExample,
     DemoExperienceResponse,
     DemoMatchResponse,
+    OperationalDigestItem,
     OperationalDigestResponse,
     TravelSuggestion,
 )
 from services.crowd_service import (
+    OperationalRisk,
     build_operational_digest_items,
     build_operational_risks,
     congestion_band,
@@ -37,6 +40,114 @@ def demo_alert(name: str, density_pct: float) -> str:
     if band == "MODERATE":
         return f"Monitor {name} and verify the next simulated reading."
     return f"{name} is operating within the normal demo range."
+
+
+def _build_demo_match(match_row: asyncpg.Record) -> DemoMatchResponse:
+    return DemoMatchResponse(
+        matchId=str(match_row["id"]),
+        homeTeam=str(match_row["home_team"]),
+        awayTeam=str(match_row["away_team"]),
+        kickoffAt=match_row["kickoff_at"].isoformat(),
+        transitLoadEstimate=match_row["transit_load_estimate"],
+    )
+
+
+def _build_zone_summaries(zones: list[Zone]) -> list[CrowdZoneSummary]:
+    return [
+        CrowdZoneSummary(
+            zoneId=zone.zone_id,
+            name=zone.name,
+            currentDensityPct=zone.current_density_pct,
+            band=congestion_band(zone.current_density_pct).lower(),
+            alert=demo_alert(zone.name, zone.current_density_pct),
+            lastUpdated=zone.last_updated.isoformat(),
+        )
+        for zone in zones
+    ]
+
+
+def _build_concierge_examples() -> list[DemoConciergeExample]:
+    return [
+        DemoConciergeExample(
+            language="English",
+            question="What is the step-free route to Section 114?",
+            answer=SECTION_114_ACCESSIBLE_GUIDANCE,
+        ),
+        DemoConciergeExample(
+            language="Español",
+            question="¿Dónde está la entrada accesible?",
+            answer="La entrada accesible está en la Puerta 2. El personal con uniforme puede ayudarle.",
+        ),
+        DemoConciergeExample(
+            language="हिन्दी",
+            question="कम भीड़ वाला रास्ता कौन सा है?",
+            answer="गेट 2 से नॉर्थ कॉनकोर्स वाला रास्ता लें और लाइव संकेतों का पालन करें।",
+        ),
+    ]
+
+
+def _build_travel_suggestions() -> list[TravelSuggestion]:
+    return [
+        TravelSuggestion(
+            mode="rail",
+            description="Use high-capacity rail for the heavy arrival wave and follow timed station guidance.",
+        ),
+        TravelSuggestion(
+            mode="stadium-shuttle",
+            description="Board the outer-hub shuttle to reduce private vehicle traffic near stadium gates.",
+        ),
+        TravelSuggestion(
+            mode="rideshare-pool",
+            description="Use the signed pooled pickup zone after peak pedestrian flow.",
+        ),
+    ]
+
+
+def _build_operations_digest(
+    generated_at: str,
+    risks: list[OperationalRisk],
+    digest_items: list[OperationalDigestItem],
+) -> OperationalDigestResponse:
+    return OperationalDigestResponse(
+        generatedAt=generated_at,
+        minutesAhead=15,
+        headline=(
+            f"{len(risks)} simulated zone{'s' if len(risks) != 1 else ''} need attention"
+            if risks
+            else "No elevated zones projected"
+        ),
+        narrative=(
+            "The deterministic risk engine ranks crowd pressure first; the authenticated Groq flow "
+            "turns those fixed facts into concise staff guidance. Supervisors approve every action."
+        ),
+        dataStatus="simulated",
+        items=digest_items,
+    )
+
+
+def _build_capabilities() -> list[DemoCapability]:
+    return [
+        DemoCapability(
+            label="Multilingual GenAI concierge",
+            description="Groq answers practical stadium questions in ten supported languages.",
+            liveEndpoint="POST /api/concierge/chat",
+        ),
+        DemoCapability(
+            label="Accessible crowd-aware routing",
+            description="A deterministic safe path is rephrased into accessible, fan-friendly instructions.",
+            liveEndpoint="POST /api/wayfinding/route",
+        ),
+        DemoCapability(
+            label="Operational decision support",
+            description="Forecasts and ranked actions are summarized for staff without automatic execution.",
+            liveEndpoint="GET /api/crowd/digest",
+        ),
+        DemoCapability(
+            label="Sustainable transport guidance",
+            description="Match load and venue access shape lower-congestion transport suggestions.",
+            liveEndpoint="GET /api/travel/suggestions",
+        ),
+    ]
 
 
 async def build_demo_experience(db: asyncpg.Pool) -> DemoExperienceResponse:
@@ -74,91 +185,11 @@ async def build_demo_experience(db: asyncpg.Pool) -> DemoExperienceResponse:
         dataStatus="simulated",
         databaseStatus="connected",
         outputSource="curated-demo-preview",
-        match=DemoMatchResponse(
-            matchId=str(match_row["id"]),
-            homeTeam=str(match_row["home_team"]),
-            awayTeam=str(match_row["away_team"]),
-            kickoffAt=match_row["kickoff_at"].isoformat(),
-            transitLoadEstimate=match_row["transit_load_estimate"],
-        ),
-        zones=[
-            CrowdZoneSummary(
-                zoneId=zone.zone_id,
-                name=zone.name,
-                currentDensityPct=zone.current_density_pct,
-                band=congestion_band(zone.current_density_pct).lower(),
-                alert=demo_alert(zone.name, zone.current_density_pct),
-                lastUpdated=zone.last_updated.isoformat(),
-            )
-            for zone in zones
-        ],
+        match=_build_demo_match(match_row),
+        zones=_build_zone_summaries(zones),
         accessibleRoute=accessible_route,
-        conciergeExamples=[
-            DemoConciergeExample(
-                language="English",
-                question="What is the step-free route to Section 114?",
-                answer=SECTION_114_ACCESSIBLE_GUIDANCE,
-            ),
-            DemoConciergeExample(
-                language="Español",
-                question="¿Dónde está la entrada accesible?",
-                answer="La entrada accesible está en la Puerta 2. El personal con uniforme puede ayudarle.",
-            ),
-            DemoConciergeExample(
-                language="हिन्दी",
-                question="कम भीड़ वाला रास्ता कौन सा है?",
-                answer="गेट 2 से नॉर्थ कॉनकोर्स वाला रास्ता लें और लाइव संकेतों का पालन करें।",
-            ),
-        ],
-        travelSuggestions=[
-            TravelSuggestion(
-                mode="rail",
-                description="Use high-capacity rail for the heavy arrival wave and follow timed station guidance.",
-            ),
-            TravelSuggestion(
-                mode="stadium-shuttle",
-                description="Board the outer-hub shuttle to reduce private vehicle traffic near stadium gates.",
-            ),
-            TravelSuggestion(
-                mode="rideshare-pool",
-                description="Use the signed pooled pickup zone after peak pedestrian flow.",
-            ),
-        ],
-        operationsDigest=OperationalDigestResponse(
-            generatedAt=generated_at,
-            minutesAhead=15,
-            headline=(
-                f"{len(risks)} simulated zone{'s' if len(risks) != 1 else ''} need attention"
-                if risks
-                else "No elevated zones projected"
-            ),
-            narrative=(
-                "The deterministic risk engine ranks crowd pressure first; the authenticated Groq flow "
-                "turns those fixed facts into concise staff guidance. Supervisors approve every action."
-            ),
-            dataStatus="simulated",
-            items=digest_items,
-        ),
-        capabilities=[
-            DemoCapability(
-                label="Multilingual GenAI concierge",
-                description="Groq answers practical stadium questions in ten supported languages.",
-                liveEndpoint="POST /api/concierge/chat",
-            ),
-            DemoCapability(
-                label="Accessible crowd-aware routing",
-                description="A deterministic safe path is rephrased into accessible, fan-friendly instructions.",
-                liveEndpoint="POST /api/wayfinding/route",
-            ),
-            DemoCapability(
-                label="Operational decision support",
-                description="Forecasts and ranked actions are summarized for staff without automatic execution.",
-                liveEndpoint="GET /api/crowd/digest",
-            ),
-            DemoCapability(
-                label="Sustainable transport guidance",
-                description="Match load and venue access shape lower-congestion transport suggestions.",
-                liveEndpoint="GET /api/travel/suggestions",
-            ),
-        ],
+        conciergeExamples=_build_concierge_examples(),
+        travelSuggestions=_build_travel_suggestions(),
+        operationsDigest=_build_operations_digest(generated_at, risks, digest_items),
+        capabilities=_build_capabilities(),
     )

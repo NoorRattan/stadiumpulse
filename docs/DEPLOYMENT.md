@@ -25,9 +25,10 @@ If you are not using the Supabase CLI, run these files in the SQL editor in this
 3. `supabase/migrations/0003_access_token_hook_privileges.sql` — lets `supabase_auth_admin` read authoritative roles and execute the access-token hook while browser roles cannot.
 4. `supabase/migrations/0004_function_security_hardening.sql` — pins privileged functions to an empty `search_path`, revokes direct execution from `public`, `anon`, and `authenticated`, and preserves the hook grant for `supabase_auth_admin`.
 5. `supabase/migrations/0005_render_keep_alive_cron.sql` — enables Supabase Cron and async HTTP, then schedules bounded `/health` and database-backed `/api/demo` requests every ten minutes.
-6. `supabase/seed.sql` — loads the labelled synthetic demonstration scenario.
+6. `supabase/migrations/0006_user_roles_auth_admin_policy.sql` — adds the least-privilege RLS policy that lets only `supabase_auth_admin` read authoritative roles for access-token claims.
+7. `supabase/seed.sql` — loads the labelled synthetic demonstration scenario.
 
-Existing deployments must apply every missing migration through `0005` in order. Migration `0004` is required even when the hook already works: it closes function-resolution and direct-execution gaps without changing the application role model. Migration `0005` is the primary warm-up scheduler; its named job is idempotently replaced when the migration is reapplied.
+Existing deployments must apply every missing migration through `0006` in order. Migration `0004` closes function-resolution and direct-execution gaps, migration `0005` installs the primary warm-up scheduler, and migration `0006` completes the hook's table grant with the RLS policy required for `supabase_auth_admin` to see `public.user_roles`. The cron job and auth-admin policy are both idempotently replaced when their migrations are reapplied.
 
 Enable Email/password Auth in Supabase for account creation and staff access:
 

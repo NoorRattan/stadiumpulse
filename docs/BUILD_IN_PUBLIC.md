@@ -1,5 +1,8 @@
 # Building StadiumPulse: A Venue Nervous System for World Cup Match Days
 
+StadiumPulse is our answer to the **Smart Stadiums & Tournament Operations**
+challenge for the FIFA World Cup 2026.
+
 Stadium match days are not a collection of independent screens. A gate becoming
 crowded changes the route a fan should take, the message a concierge should
 give, the briefing a volunteer needs, and the decision an operator may need to

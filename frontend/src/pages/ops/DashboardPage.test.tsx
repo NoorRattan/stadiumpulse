@@ -48,6 +48,7 @@ describe("DashboardPage", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Crowd Overview",
     );
+    await screen.findByText("No elevated zones projected");
     const results = await axe(container);
     expect(results.violations).toHaveLength(0);
   });

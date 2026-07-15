@@ -19,10 +19,12 @@ local tool caches were excluded from source metrics.
 | Function size           | Maximum 75 lines, excluding blank lines and comments                       |
 | File size               | Maximum 500 lines, excluding blank lines and comments                      |
 | Knip                    | 14 findings before remediation, 0 after                                    |
-| jscpd                   | 34 clones / 362 lines / 1.60% before; 14 clones / 168 lines / 0.74% after  |
+| jscpd                   | 34 clones / 362 lines / 1.60% before; 14 clones / 168 lines / 0.73% after  |
 | Production duplication  | Zero detected production clones at 5 lines / 50 tokens                     |
-| Backend tests           | 149 passed                                                                 |
+| Backend tests           | 151 passed                                                                 |
 | Backend coverage        | 100% statements and 100% branches                                          |
+| Python structural audit | 64 files / 405 functions / zero size violations                            |
+| Frontend unit tests     | 69 passed with zero React `act(...)` warnings                              |
 | Browser design          | Skip-free across five browser/device profiles plus a dedicated axe project |
 
 The 14 remaining jscpd clone groups are test-only setup, mock, and fixture
@@ -37,6 +39,11 @@ The frontend ESLint configuration now enforces complexity 10, 75 lines per
 function, and 500 lines per file as errors. These limits apply to all TypeScript
 and TSX source checked by ESLint. The final strict run has zero warnings, so
 there is no accepted-warning list or presentation-code exception.
+
+The backend suite now applies the same 75-line function and 500-line file
+ceilings to every first-party Python file through an AST-based test. The final
+audit covers 64 files and 405 functions with zero violations; the largest file
+is 473 lines and the longest function is 52 lines.
 
 ### Cockpit and page decomposition
 
@@ -87,16 +94,16 @@ exclusions:
 
 The literal command
 `npx jscpd ../backend src --min-lines 5 --min-tokens 50` now reports 14
-test-only clone groups and 0.74% duplicated lines overall, down from 34 groups
+test-only clone groups and 0.73% duplicated lines overall, down from 34 groups
 and 1.60%. CSS, production TypeScript/TSX, and production Python have no clone
 group at that threshold.
 
 ### Backend verification
 
 Shared crowd response mapping and demo response schemas retain their external
-JSON contracts. The full backend suite now runs 149 tests and reaches 100% for
-both statements and branches. The coverage gate is enforced rather than
-reported as an informational metric.
+JSON contracts. The full backend suite now runs 151 tests across 1,758
+statements and 252 branches, reaching 100% for both. The coverage and structural
+gates are enforced rather than reported as informational metrics.
 
 ### Skip-free browser coverage
 
@@ -110,8 +117,8 @@ responsive checks across the five profiles plus 23 all-severity axe scans.
 
 ## Prevention rules
 
-1. Keep ESLint complexity at 10, function length at 75, and file length at 500
-   as error-level gates. New warnings are merge blockers.
+1. Keep ESLint complexity at 10 and retain the frontend and Python function/file
+   ceilings of 75/500 as error-level gates. New warnings are merge blockers.
 2. Run Ruff, backend tests with 100% statement and branch coverage, ESLint,
    Prettier, TypeScript, Vitest, the production build, bundle checks, contrast
    checks, dependency audits, and Playwright before merging to `main`.

@@ -6,14 +6,14 @@ StadiumPulse explores what happens when crowd, route, travel, and incident conte
 
 StadiumPulse is designed as a **venue nervous system**: one crowd signal powers fan routing, a selectable operations map, predictive staff decisions, and incident automation instead of feeding unrelated AI widgets.
 
-## Challenge Alignment
+## Challenge 04 — Smart Stadiums & Tournament Operations
 
-The Challenge 04 brief asks for a GenAI-powered solution that improves stadium
-operations and the FIFA World Cup 2026 experience through intelligent,
-real-time assistance. It specifically spans navigation, crowd management,
-accessibility, transportation, sustainability, multilingual assistance,
-operational intelligence, and real-time decision support. Every domain has a
-publicly reviewable proof route:
+The **Smart Stadiums & Tournament Operations** brief asks for a GenAI-powered
+solution that improves stadium operations and the FIFA World Cup 2026
+experience through intelligent, real-time assistance. It specifically spans
+navigation, crowd management, accessibility, transportation, sustainability,
+multilingual assistance, operational intelligence, and real-time decision
+support. Every domain has a publicly reviewable proof route:
 
 | Brief domain               | Deployed proof                                                                  | What StadiumPulse demonstrates                                                                           |
 | -------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -91,12 +91,12 @@ Use `backend/.env.example` and `frontend/.env.example` as the placeholder list f
 
 ## Verification
 
-Current local verification snapshot (2026-07-15): **149 backend tests passed at 100% statement and branch coverage**, **69 frontend tests passed across 35 test files with an enforced coverage-regression gate**, and **63 Playwright checks passed with zero skips or fixmes**. Forty interaction and responsive checks run across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13; a dedicated Chromium project runs 23 all-severity axe scans across every public, support, and authentication route. The suite also proves both anonymous no-write GenAI operations generators, multilingual concierge and voice input on every profile, protected-route redirects, keyboard venue-map use, OS and app reduced motion, theme persistence, heading structure, and horizontal overflow. Production and test dependency audits report no known Python or npm vulnerabilities.
+Current local verification snapshot (2026-07-15): **151 backend tests passed at 100% statement and branch coverage**, **69 frontend tests passed across 35 test files with an enforced coverage-regression gate and zero React test warnings**, and **63 Playwright checks passed with zero skips or fixmes**. Forty interaction and responsive checks run across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13; a dedicated Chromium project runs 23 all-severity axe scans across every public, support, and authentication route. The suite also proves both anonymous no-write GenAI operations generators, multilingual concierge and voice input on every profile, protected-route redirects, keyboard venue-map use, OS and app reduced motion, theme persistence, heading structure, and horizontal overflow. Production and test dependency audits report no known Python or npm vulnerabilities.
 
-Maintainability checks are equally explicit: the permanent ESLint complexity,
-function-size, and file-size gates pass with zero warnings; Knip reports zero
-unused files or exports; and jscpd reports zero production clones and 0.74%
-test-only duplication overall.
+Maintainability checks are equally explicit: the permanent ESLint and Python
+complexity/function/file-size gates pass with zero warnings or violations; Knip
+reports zero unused files or exports; and jscpd reports zero production clones
+and 0.73% test-only duplication overall.
 
 Backend:
 

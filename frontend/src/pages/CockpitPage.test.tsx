@@ -38,7 +38,7 @@ const expectations: Array<[CockpitKind, string]> = [
 describe("CockpitPage", () => {
   it.each(expectations)(
     "renders the copied %s page hierarchy",
-    (kind, title) => {
+    async (kind, title) => {
       render(
         <MemoryRouter initialEntries={[`/${kind}`]}>
           <CockpitPage kind={kind} />
@@ -49,6 +49,9 @@ describe("CockpitPage", () => {
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
         title,
       );
+      if (kind !== "volunteer") {
+        await screen.findByText(/demo snapshot unavailable/i);
+      }
     },
   );
 

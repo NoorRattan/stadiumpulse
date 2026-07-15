@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import { axe } from "vitest-axe";
 
 import { createAuthValue, renderWithAuth } from "@/testUtils";
@@ -27,6 +27,7 @@ describe("BriefingsPage", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Volunteer Briefings",
     );
+    await act(async () => Promise.resolve());
     const results = await axe(container);
     expect(results.violations).toHaveLength(0);
   });

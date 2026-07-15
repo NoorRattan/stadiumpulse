@@ -23,9 +23,8 @@ from schemas.experience import (
 OFFICIAL_TICKET_URL = "https://www.fifa.com/tickets"
 
 
-def build_public_experience() -> PublicExperienceResponse:
-    """Return the complete public information hub with explicit demo provenance."""
-    matches = [
+def _build_public_matches() -> list[PublicMatch]:
+    return [
         PublicMatch(
             matchId="demo-usa-can",
             homeTeam="United States",
@@ -58,7 +57,10 @@ def build_public_experience() -> PublicExperienceResponse:
             ticketStatus="Official FIFA availability only",
         ),
     ]
-    venues = [
+
+
+def _build_public_venues() -> list[VenueInfo]:
+    return [
         VenueInfo(
             venueId="pulse-central",
             name="StadiumPulse Central",
@@ -96,7 +98,10 @@ def build_public_experience() -> PublicExperienceResponse:
             accessibilityFeatures=["Tactile route", "Sign-language help point", "Step-free shuttle"],
         ),
     ]
-    amenities = [
+
+
+def _build_public_amenities() -> list[AmenityInfo]:
+    return [
         AmenityInfo(
             amenityId="food-local",
             name="Local Kitchen",
@@ -138,7 +143,10 @@ def build_public_experience() -> PublicExperienceResponse:
             accessibilityNote="Adult changing table, hoist, and emergency call control",
         ),
     ]
-    events = [
+
+
+def _build_public_events() -> list[FanEvent]:
+    return [
         FanEvent(
             eventId="fan-zone-opening",
             title="Fan Zone Opening Session",
@@ -164,7 +172,10 @@ def build_public_experience() -> PublicExperienceResponse:
             ticketRequired=False,
         ),
     ]
-    sustainability = [
+
+
+def _build_public_sustainability() -> list[SustainabilityMetric]:
+    return [
         SustainabilityMetric(
             metricId="public-transit",
             label="Arrivals by shared transport",
@@ -194,7 +205,10 @@ def build_public_experience() -> PublicExperienceResponse:
             explanation="Synthetic venue-energy mix for the connected demo.",
         ),
     ]
-    alerts = [
+
+
+def _build_public_alerts() -> list[SafetyAlert]:
+    return [
         SafetyAlert(
             alertId="advisory-south",
             severity="advisory",
@@ -212,7 +226,10 @@ def build_public_experience() -> PublicExperienceResponse:
             issuedAt="2026-07-14T18:30:00Z",
         ),
     ]
-    faq = [
+
+
+def _build_public_faq() -> list[FaqEntry]:
+    return [
         FaqEntry(
             category="tickets",
             question="Does StadiumPulse sell FIFA World Cup 2026 tickets?",
@@ -248,6 +265,11 @@ def build_public_experience() -> PublicExperienceResponse:
             ),
         ),
     ]
+
+
+def build_public_experience() -> PublicExperienceResponse:
+    """Return the complete public information hub with explicit demo provenance."""
+    matches = _build_public_matches()
     return PublicExperienceResponse(
         generatedAt=datetime.now(tz=UTC).isoformat(),
         dataStatus="curated-and-simulated",
@@ -260,12 +282,12 @@ def build_public_experience() -> PublicExperienceResponse:
         ),
         matchTicker=matches[:2],
         matches=matches,
-        venues=venues,
-        amenities=amenities,
-        fanEvents=events,
-        sustainability=sustainability,
-        alerts=alerts,
-        faq=faq,
+        venues=_build_public_venues(),
+        amenities=_build_public_amenities(),
+        fanEvents=_build_public_events(),
+        sustainability=_build_public_sustainability(),
+        alerts=_build_public_alerts(),
+        faq=_build_public_faq(),
         officialTicketUrl=OFFICIAL_TICKET_URL,
     )
 

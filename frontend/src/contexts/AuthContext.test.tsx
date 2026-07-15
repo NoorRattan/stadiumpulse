@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { useContext } from "react";
 import type { Session } from "@supabase/supabase-js";
 
@@ -93,6 +93,15 @@ const sessionWithoutRoleClaim = {
   user: { id: "staff-1" },
 } as Session;
 
+async function emitAuthState(nextSession: Session): Promise<void> {
+  const callback = authHarness.callback;
+  if (!callback) throw new Error("Auth subscription is not ready.");
+  await act(async () => {
+    callback(nextSession);
+    await Promise.resolve();
+  });
+}
+
 describe("AuthProvider", () => {
   beforeEach(() => {
     authHarness.callback = null;
@@ -108,7 +117,7 @@ describe("AuthProvider", () => {
       </AuthProvider>,
     );
 
-    authHarness.callback?.(session);
+    await emitAuthState(session);
 
     await waitFor(() =>
       expect(apiRequest).toHaveBeenCalledWith("/api/auth/bootstrap", {
@@ -120,7 +129,7 @@ describe("AuthProvider", () => {
     expect(screen.getByText("fan")).toBeInTheDocument();
     expect(screen.getByText("Maria Fan")).toBeInTheDocument();
 
-    authHarness.callback?.(session);
+    await emitAuthState(session);
 
     await waitFor(() => expect(apiRequest).toHaveBeenCalledOnce());
   });
@@ -133,7 +142,7 @@ describe("AuthProvider", () => {
       </AuthProvider>,
     );
 
-    authHarness.callback?.(sessionWithoutRoleClaim);
+    await emitAuthState(sessionWithoutRoleClaim);
 
     await waitFor(() => expect(screen.getByText("ready")).toBeInTheDocument());
     expect(screen.getByText("fan")).toBeInTheDocument();
