@@ -10,20 +10,31 @@ StadiumPulse is designed as a **venue nervous system**: one crowd signal powers 
 
 The Challenge 04 brief asks for a GenAI-powered solution that improves stadium
 operations and the FIFA World Cup 2026 experience through intelligent,
-real-time assistance. StadiumPulse addresses both halves through one shared,
-explainable data path:
+real-time assistance. It specifically spans navigation, crowd management,
+accessibility, transportation, sustainability, multilingual assistance,
+operational intelligence, and real-time decision support. Every domain has a
+publicly reviewable proof route:
 
-| Brief need                           | StadiumPulse proof path                                                                                                            |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Better fan experience                | Public multilingual concierge, accessibility-aware wayfinding, travel guidance, alerts, and venue services                         |
-| Optimized stadium operations         | Live crowd bands, 15-minute forecasts, ranked decision support, incident drafts, and volunteer briefings                           |
-| Intelligent real-time assistance     | Supabase Realtime refreshes backend-computed signals; Groq explains deterministic results and never changes safety-critical values |
-| Functional, reviewable demonstration | `/demo` is a public, read-only browser-to-FastAPI-to-Supabase walkthrough; protected actions remain role-gated                     |
+| Brief domain               | Deployed proof                                                                  | What StadiumPulse demonstrates                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Navigation                 | [Plan a route](https://stadiumpulse.pages.dev/wayfinding)                       | Least-congested, step-free wayfinding with deterministic fallback routing and clear route steps          |
+| Crowd management           | [Use the connected crowd demo](https://stadiumpulse.pages.dev/demo)             | Selectable venue zones, live density bands, 15-minute forecasts, and ranked pressure signals             |
+| Accessibility              | [Open the accessibility hub](https://stadiumpulse.pages.dev/accessibility)      | High contrast, reduced motion, screen-reader support, route preferences, and accessible-arrival guidance |
+| Transportation             | [Compare match-day travel](https://stadiumpulse.pages.dev/travel)               | Rail, shuttle, park-and-ride, carpool, and accessible travel suggestions                                 |
+| Sustainability             | [Review sustainability guidance](https://stadiumpulse.pages.dev/sustainability) | Lower-impact travel choices and clearly labelled match-day sustainability metrics                        |
+| Multilingual assistance    | [Ask the live concierge](https://stadiumpulse.pages.dev/concierge)              | Rate-limited multilingual chat, voice input, read-aloud replies, and grounded venue guidance             |
+| Operational intelligence   | [Run the public operations replay](https://stadiumpulse.pages.dev/demo)         | Crowd intelligence plus safe, interactive Incident Copilot and Briefing Generator replays                |
+| Real-time decision support | [Inspect the ranked command digest](https://stadiumpulse.pages.dev/demo)        | Supabase-backed signals, deterministic rankings, AI explanations, and explicit human approval boundaries |
 
-The app has two surfaces in one React build:
+The same React application serves every audience named by the brief while
+keeping operational mutations role-gated:
 
-- **Fan Experience PWA**: multilingual voice concierge, accessibility-aware wayfinding, seat-view confidence previews, and sustainable travel suggestions.
-- **Ops Console**: live selectable venue map, ranked 15-minute command digest, density forecasts, incident drafts, and volunteer briefings for staff and volunteers.
+| Audience    | Deployed entry point                                          | Relevant experience                                                                                  |
+| ----------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Fans        | [Fan match-day cockpit](https://stadiumpulse.pages.dev/fan)   | Tickets, matches, alerts, amenities, concierge, accessible routing, and travel planning              |
+| Organizers  | [Organizer cockpit](https://stadiumpulse.pages.dev/organizer) | Event priorities, readiness signals, approvals, and cross-venue operational context                  |
+| Volunteers  | [Volunteer cockpit](https://stadiumpulse.pages.dev/volunteer) | Shift tasks, training, briefings, and clear escalation context                                       |
+| Venue staff | [Venue staff cockpit](https://stadiumpulse.pages.dev/staff)   | Crowd pressure, service queues, incidents, recommended actions, and supervisor-controlled operations |
 
 ## Experience Map
 
@@ -80,7 +91,12 @@ Use `backend/.env.example` and `frontend/.env.example` as the placeholder list f
 
 ## Verification
 
-Current local verification snapshot (2026-07-15): **139 backend tests passed at 100% statement coverage**, **66 frontend tests passed across 34 test files**, and **36 Playwright checks passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles** (with three intentionally skipped duplicate axe scans and one Firefox speech-recognition skip because Firefox does not implement that browser API). The browser suite checks all 19 public and support routes for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies the public concierge conversation and voice transcription on supported engines, protected account and role-portal redirects, keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
+Current local verification snapshot (2026-07-15): **148 backend tests passed at 100% statement and branch coverage**, **69 frontend tests passed across 35 test files with an enforced coverage-regression gate**, and **63 Playwright checks passed with zero skips or fixmes**. Forty interaction and responsive checks run across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13; a dedicated Chromium project runs 23 all-severity axe scans across every public, support, and authentication route. The suite also proves both anonymous no-write GenAI operations generators, multilingual concierge and voice input on every profile, protected-route redirects, keyboard venue-map use, OS and app reduced motion, theme persistence, heading structure, and horizontal overflow. Production and test dependency audits report no known Python or npm vulnerabilities.
+
+Maintainability checks are equally explicit: the permanent ESLint complexity,
+function-size, and file-size gates pass with zero warnings; Knip reports zero
+unused files or exports; and jscpd reports zero production clones and 0.74%
+test-only duplication overall.
 
 Backend:
 
@@ -88,8 +104,9 @@ Backend:
 cd backend
 .\.venv\Scripts\python.exe -m ruff check .
 .\.venv\Scripts\python.exe -m ruff format --check .
-.\.venv\Scripts\python.exe -m pytest --cov=. --cov-fail-under=100
+.\.venv\Scripts\python.exe -m pytest
 .\.venv\Scripts\python.exe -m pip_audit -r requirements-prod.txt
+.\.venv\Scripts\python.exe -m pip_audit -r requirements.txt
 ```
 
 Frontend:
@@ -100,10 +117,12 @@ npm ci
 npx eslint .
 npx prettier --check .
 npm run contrast:check
-npx vitest run
+npm run test:coverage
 npx tsc --noEmit
 npm run build
+npm run bundle:check
 npm run audit:prod
+npx knip
 npm run test:e2e
 ```
 
@@ -122,8 +141,8 @@ npm run test:e2e
 
 **In-memory rate limiter**: The backend rate limiter uses `slowapi`'s in-memory storage. That works fine for a single Render instance, but under multiple instances each instance has its own counter. Production-scale deployments should move rate limit state to a shared store such as Redis.
 
-**`pytest-asyncio` major-version pin**: `requirements.txt` pins `pytest-asyncio==1.4.0`. That version's `asyncio_mode = auto` setting (in `pytest.ini`) is what makes async tests run without per-test decorators. Upgrading to a different major version changes the config key name; don't bump this without verifying the existing tests still run correctly.
+**`pytest-asyncio` configuration**: `requirements.txt` pins `pytest-asyncio==1.4.0`, and `backend/pyproject.toml` is the authoritative pytest configuration. Its `asyncio_mode = "auto"` setting runs async tests without per-test decorators; dependency upgrades must preserve that behavior and the branch-coverage gate.
 
-**TypeScript / typescript-eslint peer range**: `frontend/.npmrc` sets `legacy-peer-deps=true`. This project uses `typescript@6.0.3`; the current `typescript-eslint` peer range still expects TypeScript below 6. This is a dependency resolver compatibility issue — the linting and type checking both work correctly at runtime — but `npm ci` will fail without `legacy-peer-deps=true` until `typescript-eslint` formally widens its peer declaration.
+**TypeScript compatibility**: the frontend uses `typescript@5.9.3` with `typescript-eslint@8.49.0`, inside the supported peer range. The lockfile installs with normal `npm ci`; no `legacy-peer-deps` bypass is committed. Upgrade TypeScript and typescript-eslint together so linting and type-aware rules remain supported.
 
 Deployment setup is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). API routes are summarized in [docs/API.md](docs/API.md). The latest maintainability review and prevention rules are recorded in [docs/CODE_QUALITY_POSTMORTEM.md](docs/CODE_QUALITY_POSTMORTEM.md).

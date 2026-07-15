@@ -11,15 +11,22 @@ There is no Firebase Hosting rewrite and no GCP/Firebase runtime dependency.
 
 ## Supabase Setup
 
-Create a Supabase project, then apply the schema and seed data:
+Create a Supabase project, then apply every migration in filename order before loading seed data:
 
 ```bash
 supabase db push
 supabase db seed
 ```
 
-If you are not using the Supabase CLI, run `supabase/migrations/0001_init.sql` and then `supabase/seed.sql` in the SQL editor.
-For an existing deployment, also run `supabase/migrations/0002_crowd_realtime.sql`. This adds `public.zones` to the Supabase Realtime publication used by the dashboard listener.
+If you are not using the Supabase CLI, run these files in the SQL editor in this exact order:
+
+1. `supabase/migrations/0001_init.sql` — base tables, RLS policies, role-change trigger, and custom access-token hook.
+2. `supabase/migrations/0002_crowd_realtime.sql` — adds `public.zones` to the Supabase Realtime publication used by the dashboard listener.
+3. `supabase/migrations/0003_access_token_hook_privileges.sql` — lets `supabase_auth_admin` read authoritative roles and execute the access-token hook while browser roles cannot.
+4. `supabase/migrations/0004_function_security_hardening.sql` — pins privileged functions to an empty `search_path`, revokes direct execution from `public`, `anon`, and `authenticated`, and preserves the hook grant for `supabase_auth_admin`.
+5. `supabase/seed.sql` — loads the labelled synthetic demonstration scenario.
+
+Existing deployments must also apply any missing `0002`, `0003`, and `0004` migrations in that order. Migration `0004` is required even when the hook already works: it closes function-resolution and direct-execution gaps without changing the application role model.
 
 Enable Email/password Auth in Supabase for account creation and staff access:
 
@@ -71,10 +78,16 @@ Use `SUPABASE_JWKS_URL` or `SUPABASE_JWT_SECRET` for JWT verification. JWKS is p
 
 After Render creates the service, copy the deploy hook URL and health URL into GitHub secrets:
 
-| Secret                   | Purpose                                           |
-| ------------------------ | ------------------------------------------------- |
-| `RENDER_DEPLOY_HOOK_URL` | `deploy.yml` calls this after backend tests pass. |
-| `RENDER_HEALTH_URL`      | GitHub's fallback `keep-alive.yml` pings this URL. |
+| Secret                   | Purpose                                                                                                           |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `RENDER_DEPLOY_HOOK_URL` | `deploy.yml` calls this after the complete CI workflow succeeds on `main`, or during an authorized manual deploy. |
+| `RENDER_HEALTH_URL`      | GitHub's fallback `keep-alive.yml` pings this URL.                                                                |
+
+## CI-Gated Deployment
+
+The `Deploy` workflow no longer starts directly on every push. A push to `main` first runs the complete `CI` workflow. GitHub then emits a `workflow_run` event when CI completes; both deployment jobs run only when that workflow concluded successfully and its source branch was `main`. The frontend job checks out the exact successful CI commit before building and uploading it, while the backend job invokes the Render deploy hook for that same release decision.
+
+`workflow_dispatch` remains available for an intentional manual deployment. A failed or cancelled CI run creates no automatic deployment, and the deploy workflow does not duplicate the test matrix that CI already completed.
 
 ## Frontend on Cloudflare Pages
 

@@ -4,100 +4,130 @@ Date: 2026-07-15
 
 ## Scope
 
-This review covered the current backend, frontend, tests, workflows, and live
-public routes. It used Ruff, Radon, Vulture, ESLint complexity rules, Knip,
-ts-prune, depcheck, jscpd, full unit tests, browser tests, and production
-dependency audits. Generated dependencies, build output, and local tool state
-were excluded from source metrics.
+This review covered backend and frontend production code, tests, build checks,
+browser coverage, dependency hygiene, and duplication. The final verification
+used Ruff, ESLint, Prettier, TypeScript, Knip, jscpd, pytest with branch
+coverage, Vitest, and Playwright. Generated dependencies, build output, and
+local tool caches were excluded from source metrics.
 
-## What the review found
+## Final state
 
-- The backend is well-factored overall: Radon reports an A average complexity
-  grade and every production module has an A maintainability grade.
-- `get_travel_suggestions` mixed input validation, ranking, AI fallback, and
-  response assembly. Extracting travel context and description selection makes
-  the deterministic and optional-AI paths independently testable.
-- Three generated UI/date modules and the `shadcn` scaffolding CLI were no
-  longer used. They increased the apparent API and dependency surface without
-  contributing to the application.
-- The public experience hooks repeated the same loading, error, refresh, and
-  effect lifecycle. A generic internal resource hook now owns that behavior.
-- Footer link groups repeated identical markup. A typed shared renderer now
-  keeps labels, destinations, and responsive layout data-driven.
-- The venue globe previously mixed projection, canvas rendering, interaction,
-  and host-city data in one callback. It now delegates to cohesive scene,
-  projection, and data modules. `VenueNetworkGlobe` complexity fell from 41 to
-  3 and its component body fell from 587 measured lines to 298.
-- The `/fan` cockpit previously combined five independent panels in a single
-  component. Its ticket, route, matches, alerts, amenities, shared primitives,
-  and view-model logic are now separated. `FanCockpit` complexity fell from 46
-  to 1.
-- Shared zone loading, CORS normalization, ops-zone adaptation, and route
-  loading UI removed production clones. Exact clone detection fell from 45
-  clones and 2.28% duplicated lines before remediation to 35 clones and 1.79%.
+| Gate                    | Final result                                                               |
+| ----------------------- | -------------------------------------------------------------------------- |
+| ESLint structural rules | Zero warnings and zero errors                                              |
+| Cyclomatic complexity   | Maximum 10 per function                                                    |
+| Function size           | Maximum 75 lines, excluding blank lines and comments                       |
+| File size               | Maximum 500 lines, excluding blank lines and comments                      |
+| Knip                    | 14 findings before remediation, 0 after                                    |
+| jscpd                   | 34 clones / 362 lines / 1.60% before; 14 clones / 168 lines / 0.74% after  |
+| Production duplication  | Zero detected production clones at 5 lines / 50 tokens                     |
+| Backend tests           | 148 passed                                                                 |
+| Backend coverage        | 100% statements and 100% branches                                          |
+| Browser design          | Skip-free across five browser/device profiles plus a dedicated axe project |
 
-## Frontend structural-warning disposition
+The 14 remaining jscpd clone groups are test-only setup, mock, and fixture
+patterns. They do not duplicate production behavior. No exclusions or threshold
+changes were added to hide them.
 
-The original strict ESLint diagnostic produced 59 warnings. The final run
-produces 47: 12 complexity warnings, 34 function-length warnings, and one file-
-length warning. No max-parameter, nesting, warning-comment, or correctness-rule
-warning remains.
+## What changed
 
-The 34 function-length findings use a deliberately aggressive 75-line limit
-that counts declarative JSX, fixtures, accessibility labels, and Tailwind class
-strings as executable structure. Two are test scenarios (`ConciergeChat.test`
-and `LoginPage.test`); the other 32 are bounded page or visual renderers. Every
-one is covered by unit, axe, or five-profile browser tests. They are accepted as
-presentation-size signals rather than hidden control-flow defects. The only
-file-length finding is `CockpitPage.tsx`, which now contains the three remaining
-read-only role cockpits after the fan cockpit was extracted.
+### Permanent structural enforcement
 
-The remaining complexity findings are explicitly accounted for:
+The frontend ESLint configuration now enforces complexity 10, 75 lines per
+function, and 500 lines per file as errors. These limits apply to all TypeScript
+and TSX source checked by ESLint. The final strict run has zero warnings, so
+there is no accepted-warning list or presentation-code exception.
 
-| Function                        | Complexity | Reason retained                                                                                            |
-| ------------------------------- | ---------: | ---------------------------------------------------------------------------------------------------------- |
-| `ConciergeChat`                 |         12 | Request, speech, retry, and authenticated-session states are exercised together by unit and browser tests. |
-| `ConciergeMessage`              |         12 | Small role/content rendering variants; no state or side effects.                                           |
-| `GlassCard`                     |         12 | Declarative animation and style variants only.                                                             |
-| `PageHero`                      |         17 | Declarative optional hero regions and motion variants.                                                     |
-| `ParticleCanvas` frame callback |         12 | Bounded animation loop with reduced-motion coverage and cleanup.                                           |
-| `AccountPage`                   |         16 | Explicit loading, signed-out, error, and authenticated account states.                                     |
-| `StaffCockpit`                  |         14 | Read-only data/fallback presentation; no mutations.                                                        |
-| `OrganizerCockpit`              |         28 | Read-only multi-panel presentation; approval state is local demo state only.                               |
-| `DemoPage`                      |         11 | Explicit loading, failure, and connected-demo branches.                                                    |
-| `PublicExperiencePage`          |         19 | One route renders several selected public directory modes from a common API response.                      |
-| `WayfindingPage`                |         15 | Form validation, deterministic fallback, request, and route-result states.                                 |
-| `DashboardPage`                 |         14 | Live-loading, selected-zone, and forecast-result states.                                                   |
+### Cockpit and page decomposition
 
-These are not being represented as eliminated. They are retained because a
-late broad rewrite would raise regression risk without changing authorization,
-domain logic, or evaluator-visible behavior. The two worst named outliers were
-decomposed and the remaining list is now explicit and reproducible.
+The role cockpit entry page now dispatches to separate fan, volunteer, staff,
+and organizer implementations. Large panels were separated into cohesive
+sections, view models, and state helpers. Snapshot and simulated data labels are
+explicit, and the nonfunctional Snooze action was removed.
 
-## Operational root cause
+The briefing, crowd dashboard, incident, and role portal pages now keep page
+orchestration separate from headers, state loading, metrics, maps, lists,
+previews, and error states. Fan-facing public experience, travel, wayfinding,
+support, account, demo, and authentication pages received the same focused
+decomposition where their previous render functions crossed the permanent
+limits.
 
-The warm-up workflow ran only once every three days even though the hosted
-backend can idle between visits. That schedule could not protect an evaluator
-or demo visitor from a cold start. The GitHub workflow now calls both the
-process-only health endpoint and the database-backed demo endpoint every ten
-minutes, although scheduled Actions remain best effort. A tested Cloudflare
-Cron Trigger is ready for deployment after the account token receives Workers
-Scripts edit permission. Both paths exercise the useful dependency instead of
-masking database wake-up latency with a shallow health check.
+### Component decomposition
+
+Concierge request state, speech handling, and the floating dock were separated
+from message rendering. Crowd digests, incident forms and lists, navigation,
+page heroes, theme transitions, venue maps, particle rendering, seat previews,
+and the venue network globe were split into focused components, hooks, or scene
+helpers. The globe no longer combines projection, canvas drawing, interaction,
+and venue data in one callback, and the fan cockpit no longer owns every panel
+in one component.
+
+This work preserved accessibility names, reduced-motion behavior, role checks,
+API contracts, deterministic fallbacks, and existing user-visible flows.
+
+### Dead-code and API-surface cleanup
+
+Knip initially reported one unused file, one unused export, and 12 unused
+exported types. The service worker was a real production runtime entry, so it
+was declared in `knip.json` instead of deleted. Genuinely unused exports and
+types were removed or made module-private. The final `npx knip` run exits clean
+with no findings or configuration hints.
+
+### Duplication cleanup
+
+Production duplication was removed through shared behavior rather than jscpd
+exclusions:
+
+- Crowd risks now use one mapper for operational digest response items.
+- Demo incident and briefing responses inherit their common artifact fields.
+- Zone selectors share one option renderer.
+- The theme-independent brand gradient is declared once.
+- Repeated authenticated page-test setup uses one test renderer and auth-value
+  factory.
+
+The literal command
+`npx jscpd ../backend src --min-lines 5 --min-tokens 50` now reports 14
+test-only clone groups and 0.74% duplicated lines overall, down from 34 groups
+and 1.60%. CSS, production TypeScript/TSX, and production Python have no clone
+group at that threshold.
+
+### Backend verification
+
+Shared crowd response mapping and demo response schemas retain their external
+JSON contracts. The full backend suite now runs 148 tests and reaches 100% for
+both statements and branches. The coverage gate is enforced rather than
+reported as an informational metric.
+
+### Skip-free browser coverage
+
+Playwright does not use `test.skip`, `test.fixme`, or conditional test exits.
+Behavioral coverage runs through Chromium, Firefox, WebKit, mobile Chrome, and
+mobile Safari. Accessibility coverage is routed to a dedicated axe Chromium
+project through project matching, so each selected test executes instead of
+being counted and skipped at runtime. Traces, screenshots, and videos are
+retained on failure. The final matrix passes all 63 checks: 40 behavioral and
+responsive checks across the five profiles plus 23 all-severity axe scans.
 
 ## Prevention rules
 
-1. Run Ruff, full backend coverage, ESLint, Prettier, Vitest, TypeScript, the
-   production build, bundle check, contrast check, audits, and Playwright before
-   merging to `main`.
-2. Run Knip and an exact clone scan before adding a new dependency, generated
-   UI primitive, barrel export, or cross-page abstraction.
-3. Keep generative code downstream of deterministic safety and routing logic;
-   every AI call must retain a tested fallback.
-4. Treat a new React function above 150 lines or complexity 15 as a refactoring
-   prompt. Extract data shaping or one cohesive rendered region, then preserve
-   behavior with its existing unit and browser tests.
-5. Keep `/health` minimal, but pair it with a database-backed smoke path in
-   uptime automation so process health cannot conceal dependency failure.
-6. Re-run the live RLS and custom-claim transaction audit after changing roles,
-   policies, triggers, or authentication bootstrap behavior.
+1. Keep ESLint complexity at 10, function length at 75, and file length at 500
+   as error-level gates. New warnings are merge blockers.
+2. Run Ruff, backend tests with 100% statement and branch coverage, ESLint,
+   Prettier, TypeScript, Vitest, the production build, bundle checks, contrast
+   checks, dependency audits, and Playwright before merging to `main`.
+3. Keep `npx knip` at zero findings. Declare non-imported runtime assets as
+   explicit entries instead of deleting them or suppressing the report.
+4. Run the literal jscpd command before merging. Keep overall duplicated lines
+   below 1% and do not accept production clone groups or add exclusions to meet
+   the threshold.
+5. Add shared helpers only when they represent one real behavior or contract;
+   do not create abstractions solely to change a metric.
+6. Keep browser tests skip-free. Use Playwright projects and matching to route
+   platform-specific coverage, and fail when a required prerequisite is
+   unavailable.
+7. Keep generative output downstream of deterministic safety, routing, and
+   authorization logic. Every AI call must retain a tested fallback and require
+   human review before operational mutation.
+8. Re-run the live role, RLS, custom-claim, health, and database-backed smoke
+   checks after changing authentication, policies, deployment configuration, or
+   persistence behavior.

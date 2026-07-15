@@ -2,12 +2,14 @@
 
 All protected routes use Supabase Auth access tokens with `Authorization: Bearer <token>`. Role checks are enforced server-side from the `user_role` custom access-token claim.
 
-`GET /api/demo` deliberately avoids Groq calls and mutations. Its curated synthetic preview proves frontend to FastAPI to Supabase connectivity. `GET /api/experience` supplies the public schedule, venues, amenities, events, sustainability, alerts, FAQ, and official ticket handoff. Public concierge requests are rate-limited and stateless; signed-in concierge sessions retain recent conversation context. Public fan wayfinding and travel routes return deterministic fallback content without authentication; signed-in users can receive the Groq-enhanced versions. Staff role checks remain server-side for every portal and operations route.
+`GET /api/demo` deliberately avoids Groq calls and mutations. Its curated synthetic preview proves frontend to FastAPI to Supabase connectivity. The two public demo `POST` routes use the connected Supabase scenario and the same bounded generation helpers as the protected workflows, but return review-only artifacts without writing records. `GET /api/experience` supplies the public schedule, venues, amenities, events, sustainability, alerts, FAQ, and official ticket handoff. Public concierge requests are rate-limited and stateless; signed-in concierge sessions retain recent conversation context. Public fan wayfinding and travel routes return deterministic fallback content without authentication; signed-in users can receive the Groq-enhanced versions. Staff role checks remain server-side for every portal and operations route.
 
 | Method  | Path                                  | Auth               | Purpose                                                                                        |
 | ------- | ------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------- |
 | `GET`   | `/health`                             | None               | Health check. Returns service status without authentication.                                   |
 | `GET`   | `/api/demo`                           | None               | Read-only, rate-limited FIFA 2026 scenario backed by seeded Supabase demo data.                |
+| `POST`  | `/api/demo/incident-draft`            | None               | Generate a rate-limited, review-only incident draft from the connected demo crowd context.     |
+| `POST`  | `/api/demo/volunteer-briefing`        | None               | Generate a rate-limited, review-only briefing from connected demo zone and incident context.   |
 | `GET`   | `/api/experience`                     | None               | Curated public tournament, venue, amenity, event, sustainability, alert, and FAQ hub.          |
 | `POST`  | `/api/auth/signup`                    | None               | Create a confirmed email/password Supabase user and fan profile, then let the browser sign in. |
 | `GET`   | `/api/auth/me`                        | Any signed-in user | Return the current user's backend profile.                                                     |
@@ -32,6 +34,26 @@ All protected routes use Supabase Auth access tokens with `Authorization: Bearer
 | `GET`   | `/api/portals/operations`             | Staff only         | Return organizer-level crowd, transport, incident, and staffing priorities.                    |
 | `GET`   | `/api/portals/venue-staff`            | Staff only         | Return security, medical, cleaning, crowd, and guest-services queues.                          |
 | `GET`   | `/api/portals/command-center`         | Staff only         | Return explainable, approval-gated control-room recommendations and audit state.               |
+
+## Public Connected Generation Previews
+
+`POST /api/demo/incident-draft` and `POST /api/demo/volunteer-briefing` are each limited to **10 requests per minute**. They accept no request model: any supplied request body is ignored, and callers cannot choose a zone, incident, prompt, or stored record. The server derives all generation context itself from the connected Supabase demo scenario.
+
+The incident preview selects the current highest-density demo zone and passes a bounded synthetic signal through the same incident-draft generator used by the protected workflow. The volunteer preview selects that zone, loads its current open incidents, and passes the connected context through the same briefing generator used by the protected workflow. Both retain the tested AI fallback path, so `generatedBy` is either `"ai"` or `"fallback"`.
+
+These endpoints are authentic generation previews, not mutations. They perform no `INSERT`, `UPDATE`, or `DELETE`, never create an incident or briefing row, and every response includes these immutable safety fields:
+
+```json
+{
+  "scenarioId": "fifa-2026-matchday",
+  "dataStatus": "simulated",
+  "generatedBy": "ai",
+  "reviewRequired": true,
+  "persisted": false
+}
+```
+
+The response also contains the connected zone identity and density. Incident drafts include `rawInput`, `summary`, `severity`, and `status: "draft"`; volunteer briefings include `shiftLabel`, `openIncidentCount`, and `content`.
 
 > **Note**: Render exposes the backend health endpoint directly at `/health`. The frontend is hosted separately on Cloudflare Pages and calls the Render API through `VITE_API_BASE_URL`; there is no Firebase Hosting `/api/**` rewrite.
 
