@@ -1,4 +1,6 @@
+from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Literal
 
 import asyncpg
 
@@ -9,6 +11,12 @@ from services.db import get_pool
 from services.exceptions import AIServiceError
 from services.genkit_flows import briefingFlow
 from services.zone_service import load_zone
+
+
+@dataclass(frozen=True)
+class BriefingContent:
+    content: str
+    generated_by: Literal["ai", "fallback"]
 
 
 def incident_from_row(row: object) -> IncidentReport:
@@ -77,6 +85,28 @@ def fallback_briefing_paragraph(zone: Zone, incidents: list[IncidentReport]) -> 
     )
 
 
+def generate_briefing_content(
+    zone: Zone,
+    shift_label: str,
+    incidents: list[IncidentReport],
+) -> BriefingContent:
+    """Generate briefing content without persisting a briefing record."""
+    generated_by: Literal["ai", "fallback"] = "ai"
+    try:
+        paragraph = briefingFlow(
+            zone.model_dump(by_alias=True),
+            shift_label,
+            [incident.model_dump(by_alias=True) for incident in incidents],
+        )
+    except AIServiceError:
+        generated_by = "fallback"
+        paragraph = fallback_briefing_paragraph(zone, incidents)
+    return BriefingContent(
+        content=build_briefing_content(zone, shift_label, incidents, paragraph),
+        generated_by=generated_by,
+    )
+
+
 async def generate_briefing(
     zone_id: str,
     shift_label: str,
@@ -86,16 +116,8 @@ async def generate_briefing(
     pool = db or await get_pool()
     zone = await load_zone(pool, zone_id)
     incidents = await load_open_incidents(pool, zone_id)
-    try:
-        paragraph = briefingFlow(
-            zone.model_dump(by_alias=True),
-            shift_label,
-            [incident.model_dump(by_alias=True) for incident in incidents],
-        )
-    except AIServiceError:
-        paragraph = fallback_briefing_paragraph(zone, incidents)
+    generated = generate_briefing_content(zone, shift_label, incidents)
     generated_at = datetime.now(tz=UTC)
-    content = build_briefing_content(zone, shift_label, incidents, paragraph)
     briefing_id = await pool.fetchval(
         """
         insert into public.briefings (zone_id, shift_label, content, generated_by_uid, generated_at)
@@ -104,7 +126,7 @@ async def generate_briefing(
         """,
         zone.zone_id,
         shift_label,
-        content,
+        generated.content,
         generated_by_uid,
         generated_at,
     )
@@ -112,7 +134,7 @@ async def generate_briefing(
         briefingId=str(briefing_id),
         zoneId=zone.zone_id,
         shiftLabel=shift_label,
-        content=content,
+        content=generated.content,
         generatedByUid=generated_by_uid,
         generatedAt=generated_at,
     )

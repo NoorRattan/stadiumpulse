@@ -3,7 +3,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from models.briefing import Briefing
-from models.incident import IncidentReport
+from models.incident import IncidentReport, IncidentSeverity
 from models.route import RouteOption
 from models.zone import ZoneType
 
@@ -191,6 +191,34 @@ class DemoExperienceResponse(BaseModel):
     travel_suggestions: list[TravelSuggestion] = Field(alias="travelSuggestions")
     operations_digest: OperationalDigestResponse = Field(alias="operationsDigest")
     capabilities: list[DemoCapability] = Field(alias="capabilities")
+
+
+class _DemoGeneratedArtifactResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    scenario_id: Literal["fifa-2026-matchday"] = Field(alias="scenarioId")
+    data_status: Literal["simulated"] = Field(alias="dataStatus")
+    generated_by: Literal["ai", "fallback"] = Field(alias="generatedBy")
+    zone_id: str = Field(alias="zoneId")
+    zone_name: str = Field(alias="zoneName")
+    current_density_pct: float = Field(alias="currentDensityPct", ge=0, le=100)
+
+
+class DemoIncidentDraftResponse(_DemoGeneratedArtifactResponse):
+    raw_input: str = Field(alias="rawInput")
+    summary: str = Field(alias="summary")
+    severity: IncidentSeverity = Field(alias="severity")
+    status: Literal["draft"] = Field(alias="status")
+    review_required: Literal[True] = Field(alias="reviewRequired")
+    persisted: Literal[False] = Field(alias="persisted")
+
+
+class DemoBriefingResponse(_DemoGeneratedArtifactResponse):
+    shift_label: str = Field(alias="shiftLabel")
+    open_incident_count: int = Field(alias="openIncidentCount", ge=0)
+    content: str = Field(alias="content")
+    review_required: Literal[True] = Field(alias="reviewRequired")
+    persisted: Literal[False] = Field(alias="persisted")
 
 
 class IncidentListResponse(PaginatedResponse[IncidentReport]):

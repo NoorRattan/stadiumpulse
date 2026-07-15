@@ -3,22 +3,101 @@ import { useEffect, useState, type ReactNode } from "react";
 import { apiRequest } from "@/services/apiClient";
 import type { DemoExperienceResponse } from "@/types/api";
 
-export function useDemoData(): DemoExperienceResponse | null {
-  const [demo, setDemo] = useState<DemoExperienceResponse | null>(null);
+export const DEMO_REFRESH_INTERVAL_MS = 15_000;
+
+export interface DemoDataState {
+  data: DemoExperienceResponse | null;
+  refreshedAt: number | null;
+  status: "connecting" | "live" | "refreshing" | "stale" | "unavailable";
+}
+
+const initialDemoState: DemoDataState = {
+  data: null,
+  refreshedAt: null,
+  status: "connecting",
+};
+
+export function useDemoData(): DemoDataState {
+  const [state, setState] = useState<DemoDataState>(initialDemoState);
 
   useEffect(() => {
     let active = true;
-    void apiRequest<DemoExperienceResponse>("/api/demo", { timeoutMs: 60_000 })
-      .then((response) => {
-        if (active) setDemo(response);
-      })
-      .catch(() => undefined);
+    let inFlight = false;
+    const refresh = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const data = await apiRequest<DemoExperienceResponse>("/api/demo", {
+          timeoutMs: 60_000,
+        });
+        if (active) setState({ data, refreshedAt: Date.now(), status: "live" });
+      } catch {
+        if (active) {
+          setState((current) => ({
+            ...current,
+            status: current.data ? "stale" : "unavailable",
+          }));
+        }
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    void refresh();
+    const timer = window.setInterval(() => {
+      if (!inFlight) {
+        setState((current) => ({
+          ...current,
+          status: current.data ? "refreshing" : "connecting",
+        }));
+      }
+      void refresh();
+    }, DEMO_REFRESH_INTERVAL_MS);
     return () => {
       active = false;
+      window.clearInterval(timer);
     };
   }, []);
 
-  return demo;
+  return state;
+}
+
+function freshnessMessage(state: DemoDataState): string {
+  if (state.status === "connecting") {
+    return "Connecting demo snapshot · refreshes every 15 seconds";
+  }
+  if (state.status === "unavailable") {
+    return "Demo snapshot unavailable · retrying every 15 seconds";
+  }
+  const time = new Date(state.refreshedAt ?? 0).toLocaleTimeString("en", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  if (state.status === "refreshing") {
+    return `Refreshing demo snapshot · showing data fetched at ${time}`;
+  }
+  if (state.status === "stale") {
+    return `Refresh delayed · showing data fetched at ${time} · retrying every 15 seconds`;
+  }
+  return `Connected demo snapshot · fetched at ${time} · refreshes every 15 seconds`;
+}
+
+export function DemoFreshness({
+  state,
+}: {
+  state: DemoDataState;
+}): JSX.Element {
+  const connected = state.status === "live" || state.status === "refreshing";
+  return (
+    <div className="flex items-center gap-2 font-mono text-[0.62rem] uppercase tracking-wider text-muted-foreground">
+      <span
+        aria-hidden="true"
+        className={`size-2 rounded-full ${connected ? "bg-primary" : "bg-accent"}`}
+      />
+      <p role="status">{freshnessMessage(state)}</p>
+    </div>
+  );
 }
 
 export function Panel({

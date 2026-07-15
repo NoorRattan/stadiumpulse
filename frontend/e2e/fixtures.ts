@@ -74,6 +74,37 @@ const demo = {
   ],
 };
 
+const demoIncidentDraft = {
+  scenarioId: "fifa-2026-matchday",
+  dataStatus: "simulated",
+  generatedBy: "fallback",
+  zoneId: "south-concourse",
+  zoneName: "South Concourse",
+  currentDensityPct: 88,
+  rawInput: "Crowd pressure is rising near the accessible route merge.",
+  summary:
+    "Review the South Concourse route merge and prepare the signed alternative.",
+  severity: "high",
+  status: "draft",
+  reviewRequired: true,
+  persisted: false,
+};
+
+const demoVolunteerBriefing = {
+  scenarioId: "fifa-2026-matchday",
+  dataStatus: "simulated",
+  generatedBy: "fallback",
+  zoneId: "south-concourse",
+  zoneName: "South Concourse",
+  currentDensityPct: 88,
+  shiftLabel: "Matchday volunteer shift",
+  openIncidentCount: 1,
+  content:
+    "Guide guests toward the signed alternative and escalate accessibility support requests.",
+  reviewRequired: true,
+  persisted: false,
+};
+
 const experience = {
   generatedAt: "2026-07-14T12:00:00Z",
   dataStatus: "curated-and-simulated",
@@ -173,39 +204,41 @@ const experience = {
   officialTicketUrl: "https://www.fifa.com/tickets",
 };
 
+const backendFixtures: Record<string, object> = {
+  "/api/demo": demo,
+  "/api/demo/incident-draft": demoIncidentDraft,
+  "/api/demo/volunteer-briefing": demoVolunteerBriefing,
+  "/api/experience": experience,
+  "/api/concierge/chat": {
+    sessionId: "public-concierge",
+    reply:
+      "Gate 4 is beside the east plaza. Follow the accessible-route signs.",
+    detectedLanguage: "en",
+  },
+  "/api/wayfinding/zones": {
+    zones: [
+      { zoneId: "gate-2", name: "Gate 2", type: "gate" },
+      {
+        zoneId: "section-120",
+        name: "Section 120",
+        type: "seating-block",
+      },
+    ],
+  },
+  "/api/travel/suggestions": { matchId: match.id, suggestions: [] },
+};
+
+const notFound = {
+  error: {
+    code: "NOT_FOUND",
+    message: "Not mocked",
+    status: 404,
+  },
+};
+
 async function fulfillBackend(route: Route): Promise<void> {
   const url = new URL(route.request().url());
-  const json = url.pathname.endsWith("/api/demo")
-    ? demo
-    : url.pathname.endsWith("/api/experience")
-      ? experience
-      : url.pathname.endsWith("/api/concierge/chat")
-        ? {
-            sessionId: "public-concierge",
-            reply:
-              "Gate 4 is beside the east plaza. Follow the accessible-route signs.",
-            detectedLanguage: "en",
-          }
-        : url.pathname.endsWith("/api/wayfinding/zones")
-          ? {
-              zones: [
-                { zoneId: "gate-2", name: "Gate 2", type: "gate" },
-                {
-                  zoneId: "section-120",
-                  name: "Section 120",
-                  type: "seating-block",
-                },
-              ],
-            }
-          : url.pathname.endsWith("/api/travel/suggestions")
-            ? { matchId: match.id, suggestions: [] }
-            : {
-                error: {
-                  code: "NOT_FOUND",
-                  message: "Not mocked",
-                  status: 404,
-                },
-              };
+  const json = backendFixtures[url.pathname] ?? notFound;
 
   await route.fulfill({
     status: "error" in json ? 404 : 200,

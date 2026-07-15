@@ -18,7 +18,13 @@ import type {
   VenueInfo,
 } from "@/types/api";
 
-import { Panel, shortTeam, useDemoData } from "./shared";
+import {
+  DemoFreshness,
+  Panel,
+  shortTeam,
+  useDemoData,
+  type DemoDataState,
+} from "./shared";
 
 const fallbackMatch: PublicMatch = {
   matchId: "fallback",
@@ -151,10 +157,13 @@ function buildFanViewModel(
   };
 }
 
-function useFanViewModel(): FanViewModel {
+function useFanViewModel(): {
+  demoState: DemoDataState;
+  model: FanViewModel;
+} {
   const { data } = usePublicExperience();
-  const demo = useDemoData();
-  return buildFanViewModel(data, demo);
+  const demoState = useDemoData();
+  return { demoState, model: buildFanViewModel(data, demoState.data) };
 }
 
 function DemoPass({ venue }: { venue: VenueInfo | null }): JSX.Element {
@@ -390,9 +399,10 @@ function FanAmenities({
 }
 
 export function FanCockpit(): JSX.Element {
-  const model = useFanViewModel();
+  const { demoState, model } = useFanViewModel();
   return (
     <div className="grid gap-5">
+      <DemoFreshness state={demoState} />
       <div className="grid gap-5 lg:grid-cols-[.82fr_1.18fr]">
         <MatchDayTicket model={model} />
         <CrowdAwareNavigation model={model} />

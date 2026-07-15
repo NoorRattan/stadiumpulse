@@ -1,9 +1,9 @@
 import type {
   AccessibilityNeed,
   AccessibilitySettings,
-  Briefing,
   CrowdZoneSummary,
   IncidentReport,
+  IncidentSeverity,
   IncidentStatus,
   RouteOption,
   TravelSuggestion,
@@ -47,7 +47,7 @@ export class ApiClientError extends Error {
 }
 
 /** Paginated backend response envelope. */
-export interface PaginatedResponse<TItem> {
+interface PaginatedResponse<TItem> {
   items: TItem[];
   limit: number;
   nextPageToken: string | null;
@@ -126,7 +126,7 @@ export interface CrowdForecastResponse {
 }
 
 /** Ranked operational risk in the command-center digest. */
-export interface OperationalDigestItem {
+interface OperationalDigestItem {
   zoneId: string;
   zoneName: string;
   currentDensityPct: number;
@@ -181,6 +181,35 @@ export interface DemoExperienceResponse {
   }>;
 }
 
+export interface DemoIncidentDraftResponse {
+  scenarioId: "fifa-2026-matchday";
+  dataStatus: "simulated";
+  generatedBy: "ai" | "fallback";
+  zoneId: string;
+  zoneName: string;
+  currentDensityPct: number;
+  rawInput: string;
+  summary: string;
+  severity: IncidentSeverity;
+  status: "draft";
+  reviewRequired: true;
+  persisted: false;
+}
+
+export interface DemoBriefingResponse {
+  scenarioId: "fifa-2026-matchday";
+  dataStatus: "simulated";
+  generatedBy: "ai" | "fallback";
+  zoneId: string;
+  zoneName: string;
+  currentDensityPct: number;
+  shiftLabel: string;
+  openIncidentCount: number;
+  content: string;
+  reviewRequired: true;
+  persisted: false;
+}
+
 /** Auth profile response body. */
 export type UserProfileResponse = UserProfile;
 
@@ -189,9 +218,6 @@ export type AccessibilitySettingsResponse = AccessibilitySettings;
 
 /** Incident list response body. */
 export type IncidentListResponse = PaginatedResponse<IncidentReport>;
-
-/** Briefing route response body. */
-export type BriefingResponse = Briefing;
 
 export interface PublicMatch {
   matchId: string;
@@ -236,7 +262,7 @@ export interface FanEvent {
   ticketRequired: boolean;
 }
 
-export interface SustainabilityMetric {
+interface SustainabilityMetric {
   metricId: string;
   label: string;
   value: string;
@@ -253,7 +279,7 @@ export interface SafetyAlert {
   issuedAt: string;
 }
 
-export interface FaqEntry {
+interface FaqEntry {
   question: string;
   answer: string;
   category: string;

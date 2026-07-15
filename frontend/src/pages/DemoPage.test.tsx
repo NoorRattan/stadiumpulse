@@ -75,7 +75,40 @@ const demoResponse = {
 
 describe("DemoPage", () => {
   it("renders the connected demo with no axe violations", async () => {
-    vi.mocked(apiRequest).mockResolvedValue(demoResponse);
+    vi.mocked(apiRequest).mockImplementation((path) => {
+      if (path === "/api/demo/incident-draft") {
+        return Promise.resolve({
+          scenarioId: "fifa-2026-matchday",
+          dataStatus: "simulated",
+          generatedBy: "fallback",
+          zoneId: "gate-2",
+          zoneName: "Gate 2",
+          currentDensityPct: 30,
+          rawInput: "Connected demo context",
+          summary: "Prepare a supervised alternative route.",
+          severity: "medium",
+          status: "draft",
+          reviewRequired: true,
+          persisted: false,
+        });
+      }
+      if (path === "/api/demo/volunteer-briefing") {
+        return Promise.resolve({
+          scenarioId: "fifa-2026-matchday",
+          dataStatus: "simulated",
+          generatedBy: "fallback",
+          zoneId: "gate-2",
+          zoneName: "Gate 2",
+          currentDensityPct: 30,
+          shiftLabel: "Pre-match volunteer shift",
+          openIncidentCount: 0,
+          content: "Support the accessible route and escalate changes.",
+          reviewRequired: true,
+          persisted: false,
+        });
+      }
+      return Promise.resolve(demoResponse);
+    });
     const { container } = render(
       <MemoryRouter>
         <AuthContext.Provider value={authValue}>
@@ -89,15 +122,19 @@ describe("DemoPage", () => {
     );
     expect(screen.getByText(/United States vs\. Canada/)).toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole("button", { name: "Run incident replay" }),
+      screen.getByRole("button", { name: "Generate incident draft" }),
     );
-    expect(screen.getByText("Generated incident draft")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Generated incident draft")).toBeInTheDocument(),
+    );
     fireEvent.click(
-      screen.getByRole("button", { name: "Run briefing replay" }),
+      screen.getByRole("button", { name: "Generate volunteer briefing" }),
     );
-    expect(
-      screen.getByText("Generated volunteer briefing"),
-    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByText("Generated volunteer briefing"),
+      ).toBeInTheDocument(),
+    );
     const results = await axe(container);
     expect(results.violations).toHaveLength(0);
   });
