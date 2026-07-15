@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { axe } from "vitest-axe";
 
@@ -88,6 +88,16 @@ describe("DemoPage", () => {
       expect(screen.getByText("Seeded Supabase scenario")).toBeInTheDocument(),
     );
     expect(screen.getByText(/United States vs\. Canada/)).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Run incident replay" }),
+    );
+    expect(screen.getByText("Generated incident draft")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Run briefing replay" }),
+    );
+    expect(
+      screen.getByText("Generated volunteer briefing"),
+    ).toBeInTheDocument();
     const results = await axe(container);
     expect(results.violations).toHaveLength(0);
   });

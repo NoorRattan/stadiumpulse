@@ -12,6 +12,7 @@ import {
 import { motion } from "motion/react";
 
 import { AppShell } from "@/components/layout";
+import { OperationsReplay } from "@/components/demo/OperationsReplay";
 import { AnimatedCounter } from "@/components/motion/AnimatedCounter";
 import { FadeInView } from "@/components/motion/FadeInView";
 import { MagneticCard } from "@/components/motion/MagneticCard";
@@ -288,6 +289,10 @@ export default function DemoPage(): JSX.Element {
                   </div>
                 </div>
               </section>
+            </FadeInView>
+
+            <FadeInView delay={0.18}>
+              <OperationsReplay demo={demo} />
             </FadeInView>
 
             {/* Capabilities grid */}
