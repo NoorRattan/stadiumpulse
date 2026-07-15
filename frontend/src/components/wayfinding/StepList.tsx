@@ -3,7 +3,7 @@ import { memo } from "react";
 import type { RouteOption } from "@/types/domain";
 
 /** Props for the accessible route step list. */
-export interface StepListProps {
+interface StepListProps {
   route: RouteOption | null;
 }
 

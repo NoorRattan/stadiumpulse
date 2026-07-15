@@ -9,7 +9,7 @@ import {
 import type { SupportedLanguage } from "../types/domain";
 
 /** Ordered language list supported by the backend language fallback policy. */
-export const supportedLanguages: readonly SupportedLanguage[] = [
+const supportedLanguages: readonly SupportedLanguage[] = [
   "en",
   "es",
   "pt",

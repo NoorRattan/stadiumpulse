@@ -12,6 +12,7 @@ from services.briefing_service import generate_briefing, summarize_incidents
 from services.concierge_service import (
     enforce_route_grounding,
     fallback_concierge_reply,
+    get_or_create_session,
     handle_chat_message,
     normalize_language,
 )
@@ -177,6 +178,17 @@ async def test_crowd_load_zones_skips_empty_snapshots_and_filter(
 
 
 @pytest.mark.asyncio
+async def test_high_crowd_alert_does_not_auto_create_incident(mock_db: FakeDb) -> None:
+    before = len(mock_db.store["incidents"])
+    mock_db.store["zones"]["gate-4"]["currentDensityPct"] = 80.0
+
+    alerts = await crowd_service.list_zone_alerts(ZoneType.gate, db=mock_db)
+
+    assert [alert.band for alert in alerts] == ["HIGH"]
+    assert len(mock_db.store["incidents"]) == before
+
+
+@pytest.mark.asyncio
 async def test_concierge_language_fallback_existing_session_and_no_data(mock_db: FakeDb) -> None:
     assert normalize_language(" FR ") == ("fr", False)
     assert normalize_language("xx") == ("en", True)
@@ -190,6 +202,14 @@ async def test_concierge_language_fallback_existing_session_and_no_data(mock_db:
 
     assert response.session_id == "existing"
     assert response.reply.startswith("Language fallback:")
+
+
+@pytest.mark.asyncio
+async def test_missing_requested_concierge_session_creates_a_new_one(mock_db: FakeDb) -> None:
+    session_id, created = await get_or_create_session("fan-1", "missing", "en", mock_db)
+
+    assert created is True
+    assert session_id != "missing"
 
 
 @pytest.mark.asyncio

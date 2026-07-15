@@ -1,4 +1,5 @@
 dist
+coverage
 public/_headers
 public/icons/*.svg
 node_modules

@@ -11,7 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "./Navbar";
 import { SkipLink } from "./SkipLink";
 
-export interface AppShellProps {
+interface AppShellProps {
   children: ReactNode;
   shader?: "subtle" | "vivid" | "none";
   flush?: boolean;

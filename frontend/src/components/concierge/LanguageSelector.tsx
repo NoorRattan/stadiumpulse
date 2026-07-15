@@ -24,7 +24,7 @@ const languageLabels: Record<SupportedLanguage, string> = {
 };
 
 /** Props for the concierge language combobox. */
-export interface LanguageSelectorProps {
+interface LanguageSelectorProps {
   onLanguageChange?: (language: SupportedLanguage, label: string) => void;
 }
 

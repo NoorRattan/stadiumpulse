@@ -1,7 +1,7 @@
 import asyncio
 import os
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from http import HTTPStatus
 
 from fastapi import FastAPI
@@ -55,10 +55,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     finally:
         if simulation_task is not None:
             simulation_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await simulation_task
-            except asyncio.CancelledError:
-                pass
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:

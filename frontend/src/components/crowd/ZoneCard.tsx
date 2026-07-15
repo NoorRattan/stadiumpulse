@@ -36,7 +36,7 @@ const bandMeta: Record<
 };
 
 /** Props for a single crowd-zone status card. */
-export interface ZoneCardProps {
+interface ZoneCardProps {
   zone: CrowdZoneSummary;
 }
 

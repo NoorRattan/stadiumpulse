@@ -158,10 +158,7 @@ def format_route_as_static_steps(path: PathResult, zones: dict[str, Zone]) -> Ro
     steps: list[RouteStep] = []
     for index, zone_id in enumerate(path.zones):
         zone_name = zones[zone_id].name if zone_id in zones else zone_id
-        if index == 0:
-            instruction = f"Start at {zone_name}."
-        else:
-            instruction = f"Continue to {zone_name}."
+        instruction = f"Start at {zone_name}." if index == 0 else f"Continue to {zone_name}."
         steps.append(RouteStep(instruction=instruction, zoneId=zone_id))
 
     return RouteOption(

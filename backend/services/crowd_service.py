@@ -6,6 +6,7 @@ import asyncpg
 
 from models.incident import IncidentReport, IncidentSeverity, IncidentStatus
 from models.zone import Zone, ZoneType
+from schemas.responses import OperationalDigestItem
 from services.ai_core import StadiumPulseAIClient, get_ai_client
 from services.db import get_pool
 from services.exceptions import AIServiceError
@@ -143,6 +144,25 @@ def build_operational_risks(zones: list[Zone], readings_by_zone: dict[str, list[
         reverse=True,
     )
     return risks[:3]
+
+
+def build_operational_digest_items(risks: list[OperationalRisk]) -> list[OperationalDigestItem]:
+    """Map ranked domain risks to the shared public API response contract."""
+    return [
+        OperationalDigestItem(
+            zoneId=risk.zone.zone_id,
+            zoneName=risk.zone.name,
+            currentDensityPct=risk.zone.current_density_pct,
+            projectedDensityPct=risk.forecast.projected_density_pct,
+            projectedBand=risk.forecast.projected_band.lower(),
+            direction=risk.forecast.direction,
+            confidence=risk.forecast.confidence,
+            priority=risk.priority,
+            recommendedAction=risk.recommended_action,
+            requiresSupervisorApproval=True,
+        )
+        for risk in risks
+    ]
 
 
 def phrase_operational_digest(risks: list[OperationalRisk], ai_client: StadiumPulseAIClient | None = None) -> str:

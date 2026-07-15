@@ -1,8 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { axe } from "vitest-axe";
-import { MemoryRouter } from "react-router-dom";
 
-import { AuthContext, type AuthContextValue } from "@/contexts/AuthContext";
+import { createAuthValue, renderWithAuth } from "@/testUtils";
 
 import DashboardPage from "./DashboardPage";
 
@@ -39,25 +38,11 @@ vi.mock("@/hooks/useReducedMotionSafe", () => ({
   useReducedMotionSafe: () => true,
 }));
 
-const authValue: AuthContextValue = {
-  user: null,
-  profile: null,
-  role: "staff",
-  loading: false,
-  signInGuest: vi.fn(),
-  signOut: vi.fn(),
-  refreshRole: vi.fn(),
-};
+const authValue = createAuthValue({ role: "staff" });
 
 describe("DashboardPage", () => {
   it("renders one h1 and has no axe violations", async () => {
-    const { container } = render(
-      <MemoryRouter>
-        <AuthContext.Provider value={authValue}>
-          <DashboardPage />
-        </AuthContext.Provider>
-      </MemoryRouter>,
-    );
+    const { container } = renderWithAuth(<DashboardPage />, { authValue });
 
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(

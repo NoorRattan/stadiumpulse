@@ -1,6 +1,2 @@
-export {
-  BriefingGenerator,
-  type BriefingGenerateInput,
-  type BriefingGeneratorProps,
-} from "./BriefingGenerator";
-export { BriefingPreview, type BriefingPreviewProps } from "./BriefingPreview";
+export { BriefingGenerator } from "./BriefingGenerator";
+export { BriefingPreview } from "./BriefingPreview";

@@ -1,9 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import type { User } from "@supabase/supabase-js";
 import { axe } from "vitest-axe";
-import { MemoryRouter } from "react-router-dom";
 
-import { AuthContext, type AuthContextValue } from "@/contexts/AuthContext";
+import { createAuthValue, renderWithAuth } from "@/testUtils";
 
 import RolePortalPage from "./RolePortalPage";
 
@@ -36,7 +35,7 @@ vi.mock("@/hooks/useReducedMotionSafe", () => ({
   useReducedMotionSafe: () => true,
 }));
 
-const authValue: AuthContextValue = {
+const authValue = createAuthValue({
   user: {
     id: "staff-1",
     email: "staff@example.com",
@@ -45,22 +44,14 @@ const authValue: AuthContextValue = {
     created_at: "2026-07-14T00:00:00Z",
     user_metadata: {},
   } as User,
-  profile: null,
   role: "staff",
-  loading: false,
-  signInGuest: vi.fn(),
-  signOut: vi.fn(),
-  refreshRole: vi.fn(),
-};
+});
 
 describe("RolePortalPage", () => {
   it("renders explainable, human-reviewed command support without axe violations", async () => {
-    const { container } = render(
-      <MemoryRouter>
-        <AuthContext.Provider value={authValue}>
-          <RolePortalPage kind="command-center" />
-        </AuthContext.Provider>
-      </MemoryRouter>,
+    const { container } = renderWithAuth(
+      <RolePortalPage kind="command-center" />,
+      { authValue },
     );
 
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(

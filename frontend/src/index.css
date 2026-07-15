@@ -15,6 +15,12 @@
 :root {
   --theme-background-light: #f0f4f8;
   --theme-background-dark: #0b1121;
+  --brand-gradient: linear-gradient(
+    90deg,
+    var(--brand-cyan) 0%,
+    var(--brand-magenta) 72%,
+    var(--brand-amber) 120%
+  );
 }
 
 html[data-theme="light"] {
@@ -56,12 +62,6 @@ html[data-theme="light"] {
   --brand-amber: #d97706;
   --brand-deep: #020617;
   --brand-violet: #7c3aed;
-  --brand-gradient: linear-gradient(
-    90deg,
-    var(--brand-cyan) 0%,
-    var(--brand-magenta) 72%,
-    var(--brand-amber) 120%
-  );
   --glow-primary: rgb(0 180 198 / 0.2);
   --glow-accent: rgb(214 0 90 / 0.14);
   --glow-spread: 30px;
@@ -128,12 +128,6 @@ html[data-theme="dark"] {
   --brand-amber: #fbbf24;
   --brand-deep: #020617;
   --brand-violet: #8b5cf6;
-  --brand-gradient: linear-gradient(
-    90deg,
-    var(--brand-cyan) 0%,
-    var(--brand-magenta) 72%,
-    var(--brand-amber) 120%
-  );
   --glow-primary: rgb(0 240 255 / 0.2);
   --glow-accent: rgb(255 0 127 / 0.16);
   --glow-spread: 40px;

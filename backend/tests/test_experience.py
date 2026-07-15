@@ -59,6 +59,23 @@ def test_account_overview_requires_auth_and_labels_demo_ticket(client: TestClien
         "screen reader mode",
     ]
 
+    cleared = client.put(
+        "/api/accessibility/settings",
+        json={
+            "highContrast": False,
+            "reducedMotion": False,
+            "screenReaderMode": False,
+            "preferredLanguage": "en",
+        },
+        headers=auth_headers("fan-123456", UserRole.fan),
+    )
+    no_needs = client.get(
+        "/api/account/overview",
+        headers=auth_headers("fan-123456", UserRole.fan),
+    )
+    assert cleared.status_code == 200
+    assert no_needs.json()["preferences"]["accessibilityNeeds"] == ["No saved accessibility settings"]
+
 
 @pytest.mark.parametrize(
     ("path", "role", "expected_portal"),

@@ -5,7 +5,9 @@ import {
   useMemo,
   useRef,
   useState,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 
@@ -32,27 +34,22 @@ export interface AuthContextValue {
 /** React context for Supabase auth state and UX-only role claims. */
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Provides Supabase Auth state to the frontend route tree. */
-export function AuthProvider({
-  children,
-}: {
-  children: ReactNode;
-}): JSX.Element {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [role, setRole] = useState<UserRole>("fan");
-  const [loading, setLoading] = useState(true);
+interface AuthSubscriptionSetters {
+  setLoading: Dispatch<SetStateAction<boolean>>;
+  setProfile: Dispatch<SetStateAction<UserProfile | null>>;
+  setRole: Dispatch<SetStateAction<UserRole>>;
+  setSession: Dispatch<SetStateAction<Session | null>>;
+  setUser: Dispatch<SetStateAction<User | null>>;
+}
+
+function useAuthSubscription({
+  setLoading,
+  setProfile,
+  setRole,
+  setSession,
+  setUser,
+}: AuthSubscriptionSetters): void {
   const bootstrappedUid = useRef<string | null>(null);
-
-  const refreshRole = useCallback((): void => {
-    if (!session) {
-      setRole("fan");
-      return;
-    }
-    setRole(readRoleClaim(session));
-  }, [session]);
-
   useEffect(() => {
     let active = true;
     const unsubscribe = subscribeToAuthState((nextSession) => {
@@ -72,15 +69,11 @@ export function AuthProvider({
         try {
           if (bootstrappedUid.current !== nextUser.id) {
             const nextProfile = await bootstrapUserProfile();
-            if (!active) {
-              return;
-            }
+            if (!active) return;
             bootstrappedUid.current = nextUser.id;
             setProfile(nextProfile);
-            setRole(readRoleClaim(nextSession));
-          } else {
-            setRole(readRoleClaim(nextSession));
           }
+          setRole(readRoleClaim(nextSession));
         } catch {
           if (active) {
             bootstrappedUid.current = null;
@@ -88,9 +81,7 @@ export function AuthProvider({
             setRole("fan");
           }
         } finally {
-          if (active) {
-            setLoading(false);
-          }
+          if (active) setLoading(false);
         }
       })();
     });
@@ -99,7 +90,29 @@ export function AuthProvider({
       active = false;
       unsubscribe();
     };
-  }, []);
+  }, [setLoading, setProfile, setRole, setSession, setUser]);
+}
+
+/** Provides Supabase Auth state to the frontend route tree. */
+export function AuthProvider({
+  children,
+}: {
+  children: ReactNode;
+}): JSX.Element {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [role, setRole] = useState<UserRole>("fan");
+  const [loading, setLoading] = useState(true);
+  useAuthSubscription({ setLoading, setProfile, setRole, setSession, setUser });
+
+  const refreshRole = useCallback((): void => {
+    if (!session) {
+      setRole("fan");
+      return;
+    }
+    setRole(readRoleClaim(session));
+  }, [session]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

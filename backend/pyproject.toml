@@ -3,8 +3,29 @@ name = "stadiumpulse-backend"
 version = "0.1.0"
 description = "FastAPI backend for StadiumPulse match-day operations and fan experience."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi==0.139.0",
+    "uvicorn[standard]==0.34.0",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.14.2",
+    "asyncpg==0.31.0",
+    "httpx==0.28.1",
+    "PyJWT[crypto]==2.13.0",
+    "slowapi==0.1.10",
+    "python-dotenv==1.2.2",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "pytest-cov==7.1.0",
+    "httpx2==2.5.0",
+    "ruff==0.15.20",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+pythonpath = ["."]
+addopts = "--strict-markers --cov=. --cov-branch --cov-report=term-missing --cov-fail-under=100"
 testpaths = ["tests"]

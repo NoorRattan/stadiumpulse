@@ -12,6 +12,7 @@ export default tseslint.config(
       "eslint.config.js",
       "public/sw.js",
       "scripts/**",
+      "coverage/**",
     ],
   },
   js.configs.recommended,
@@ -31,6 +32,17 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       ...jsxA11y.flatConfigs.recommended.rules,
+      complexity: ["error", 10],
+      "max-depth": ["error", 4],
+      "max-lines": [
+        "error",
+        { max: 500, skipBlankLines: true, skipComments: true },
+      ],
+      "max-lines-per-function": [
+        "error",
+        { max: 75, skipBlankLines: true, skipComments: true },
+      ],
+      "max-params": ["error", 4],
     },
   },
 );

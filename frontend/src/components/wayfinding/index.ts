@@ -1,2 +1,2 @@
-export { RouteLine, type RouteLineProps } from "./RouteLine";
-export { StepList, type StepListProps } from "./StepList";
+export { RouteLine } from "./RouteLine";
+export { StepList } from "./StepList";

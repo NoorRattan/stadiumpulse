@@ -8,11 +8,11 @@ from schemas.responses import (
     DemoConciergeExample,
     DemoExperienceResponse,
     DemoMatchResponse,
-    OperationalDigestItem,
     OperationalDigestResponse,
     TravelSuggestion,
 )
 from services.crowd_service import (
+    build_operational_digest_items,
     build_operational_risks,
     congestion_band,
     load_recent_density_readings,
@@ -64,21 +64,7 @@ async def build_demo_experience(db: asyncpg.Pool) -> DemoExperienceResponse:
     readings_by_zone = {zone.zone_id: await load_recent_density_readings(db, zone.zone_id) for zone in zones}
     risks = build_operational_risks(zones, readings_by_zone)
     generated_at = datetime.now(tz=UTC).isoformat()
-    digest_items = [
-        OperationalDigestItem(
-            zoneId=risk.zone.zone_id,
-            zoneName=risk.zone.name,
-            currentDensityPct=risk.zone.current_density_pct,
-            projectedDensityPct=risk.forecast.projected_density_pct,
-            projectedBand=risk.forecast.projected_band.lower(),
-            direction=risk.forecast.direction,
-            confidence=risk.forecast.confidence,
-            priority=risk.priority,
-            recommendedAction=risk.recommended_action,
-            requiresSupervisorApproval=True,
-        )
-        for risk in risks
-    ]
+    digest_items = build_operational_digest_items(risks)
 
     return DemoExperienceResponse(
         scenarioId="fifa-2026-matchday",

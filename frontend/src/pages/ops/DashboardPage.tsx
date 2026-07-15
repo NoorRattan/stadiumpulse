@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Activity, AlertTriangle, Radio, RefreshCw, Users } from "lucide-react";
 
 import {
@@ -12,14 +12,37 @@ import { CrowdVenueMap } from "@/components/visuals/CrowdVenueMap";
 import { useCrowdDensity } from "@/hooks/useCrowdDensity";
 import type { CrowdZoneSummary } from "@/types/domain";
 
-/** Ops dashboard - mission-control aesthetic with live crowd density data. */
-export default function DashboardPage(): JSX.Element {
-  const { zones: summaries, loading, error, refresh } = useCrowdDensity();
-  const [selectedZone, setSelectedZone] = useState<CrowdZoneSummary | null>(
-    null,
+function DashboardHeader({ onRefresh }: { onRefresh: () => void }) {
+  return (
+    <div className="border-b border-border pb-8">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <span className="live-pulse inline-flex items-center gap-2 border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
+            <Radio aria-hidden="true" className="size-3" />
+            Operations command
+          </span>
+          <h1 className="mt-4 font-display text-4xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
+            Crowd Overview.
+          </h1>
+          <p className="mt-3 max-w-lg text-sm text-muted-foreground">
+            A live venue map for staff and volunteers, focused on zones that
+            need action before pressure becomes an incident.
+          </p>
+        </div>
+        <button
+          className="hidden shrink-0 items-center gap-2 border border-border bg-muted px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted/80 md:inline-flex"
+          onClick={onRefresh}
+          type="button"
+        >
+          <RefreshCw aria-hidden="true" className="size-3.5" />
+          Refresh live data
+        </button>
+      </div>
+    </div>
   );
-  const [digestRefreshToken, setDigestRefreshToken] = useState(0);
+}
 
+function CrowdMetrics({ summaries }: { summaries: CrowdZoneSummary[] }) {
   const busiestZone = summaries.reduce<CrowdZoneSummary | null>(
     (current, zone) =>
       !current || zone.currentDensityPct > current.currentDensityPct
@@ -30,175 +53,200 @@ export default function DashboardPage(): JSX.Element {
   const criticalCount = summaries.filter(
     (zone) => zone.band === "critical" || zone.band === "high",
   ).length;
+  const metrics = [
+    {
+      label: "Monitored zones",
+      value: summaries.length,
+      helper: "Live listener",
+    },
+    {
+      label: "Action zones",
+      value: criticalCount,
+      helper: "High or critical",
+    },
+    {
+      label: "Busiest zone",
+      value: busiestZone ? Math.round(busiestZone.currentDensityPct) : "--",
+      helper: busiestZone?.name ?? "No live zones",
+      suffix: busiestZone ? "%" : "",
+    },
+  ];
+
+  return (
+    <section
+      aria-label="Crowd metrics"
+      className="grid grid-cols-3 divide-x divide-border border border-border"
+    >
+      {metrics.map((metric) => (
+        <div className="px-4 py-6 text-center" key={metric.label}>
+          <p className="font-display text-4xl font-bold text-foreground lg:text-5xl">
+            {metric.value}
+            {metric.suffix ?? ""}
+          </p>
+          <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
+            {metric.label}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{metric.helper}</p>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function VenueMap({
+  onSelectZone,
+  selectedZone,
+  summaries,
+}: {
+  onSelectZone: (zone: CrowdZoneSummary) => void;
+  selectedZone: CrowdZoneSummary | null;
+  summaries: CrowdZoneSummary[];
+}): JSX.Element {
+  return (
+    <FadeInView>
+      {summaries.length > 0 && (
+        <CrowdVenueMap
+          onSelectZone={onSelectZone}
+          selectedZoneId={selectedZone?.zoneId}
+          zones={summaries}
+        />
+      )}
+    </FadeInView>
+  );
+}
+
+function SelectedZone({
+  onClear,
+  zone,
+}: {
+  onClear: () => void;
+  zone: CrowdZoneSummary;
+}): JSX.Element {
+  return (
+    <section aria-label={`Selected zone: ${zone.name}`} className="grid gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-xl font-bold text-foreground">
+          Venue map selection -{" "}
+          <span className="text-primary">{zone.name}</span>
+        </h2>
+        <button
+          className="border border-border bg-muted px-4 py-2 text-sm font-semibold transition hover:bg-muted/80"
+          onClick={onClear}
+          type="button"
+        >
+          Clear
+        </button>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ZoneCard zone={zone} />
+        <CrowdForecastCard key={zone.zoneId} zoneId={zone.zoneId} />
+      </div>
+    </section>
+  );
+}
+
+function LoadingZoneGrid(): JSX.Element {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {[Activity, Users, AlertTriangle].map((Icon, index) => (
+        <div
+          aria-hidden="true"
+          className="border border-border bg-card p-6"
+          key={index}
+        >
+          <Icon className="size-5 text-muted-foreground/30" />
+          <div className="mt-5 h-6 w-24 bg-muted" />
+          <div className="mt-3 h-3 w-full bg-muted" />
+          <div className="mt-2 h-3 w-3/4 bg-muted" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ZoneGrid({
+  loading,
+  onRefresh,
+  summaries,
+}: {
+  loading: boolean;
+  onRefresh: () => void;
+  summaries: CrowdZoneSummary[];
+}): JSX.Element {
+  return (
+    <section aria-labelledby="zone-grid-heading" className="grid gap-6">
+      <div className="flex items-center justify-between">
+        <h2
+          className="font-display text-sm uppercase tracking-widest text-muted-foreground"
+          id="zone-grid-heading"
+        >
+          Zone Grid
+        </h2>
+        <button
+          className="inline-flex items-center gap-2 border border-border bg-muted px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/80 md:hidden"
+          onClick={onRefresh}
+          type="button"
+        >
+          <RefreshCw aria-hidden="true" className="size-3.5" />
+          Refresh
+        </button>
+      </div>
+      {loading && <LoadingZoneGrid />}
+      {!loading && summaries.length === 0 && (
+        <p className="border border-border bg-card p-5 text-sm text-muted-foreground">
+          No zones configured yet.
+        </p>
+      )}
+      {!loading && summaries.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {summaries.map((zone) => (
+            <ZoneCard key={zone.zoneId} zone={zone} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Ops dashboard - mission-control aesthetic with live crowd density data. */
+export default function DashboardPage(): JSX.Element {
+  const { zones: summaries, loading, error, refresh } = useCrowdDensity();
+  const [selectedZone, setSelectedZone] = useState<CrowdZoneSummary | null>(
+    null,
+  );
+  const [digestRefreshToken, setDigestRefreshToken] = useState(0);
+  const refreshAll = () => {
+    void refresh();
+    setDigestRefreshToken((current) => current + 1);
+  };
 
   return (
     <AppShell shader="subtle">
       <div className="grid gap-10">
-        {/* -- OPS Header -- */}
-        <div className="border-b border-border pb-8">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <span className="live-pulse inline-flex items-center gap-2 border border-primary/25 bg-primary/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
-                <Radio aria-hidden="true" className="size-3" />
-                Operations command
-              </span>
-              <h1 className="mt-4 font-display text-4xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
-                Crowd Overview.
-              </h1>
-              <p className="mt-3 max-w-lg text-sm text-muted-foreground">
-                A live venue map for staff and volunteers, focused on zones that
-                need action before pressure becomes an incident.
-              </p>
-            </div>
-            <button
-              className="hidden shrink-0 items-center gap-2 border border-border bg-muted px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted/80 md:inline-flex"
-              onClick={() => {
-                void refresh();
-                setDigestRefreshToken((current) => current + 1);
-              }}
-              type="button"
-            >
-              <RefreshCw aria-hidden="true" className="size-3.5" />
-              Refresh live data
-            </button>
-          </div>
-        </div>
-
-        {/* -- Scoreboard metrics -- */}
-        <section
-          aria-label="Crowd metrics"
-          className="grid grid-cols-3 divide-x divide-border border border-border"
-        >
-          {[
-            {
-              label: "Monitored zones",
-              value: summaries.length,
-              helper: "Live listener",
-            },
-            {
-              label: "Action zones",
-              value: criticalCount,
-              helper: "High or critical",
-            },
-            {
-              label: "Busiest zone",
-              value: busiestZone
-                ? Math.round(busiestZone.currentDensityPct)
-                : "--",
-              helper: busiestZone?.name ?? "No live zones",
-              suffix: busiestZone ? "%" : "",
-            },
-          ].map((m) => (
-            <div className="px-4 py-6 text-center" key={m.label}>
-              <p className="font-display text-4xl font-bold text-foreground lg:text-5xl">
-                {m.value}
-                {m.suffix ?? ""}
-              </p>
-              <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
-                {m.label}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">{m.helper}</p>
-            </div>
-          ))}
-        </section>
-
+        <DashboardHeader onRefresh={refreshAll} />
+        <CrowdMetrics summaries={summaries} />
         <OperationalDigest refreshToken={digestRefreshToken} />
-
-        <FadeInView>
-          {summaries.length > 0 && (
-            <CrowdVenueMap
-              onSelectZone={setSelectedZone}
-              selectedZoneId={selectedZone?.zoneId}
-              zones={summaries}
-            />
-          )}
-        </FadeInView>
-
+        <VenueMap
+          onSelectZone={setSelectedZone}
+          selectedZone={selectedZone}
+          summaries={summaries}
+        />
         {selectedZone && (
-          <section
-            aria-label={`Selected zone: ${selectedZone.name}`}
-            className="grid gap-4"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-xl font-bold text-foreground">
-                Venue map selection -{" "}
-                <span className="text-primary">{selectedZone.name}</span>
-              </h2>
-              <button
-                className="border border-border bg-muted px-4 py-2 text-sm font-semibold transition hover:bg-muted/80"
-                onClick={() => setSelectedZone(null)}
-                type="button"
-              >
-                Clear
-              </button>
-            </div>
-            <div className="grid gap-4 lg:grid-cols-2">
-              <ZoneCard zone={selectedZone} />
-              <CrowdForecastCard
-                key={selectedZone.zoneId}
-                zoneId={selectedZone.zoneId}
-              />
-            </div>
-          </section>
+          <SelectedZone
+            onClear={() => setSelectedZone(null)}
+            zone={selectedZone}
+          />
         )}
-
         {error && (
           <p className="border border-error-text/30 bg-error-text/[0.04] p-4 text-sm text-error-text">
             Crowd zones could not be loaded. Check your role and connection.
           </p>
         )}
-
-        {/* -- Zone Grid -- */}
-        <section aria-labelledby="zone-grid-heading" className="grid gap-6">
-          <div className="flex items-center justify-between">
-            <h2
-              className="font-display text-sm uppercase tracking-widest text-muted-foreground"
-              id="zone-grid-heading"
-            >
-              Zone Grid
-            </h2>
-            <button
-              className="inline-flex items-center gap-2 border border-border bg-muted px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/80 md:hidden"
-              onClick={() => {
-                void refresh();
-                setDigestRefreshToken((c) => c + 1);
-              }}
-              type="button"
-            >
-              <RefreshCw aria-hidden="true" className="size-3.5" />
-              Refresh
-            </button>
-          </div>
-
-          {loading && (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {[Activity, Users, AlertTriangle].map((Icon, index) => (
-                <div
-                  aria-hidden="true"
-                  className="border border-border bg-card p-6"
-                  key={index}
-                >
-                  <Icon className="size-5 text-muted-foreground/30" />
-                  <div className="mt-5 h-6 w-24 bg-muted" />
-                  <div className="mt-3 h-3 w-full bg-muted" />
-                  <div className="mt-2 h-3 w-3/4 bg-muted" />
-                </div>
-              ))}
-            </div>
-          )}
-          {!loading && summaries.length === 0 && (
-            <p className="border border-border bg-card p-5 text-sm text-muted-foreground">
-              No zones configured yet.
-            </p>
-          )}
-          {!loading && summaries.length > 0 && (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {summaries.map((zone) => (
-                <ZoneCard key={zone.zoneId} zone={zone} />
-              ))}
-            </div>
-          )}
-        </section>
+        <ZoneGrid
+          loading={loading}
+          onRefresh={refreshAll}
+          summaries={summaries}
+        />
       </div>
     </AppShell>
   );

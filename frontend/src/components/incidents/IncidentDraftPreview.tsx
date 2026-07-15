@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { IncidentReport } from "@/types/domain";
 
 /** Props for the generated incident draft preview. */
-export interface IncidentDraftPreviewProps {
+interface IncidentDraftPreviewProps {
   draft: IncidentReport;
   onSubmitReport?: (draft: IncidentReport) => Promise<void>;
   submitting?: boolean;

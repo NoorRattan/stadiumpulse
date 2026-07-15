@@ -5,7 +5,7 @@ import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import type { RouteOption } from "@/types/domain";
 
 /** Props for the route-line visualizer. */
-export interface RouteLineProps {
+interface RouteLineProps {
   route: RouteOption | null;
   generatedBy?: "ai" | "fallback";
 }

@@ -7,46 +7,66 @@ import { cn } from "@/lib/utils";
 export type ConciergeMessageRole = "user" | "assistant" | "system";
 
 /** Props for a single concierge message row. */
-export interface ConciergeMessageProps {
+interface ConciergeMessageProps {
   role: ConciergeMessageRole;
   text: string;
 }
+
+const messagePresentation = {
+  user: {
+    Icon: UserRound,
+    articleClassName: "justify-end",
+    bubbleClassName: "bg-primary text-primary-foreground",
+    label: "You",
+    leadingIcon: false,
+  },
+  assistant: {
+    Icon: Bot,
+    articleClassName: undefined,
+    bubbleClassName: undefined,
+    label: "StadiumPulse",
+    leadingIcon: true,
+  },
+  system: {
+    Icon: Info,
+    articleClassName: "justify-center",
+    bubbleClassName: "bg-muted text-foreground",
+    label: "System note",
+    leadingIcon: true,
+  },
+} as const;
 
 /** Message bubble with sender name, icon, and alignment distinction. */
 export const ConciergeMessage = memo(function ConciergeMessage({
   role,
   text,
 }: ConciergeMessageProps) {
-  const isUser = role === "user";
-  const isSystem = role === "system";
-  const Icon = isSystem ? Info : isUser ? UserRound : Bot;
-  const label = isSystem ? "System note" : isUser ? "You" : "StadiumPulse";
+  const presentation = messagePresentation[role];
+  const { Icon } = presentation;
 
   return (
-    <article
-      className={cn(
-        "flex gap-3",
-        isUser && "justify-end",
-        isSystem && "justify-center",
-      )}
-    >
-      {!isUser && (
+    <article className={cn("flex gap-3", presentation.articleClassName)}>
+      {presentation.leadingIcon && (
         <Icon
           aria-hidden="true"
-          className={cn("mt-1 size-5 shrink-0", isSystem && "text-accent")}
+          className={cn(
+            "mt-1 size-5 shrink-0",
+            role === "system" && "text-accent",
+          )}
         />
       )}
       <div
         className={cn(
           "max-w-[min(42rem,85%)] rounded-lg border border-border bg-card px-4 py-3",
-          isUser && "bg-primary text-primary-foreground",
-          isSystem && "bg-muted text-foreground",
+          presentation.bubbleClassName,
         )}
       >
-        <p className="text-xs font-semibold">{label}</p>
+        <p className="text-xs font-semibold">{presentation.label}</p>
         <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{text}</p>
       </div>
-      {isUser && <Icon aria-hidden="true" className="mt-1 size-5 shrink-0" />}
+      {!presentation.leadingIcon && (
+        <Icon aria-hidden="true" className="mt-1 size-5 shrink-0" />
+      )}
     </article>
   );
 });

@@ -15,10 +15,7 @@ export type SupportedLanguage =
   | "hi";
 
 /** Stadium zone category from Supabase and the backend API. */
-export type ZoneType = "concourse" | "gate" | "seating-block" | "transit-hub";
-
-/** Live density reading source. */
-export type ReadingSource = "sensor" | "manual" | "estimated";
+type ZoneType = "concourse" | "gate" | "seating-block" | "transit-hub";
 
 /** Accessibility need enum shared with the wayfinding request. */
 export type AccessibilityNeed =
@@ -29,7 +26,7 @@ export type AccessibilityNeed =
   | "none";
 
 /** Congestion level returned on route options. */
-export type CongestionLevel = "low" | "medium" | "high" | "critical";
+type CongestionLevel = "low" | "medium" | "high" | "critical";
 
 /** Server-derived crowd band returned by crowd routes. */
 export type CrowdBand = "normal" | "moderate" | "high" | "critical";
@@ -41,7 +38,7 @@ export type IncidentStatus = "draft" | "submitted" | "resolved";
 export type IncidentSeverity = "low" | "medium" | "high" | "critical";
 
 /** Latitude and longitude pair for map rendering. */
-export interface Coordinates {
+interface Coordinates {
   lat: number;
   lng: number;
 }
@@ -84,15 +81,6 @@ export interface Match {
   transitLoadEstimate: "low" | "medium" | "high";
 }
 
-/** Raw zone density reading from the zone readings subcollection. */
-export interface CrowdDensityReading {
-  readingId: string;
-  zoneId: string;
-  densityPct: number;
-  source: ReadingSource;
-  recordedAt: string;
-}
-
 /** Flat crowd zone summary returned by File 04's crowd routes. */
 export interface CrowdZoneSummary {
   zoneId: string;
@@ -104,7 +92,7 @@ export interface CrowdZoneSummary {
 }
 
 /** Wayfinding step returned inside a route option. */
-export interface RouteStep {
+interface RouteStep {
   instruction: string;
   zoneId: string;
 }

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Briefing } from "@/types/domain";
 
 /** Props for read-only briefing previews. */
-export interface BriefingPreviewProps {
+interface BriefingPreviewProps {
   briefings: Briefing[];
 }
 

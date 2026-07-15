@@ -15,13 +15,13 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Briefing, Zone } from "@/types/domain";
 
 /** Input sent to the briefing generation endpoint. */
-export interface BriefingGenerateInput {
+interface BriefingGenerateInput {
   zoneId: string;
   shiftLabel: string;
 }
 
 /** Props for the staff-only briefing generator. */
-export interface BriefingGeneratorProps {
+interface BriefingGeneratorProps {
   zones: Zone[];
   onGenerate: (input: BriefingGenerateInput) => Promise<Briefing>;
   onGenerated?: (briefing: Briefing) => void;

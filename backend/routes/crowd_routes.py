@@ -11,12 +11,12 @@ from schemas.responses import (
     CrowdForecastResponse,
     CrowdZonesResponse,
     CrowdZoneSummary,
-    OperationalDigestItem,
     OperationalDigestResponse,
 )
 from services.crowd_service import (
     auto_flag_incident,
     build_alert,
+    build_operational_digest_items,
     build_operational_risks,
     congestion_band,
     forecast_density,
@@ -76,21 +76,7 @@ async def get_operational_digest(
         headline=headline,
         narrative=phrase_operational_digest(risks),
         dataStatus="simulated",
-        items=[
-            OperationalDigestItem(
-                zoneId=risk.zone.zone_id,
-                zoneName=risk.zone.name,
-                currentDensityPct=risk.zone.current_density_pct,
-                projectedDensityPct=risk.forecast.projected_density_pct,
-                projectedBand=risk.forecast.projected_band.lower(),
-                direction=risk.forecast.direction,
-                confidence=risk.forecast.confidence,
-                priority=risk.priority,
-                recommendedAction=risk.recommended_action,
-                requiresSupervisorApproval=True,
-            )
-            for risk in risks
-        ],
+        items=build_operational_digest_items(risks),
     )
 
 

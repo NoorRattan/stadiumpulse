@@ -11,10 +11,22 @@ export default defineConfig({
     },
   },
   test: {
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "html"],
+      thresholds: {
+        branches: 45,
+        functions: 60,
+        lines: 55,
+        statements: 55,
+      },
+    },
     environment: "jsdom",
     exclude: ["e2e/**", "node_modules/**", "dist/**", "test-results/**"],
     globals: true,
     setupFiles: "./src/setupTests.ts",
-    testTimeout: 10_000,
+    // Coverage instrumentation and axe analysis can exceed ten seconds on
+    // shared CI runners even though the same test completes quickly locally.
+    testTimeout: 30_000,
   },
 });

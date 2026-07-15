@@ -14,6 +14,51 @@ interface GlassCardProps {
   delay?: number;
 }
 
+const accentStyles = {
+  primary: {
+    glow: "hover:border-primary/40 hover:shadow-[0_0_40px_var(--glow-primary)]",
+    line: "bg-gradient-to-r from-transparent via-primary/50 to-transparent",
+  },
+  accent: {
+    glow: "hover:border-accent/40 hover:shadow-[0_0_40px_var(--glow-accent)]",
+    line: "bg-gradient-to-r from-transparent via-accent/50 to-transparent",
+  },
+  secondary: {
+    glow: "hover:border-secondary/40 hover:shadow-[0_0_40px_var(--glow-accent)]",
+    line: "bg-gradient-to-r from-transparent via-secondary/50 to-transparent",
+  },
+} as const;
+
+function GlassCardSurface({
+  accentColor,
+  children,
+  className,
+  hover,
+}: Required<Pick<GlassCardProps, "accentColor" | "hover">> &
+  Pick<GlassCardProps, "children" | "className">): JSX.Element {
+  const accent = accentStyles[accentColor];
+  return (
+    <div
+      className={cn(
+        "relative rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] backdrop-blur-xl",
+        hover && cn("cursor-pointer transition-all duration-300", accent.glow),
+        className,
+      )}
+    >
+      {hover && (
+        <div
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-300 group-hover:opacity-100",
+            accent.line,
+          )}
+        />
+      )}
+      {children}
+    </div>
+  );
+}
+
 /** Glassmorphism surface with optional magnetic tilt, glow border, and fade-in entrance. */
 export function GlassCard({
   children,
@@ -24,40 +69,14 @@ export function GlassCard({
   delay = 0,
 }: GlassCardProps): JSX.Element {
   const reduced = useReducedMotionSafe();
-
-  const glowColor = {
-    primary:
-      "hover:border-primary/40 hover:shadow-[0_0_40px_var(--glow-primary)]",
-    accent: "hover:border-accent/40 hover:shadow-[0_0_40px_var(--glow-accent)]",
-    secondary:
-      "hover:border-secondary/40 hover:shadow-[0_0_40px_var(--glow-accent)]",
-  }[accentColor];
-
   const inner = (
-    <div
-      className={cn(
-        "relative rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] backdrop-blur-xl",
-        hover && cn("cursor-pointer transition-all duration-300", glowColor),
-        className,
-      )}
+    <GlassCardSurface
+      accentColor={accentColor}
+      className={className}
+      hover={hover}
     >
-      {/* Top accent line */}
-      {hover && (
-        <div
-          className={cn(
-            "absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-300 group-hover:opacity-100",
-            accentColor === "primary" &&
-              "bg-gradient-to-r from-transparent via-primary/50 to-transparent",
-            accentColor === "accent" &&
-              "bg-gradient-to-r from-transparent via-accent/50 to-transparent",
-            accentColor === "secondary" &&
-              "bg-gradient-to-r from-transparent via-secondary/50 to-transparent",
-          )}
-          aria-hidden="true"
-        />
-      )}
       {children}
-    </div>
+    </GlassCardSurface>
   );
 
   const wrapped = magnetic ? (
