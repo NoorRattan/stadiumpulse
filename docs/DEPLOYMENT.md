@@ -24,9 +24,10 @@ If you are not using the Supabase CLI, run these files in the SQL editor in this
 2. `supabase/migrations/0002_crowd_realtime.sql` — adds `public.zones` to the Supabase Realtime publication used by the dashboard listener.
 3. `supabase/migrations/0003_access_token_hook_privileges.sql` — lets `supabase_auth_admin` read authoritative roles and execute the access-token hook while browser roles cannot.
 4. `supabase/migrations/0004_function_security_hardening.sql` — pins privileged functions to an empty `search_path`, revokes direct execution from `public`, `anon`, and `authenticated`, and preserves the hook grant for `supabase_auth_admin`.
-5. `supabase/seed.sql` — loads the labelled synthetic demonstration scenario.
+5. `supabase/migrations/0005_render_keep_alive_cron.sql` — enables Supabase Cron and async HTTP, then schedules bounded `/health` and database-backed `/api/demo` requests every ten minutes.
+6. `supabase/seed.sql` — loads the labelled synthetic demonstration scenario.
 
-Existing deployments must also apply any missing `0002`, `0003`, and `0004` migrations in that order. Migration `0004` is required even when the hook already works: it closes function-resolution and direct-execution gaps without changing the application role model.
+Existing deployments must apply every missing migration through `0005` in order. Migration `0004` is required even when the hook already works: it closes function-resolution and direct-execution gaps without changing the application role model. Migration `0005` is the primary warm-up scheduler; its named job is idempotently replaced when the migration is reapplied.
 
 Enable Email/password Auth in Supabase for account creation and staff access:
 
@@ -89,6 +90,12 @@ The `Deploy` workflow no longer starts directly on every push. A push to `main` 
 
 `workflow_dispatch` remains available for an intentional manual deployment. A failed or cancelled CI run creates no automatic deployment, and the deploy workflow does not duplicate the test matrix that CI already completed.
 
+## Render Warm-Up Reliability
+
+Supabase Cron is the active primary scheduler. The `stadiumpulse-render-keep-alive` job runs every ten minutes and enqueues two bounded HTTPS GET requests through `pg_net`: the process-only `/health` check and the database-backed `/api/demo` check. The second request prevents a shallow health response from hiding a sleeping or disconnected database path. Job execution is observable in `cron.job_run_details`; HTTP results are observable in `net._http_response`.
+
+GitHub's **Keep Render Warm** workflow remains a best-effort independent fallback. GitHub explicitly does not guarantee exact scheduled execution, so it must not be treated as the primary ten-minute timer.
+
 ## Frontend on Cloudflare Pages
 
 Create a Cloudflare Pages project named `stadiumpulse`. The GitHub deploy workflow builds `frontend/dist` and uploads it with Wrangler.
@@ -104,12 +111,11 @@ Set these GitHub secrets:
 | `VITE_API_BASE_URL`       | Public Render backend base URL.                                                        |
 | `VITE_ENABLE_GOOGLE_AUTH` | Set to `true` only when Google OAuth is enabled.                                       |
 
-The repository includes a cron-only `stadiumpulse-keep-alive` Worker that calls
-both `/health` and the database-backed `/api/demo` every ten minutes. Deploy it
-with the manual **Deploy Keep-Alive Worker** workflow after replacing
-`CLOUDFLARE_API_TOKEN` with a token that has **Account > Workers Scripts >
-Edit** in addition to its Pages permission. Until then, GitHub Actions is the
-active best-effort schedule and may be delayed or dropped under load.
+The repository also includes an optional cron-only Cloudflare Worker with the
+same two-check contract. It is not required while Supabase Cron is active. To
+use it as another independent fallback, run **Deploy Keep-Alive Worker** with a
+token that has **Account > Workers Scripts > Edit** in addition to Pages
+permission.
 
 Cloudflare Pages should serve the Vite app directly. API calls go to Render through `VITE_API_BASE_URL`; do not add a Firebase-style `/api/**` rewrite.
 
@@ -155,6 +161,7 @@ After deployment, verify:
 - `supabase_realtime` publishes `public.zones` only; do not add `public.incidents`, `public.profiles`, `public.user_roles`, or briefing tables to the Realtime publication.
 - The ops dashboard receives zone updates from Supabase Realtime.
 - The dashboard visibly changes without a reload and labels the signal `Simulated demo signal`.
+- `cron.job` contains one active `stadiumpulse-render-keep-alive` job on `*/10 * * * *`; its recent run details are successful and both queued HTTP responses return 2xx.
 - Selecting a venue-map zone returns a real `/forecast` response with a deterministic projection and Groq-written action.
 - Travel initially shows a guided selection state by design; selecting a match works publicly with curated descriptions and uses Groq-enhanced descriptions for signed-in users.
 

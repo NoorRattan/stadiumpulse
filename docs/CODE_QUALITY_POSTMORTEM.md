@@ -21,7 +21,7 @@ local tool caches were excluded from source metrics.
 | Knip                    | 14 findings before remediation, 0 after                                    |
 | jscpd                   | 34 clones / 362 lines / 1.60% before; 14 clones / 168 lines / 0.74% after  |
 | Production duplication  | Zero detected production clones at 5 lines / 50 tokens                     |
-| Backend tests           | 148 passed                                                                 |
+| Backend tests           | 149 passed                                                                 |
 | Backend coverage        | 100% statements and 100% branches                                          |
 | Browser design          | Skip-free across five browser/device profiles plus a dedicated axe project |
 
@@ -94,7 +94,7 @@ group at that threshold.
 ### Backend verification
 
 Shared crowd response mapping and demo response schemas retain their external
-JSON contracts. The full backend suite now runs 148 tests and reaches 100% for
+JSON contracts. The full backend suite now runs 149 tests and reaches 100% for
 both statements and branches. The coverage gate is enforced rather than
 reported as an informational metric.
 

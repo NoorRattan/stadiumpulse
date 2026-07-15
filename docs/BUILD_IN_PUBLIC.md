@@ -85,9 +85,11 @@ presented as live integrations.
 
 A shallow health endpoint is not enough for a hosted demo. The warm-up path
 therefore calls both `/health` and the database-backed `/api/demo` instead of
-hiding database wake-up latency behind a process-only response. GitHub Actions
-is the current best-effort scheduler; a tested Cloudflare Cron Trigger is ready
-to deploy once the account token is granted Workers Scripts edit permission.
+hiding database wake-up latency behind a process-only response. A ten-minute
+Supabase Cron job is the active primary scheduler, with observable job and HTTP
+response history in Postgres. GitHub Actions remains an independent best-effort
+fallback; an optional Cloudflare Cron Worker is also ready for accounts that
+grant Workers Scripts edit permission.
 
 The security boundary is tested at several layers: JWT validation, server-side
 role checks, Postgres RLS, a protected role-change trigger, and a custom access-
