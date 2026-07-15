@@ -6,6 +6,20 @@ StadiumPulse explores what happens when crowd, route, travel, and incident conte
 
 StadiumPulse is designed as a **venue nervous system**: one crowd signal powers fan routing, a selectable operations map, predictive staff decisions, and incident automation instead of feeding unrelated AI widgets.
 
+## Challenge Alignment
+
+The Challenge 04 brief asks for a GenAI-powered solution that improves stadium
+operations and the FIFA World Cup 2026 experience through intelligent,
+real-time assistance. StadiumPulse addresses both halves through one shared,
+explainable data path:
+
+| Brief need                           | StadiumPulse proof path                                                                                                            |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Better fan experience                | Public multilingual concierge, accessibility-aware wayfinding, travel guidance, alerts, and venue services                         |
+| Optimized stadium operations         | Live crowd bands, 15-minute forecasts, ranked decision support, incident drafts, and volunteer briefings                           |
+| Intelligent real-time assistance     | Supabase Realtime refreshes backend-computed signals; Groq explains deterministic results and never changes safety-critical values |
+| Functional, reviewable demonstration | `/demo` is a public, read-only browser-to-FastAPI-to-Supabase walkthrough; protected actions remain role-gated                     |
+
 The app has two surfaces in one React build:
 
 - **Fan Experience PWA**: multilingual voice concierge, accessibility-aware wayfinding, seat-view confidence previews, and sustainable travel suggestions.
@@ -33,7 +47,9 @@ Advanced capabilities use the project's existing GenAI concierge, route explanat
 
 Open `/demo` locally or visit [https://stadiumpulse.pages.dev/demo](https://stadiumpulse.pages.dev/demo) for the read-only FIFA World Cup 2026 walkthrough. It connects the browser to `GET /api/demo`, reads the seeded Supabase scenario, and presents a selectable venue map, an accessible route, multilingual concierge examples, sustainable transport guidance, and staff decision support without requiring an account or consuming Groq quota.
 
-The demo preview is intentionally curated and labeled synthetic. The public concierge is the proof path for live Groq generation; role-protected staff actions remain authenticated.
+The demo preview is intentionally curated and labeled synthetic. It includes safe, interactive replays of the Incident Copilot and Briefing Generator so an anonymous reviewer can complete both review-first workflows without creating shared records. The public concierge is the proof path for live Groq generation; real staff mutations remain authenticated.
+
+A ready-to-publish technical narrative is available in [docs/BUILD_IN_PUBLIC.md](docs/BUILD_IN_PUBLIC.md). Publishing and attaching its public URL to the submission remains a human submission step.
 
 ## Running Locally
 
@@ -64,7 +80,7 @@ Use `backend/.env.example` and `frontend/.env.example` as the placeholder list f
 
 ## Verification
 
-Current local verification snapshot (2026-07-14): **138 backend tests passed at 100% statement coverage**, **52 frontend tests passed across 27 test files**, and **31 Playwright checks passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles** (with three intentionally skipped duplicate axe scans and one Firefox speech-recognition skip because Firefox does not implement that browser API). The browser suite checks all 19 public and support routes for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies the public concierge conversation and voice transcription on supported engines, protected account and role-portal redirects, keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
+Current local verification snapshot (2026-07-15): **138 backend tests passed at 100% statement coverage**, **66 frontend tests passed across 34 test files**, and **36 Playwright checks passed across Chromium, Firefox, WebKit, Pixel 7, and iPhone 13 profiles** (with three intentionally skipped duplicate axe scans and one Firefox speech-recognition skip because Firefox does not implement that browser API). The browser suite checks all 19 public and support routes for serious or critical axe findings, heading structure, and horizontal overflow; it also verifies the public concierge conversation and voice transcription on supported engines, protected account and role-portal redirects, keyboard stadium-map interaction, skip navigation, and reduced motion. Production dependency audits report no known Python or npm vulnerabilities.
 
 Backend:
 
@@ -110,4 +126,4 @@ npm run test:e2e
 
 **TypeScript / typescript-eslint peer range**: `frontend/.npmrc` sets `legacy-peer-deps=true`. This project uses `typescript@6.0.3`; the current `typescript-eslint` peer range still expects TypeScript below 6. This is a dependency resolver compatibility issue — the linting and type checking both work correctly at runtime — but `npm ci` will fail without `legacy-peer-deps=true` until `typescript-eslint` formally widens its peer declaration.
 
-Deployment setup is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). API routes are summarized in [docs/API.md](docs/API.md).
+Deployment setup is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). API routes are summarized in [docs/API.md](docs/API.md). The latest maintainability review and prevention rules are recorded in [docs/CODE_QUALITY_POSTMORTEM.md](docs/CODE_QUALITY_POSTMORTEM.md).
