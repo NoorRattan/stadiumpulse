@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = "http://127.0.0.1:4173";
+const accessibilitySpec = /accessibility\.spec\.ts/;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -34,10 +35,35 @@ export default defineConfig({
     },
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
-    { name: "webkit", use: { ...devices["Desktop Safari"] } },
-    { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
-    { name: "mobile-safari", use: { ...devices["iPhone 13"] } },
+    {
+      name: "chromium",
+      testIgnore: accessibilitySpec,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "firefox",
+      testIgnore: accessibilitySpec,
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
+      name: "webkit",
+      testIgnore: accessibilitySpec,
+      use: { ...devices["Desktop Safari"] },
+    },
+    {
+      name: "mobile-chrome",
+      testIgnore: accessibilitySpec,
+      use: { ...devices["Pixel 7"] },
+    },
+    {
+      name: "mobile-safari",
+      testIgnore: accessibilitySpec,
+      use: { ...devices["iPhone 13"] },
+    },
+    {
+      name: "axe-chromium",
+      testMatch: accessibilitySpec,
+      use: { ...devices["Desktop Chrome"] },
+    },
   ],
 });

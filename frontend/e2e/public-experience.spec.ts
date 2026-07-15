@@ -1,33 +1,7 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 import { installPublicFixtures } from "./fixtures";
-
-const publicRoutes = [
-  ["/", "Every venue, in one pulse."],
-  ["/fan", "Your match day, one tap away."],
-  ["/volunteer", "Shift-ready. Zone-aware."],
-  ["/staff", "Operate safely. See everything."],
-  ["/organizer", "Command every venue, in real time."],
-  ["/demo", "One connected match-day story."],
-  ["/matches", "Matches & Tickets"],
-  ["/venues", "Venues, Gates & Seating"],
-  ["/accessibility", "Plan Around Your Needs"],
-  ["/amenities", "Food, Retail & Amenities"],
-  ["/events", "Fan Zones & Events"],
-  ["/sustainability", "A Lower-Impact Match Day"],
-  ["/alerts", "Alerts That Explain What to Do"],
-  ["/help", "Questions, Answered Clearly"],
-  ["/about", "One Match Day. One Shared Picture."],
-  ["/contact", "Contact StadiumPulse"],
-  ["/privacy", "Privacy in Plain Language"],
-  ["/terms", "Terms of Use"],
-  ["/concierge", "Ask StadiumPulse."],
-  ["/wayfinding", "Find Your Way."],
-  ["/travel", "Transport & Parking"],
-  ["/login", "Sign In"],
-  ["/signup", "Sign Up"],
-] as const;
+import { publicRoutes } from "./publicRoutes";
 
 test.beforeEach(async ({ page }) => {
   await installPublicFixtures(page);
@@ -47,27 +21,6 @@ test("public routes have one heading and no horizontal overflow", async ({
       scrollWidth: document.documentElement.scrollWidth,
     }));
     expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
-  }
-});
-
-test("public routes have no serious or critical axe violations", async ({
-  browserName,
-  page,
-}) => {
-  test.skip(
-    browserName !== "chromium",
-    "Axe evaluates the rendered accessibility tree independently of browser engine.",
-  );
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  for (const [path] of publicRoutes) {
-    await page.goto(path, { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1_200);
-    const results = await new AxeBuilder({ page }).analyze();
-    expect(
-      results.violations.filter((violation) =>
-        ["serious", "critical"].includes(violation.impact ?? ""),
-      ),
-    ).toEqual([]);
   }
 });
 
@@ -109,14 +62,49 @@ test("public concierge answers without requiring sign-in", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("voice input fills the concierge message composer", async ({
-  browserName,
+test("public demo runs both no-write operations generators", async ({
   page,
 }) => {
-  test.skip(
-    browserName === "firefox",
-    "Firefox does not implement the Web Speech Recognition API.",
+  await page.goto("/demo", { waitUntil: "domcontentloaded" });
+
+  const incidentResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/demo/incident-draft") &&
+      response.request().method() === "POST",
   );
+  await page.getByRole("button", { name: "Generate incident draft" }).click();
+  const incidentResponse = await incidentResponsePromise;
+  expect(await incidentResponse.json()).toMatchObject({
+    persisted: false,
+    reviewRequired: true,
+    status: "draft",
+  });
+  await expect(page.getByText("Generated incident draft")).toBeVisible();
+  await expect(
+    page.getByText(/Review the South Concourse route merge/),
+  ).toBeVisible();
+
+  const briefingResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/demo/volunteer-briefing") &&
+      response.request().method() === "POST",
+  );
+  await page
+    .getByRole("button", { name: "Generate volunteer briefing" })
+    .click();
+  const briefingResponse = await briefingResponsePromise;
+  expect(await briefingResponse.json()).toMatchObject({
+    persisted: false,
+    reviewRequired: true,
+  });
+  await expect(page.getByText("Generated volunteer briefing")).toBeVisible();
+  await expect(
+    page.getByText(/Guide guests toward the signed alternative/),
+  ).toBeVisible();
+  await expect(page.getByText(/nothing persisted/)).toHaveCount(2);
+});
+
+test("voice input fills the concierge message composer", async ({ page }) => {
   await page.addInitScript(() => {
     class MockSpeechRecognition {
       lang = "";
@@ -131,10 +119,12 @@ test("voice input fills the concierge message composer", async ({
 
       start() {
         this.onstart?.();
-        this.onresult?.({
-          results: { 0: { 0: { transcript: "Take me to Gate 12" } } },
-        });
-        this.onend?.();
+        window.setTimeout(() => {
+          this.onresult?.({
+            results: { 0: { 0: { transcript: "Take me to Gate 12" } } },
+          });
+          this.onend?.();
+        }, 25);
       }
 
       stop() {
@@ -142,10 +132,12 @@ test("voice input fills the concierge message composer", async ({
       }
     }
 
-    Object.defineProperty(window, "SpeechRecognition", {
-      configurable: true,
-      value: MockSpeechRecognition,
-    });
+    for (const property of ["SpeechRecognition", "webkitSpeechRecognition"]) {
+      Object.defineProperty(window, property, {
+        configurable: true,
+        value: MockSpeechRecognition,
+      });
+    }
   });
   await page.goto("/concierge", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Start voice input" }).click();
@@ -168,10 +160,10 @@ test("account and role portals send signed-out visitors to sign in", async ({
   }
 });
 
-test("full motion works across browsers and the app opt-out stops it", async ({
+test("system and app reduced-motion preferences stop animation", async ({
   page,
 }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const skipLink = page.getByRole("link", { name: "Skip to main content" });
   await skipLink.focus();
@@ -189,6 +181,14 @@ test("full motion works across browsers and the app opt-out stops it", async ({
   await page.waitForTimeout(500);
   const nextGlobeFrame = await animatedGlobe.screenshot();
   expect(nextGlobeFrame.equals(firstGlobeFrame)).toBe(false);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "reduced");
+  await expect(page.locator("canvas")).toHaveCount(0);
+
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(page.locator("html")).toHaveAttribute("data-motion", "full");
+  await expect(page.locator("canvas")).not.toHaveCount(0);
 
   await page.getByLabel("Reduce motion").check();
   await expect(page.locator("html")).toHaveAttribute("data-motion", "reduced");

@@ -41,7 +41,7 @@ describe("useReducedMotionSafe", () => {
     expect(result.current).toBe(true);
   });
 
-  it("keeps full motion when the app setting is false", () => {
+  it("honors the operating-system preference without a provider", () => {
     vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
       matches: query === "(prefers-reduced-motion: reduce)",
       media: query,
@@ -53,11 +53,9 @@ describe("useReducedMotionSafe", () => {
       dispatchEvent: vi.fn(),
     }));
 
-    const { result } = renderHook(useReducedMotionSafe, {
-      wrapper: wrapperFor(basePreferences),
-    });
+    const { result } = renderHook(useReducedMotionSafe);
 
-    expect(result.current).toBe(false);
+    expect(result.current).toBe(true);
   });
 
   it("honors the app's explicit reduced-motion setting", () => {

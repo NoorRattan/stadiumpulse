@@ -1,102 +1,24 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  workflow_dispatch:
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-${{ github.event.workflow_run.head_sha || github.sha }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  backend-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: backend/requirements.txt
-
-      - run: pip install -r requirements.txt
-
-      - name: Audit production dependencies
-        run: pip install pip-audit==2.10.1 && pip-audit --requirement requirements-prod.txt
-
-      - name: Lint
-        run: ruff check .
-
-      - name: Format check
-        run: ruff format --check .
-
-      - name: Tests with coverage
-        run: pytest --cov=. --cov-fail-under=100
-        env:
-          ENVIRONMENT: test
-          SUPABASE_URL: https://example.supabase.co
-          SUPABASE_DB_URL: postgresql://postgres:postgres@localhost:5432/postgres
-          SUPABASE_JWT_SECRET: test-secret-for-ci-only-at-least-32-bytes
-          GROQ_API_KEY: test-key
-          GROQ_MODEL_PRIMARY: llama-3.1-8b-instant
-          GROQ_MODEL_LITE: llama-3.1-8b-instant
-          ALLOWED_ORIGINS: http://localhost:5173
-          LOG_LEVEL: WARNING
-
-  frontend-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
-
-      - run: npm ci
-
-      - name: Audit production dependencies
-        run: npm run audit:prod
-
-      - run: npx eslint .
-
-      - run: npx prettier --check .
-
-      - name: Check contrast tokens
-        run: npm run contrast:check
-
-      - run: npx vitest run
-
-      - run: npx tsc --noEmit
-
-      - run: npm run build
-        env:
-          VITE_SUPABASE_URL: https://example.supabase.co
-          VITE_SUPABASE_ANON_KEY: test-anon-key
-          VITE_API_BASE_URL: https://api.example.com
-
-      - name: Enforce bundle budgets
-        run: npm run bundle:check
-
-      - name: Install browser engines
-        run: npx playwright install --with-deps chromium firefox webkit
-
-      - name: Cross-browser accessibility and responsive tests
-        run: npm run test:e2e
-
   deploy-backend:
-    needs: backend-test
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Render deploy
@@ -113,15 +35,18 @@ jobs:
             "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
 
   deploy-frontend:
-    # Frontend deployment is independently verified and must not be blocked by
-    # a Render control-plane outage affecting the backend deploy hook.
-    needs: frontend-test
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     permissions:
       contents: read
       deployments: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v6
         with:

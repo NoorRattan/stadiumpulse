@@ -77,8 +77,8 @@ jobs:
       - name: Contrast tokens
         run: npm run contrast:check
 
-      - name: Tests (vitest)
-        run: npx vitest run
+      - name: Tests with coverage regression gate (vitest)
+        run: npm run test:coverage
 
       - name: Type check (tsc)
         run: npx tsc --noEmit
