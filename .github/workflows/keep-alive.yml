@@ -2,7 +2,9 @@ name: Keep Render Warm
 
 on:
   schedule:
-    - cron: "0 8 */3 * *"
+    # Render's free web services idle after roughly 15 minutes. Keep both the
+    # process and its database path warm for evaluator and demo traffic.
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 permissions:

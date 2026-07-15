@@ -74,7 +74,7 @@ After Render creates the service, copy the deploy hook URL and health URL into G
 | Secret                   | Purpose                                           |
 | ------------------------ | ------------------------------------------------- |
 | `RENDER_DEPLOY_HOOK_URL` | `deploy.yml` calls this after backend tests pass. |
-| `RENDER_HEALTH_URL`      | `keep-alive.yml` pings this every three days.     |
+| `RENDER_HEALTH_URL`      | `keep-alive.yml` pings this every ten minutes.    |
 
 ## Frontend on Cloudflare Pages
 
@@ -82,14 +82,14 @@ Create a Cloudflare Pages project named `stadiumpulse`. The GitHub deploy workfl
 
 Set these GitHub secrets:
 
-| Secret                    | Purpose                                          |
-| ------------------------- | ------------------------------------------------ |
-| `CLOUDFLARE_ACCOUNT_ID`   | Cloudflare account for Pages upload.             |
-| `CLOUDFLARE_API_TOKEN`    | Token with Cloudflare Pages edit permissions.    |
-| `VITE_SUPABASE_URL`       | Supabase project URL for the browser client.     |
+| Secret                    | Purpose                                                                                |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| `CLOUDFLARE_ACCOUNT_ID`   | Cloudflare account for Pages upload.                                                   |
+| `CLOUDFLARE_API_TOKEN`    | Token with Cloudflare Pages edit permissions.                                          |
+| `VITE_SUPABASE_URL`       | Supabase project URL for the browser client.                                           |
 | `VITE_SUPABASE_ANON_KEY`  | Supabase anon key for browser auth and Realtime. Do not use the service-role key here. |
-| `VITE_API_BASE_URL`       | Public Render backend base URL.                  |
-| `VITE_ENABLE_GOOGLE_AUTH` | Set to `true` only when Google OAuth is enabled. |
+| `VITE_API_BASE_URL`       | Public Render backend base URL.                                                        |
+| `VITE_ENABLE_GOOGLE_AUTH` | Set to `true` only when Google OAuth is enabled.                                       |
 
 Cloudflare Pages should serve the Vite app directly. API calls go to Render through `VITE_API_BASE_URL`; do not add a Firebase-style `/api/**` rewrite.
 
