@@ -78,11 +78,12 @@ decomposed and the remaining list is now explicit and reproducible.
 
 The warm-up workflow ran only once every three days even though the hosted
 backend can idle between visits. That schedule could not protect an evaluator
-or demo visitor from a cold start. A Cloudflare Cron Trigger now calls both the
+or demo visitor from a cold start. The GitHub workflow now calls both the
 process-only health endpoint and the database-backed demo endpoint every ten
-minutes, while the GitHub workflow remains a best-effort fallback. This keeps
-the useful end-to-end path exercised instead of masking database wake-up latency
-with a shallow health check.
+minutes, although scheduled Actions remain best effort. A tested Cloudflare
+Cron Trigger is ready for deployment after the account token receives Workers
+Scripts edit permission. Both paths exercise the useful dependency instead of
+masking database wake-up latency with a shallow health check.
 
 ## Prevention rules
 

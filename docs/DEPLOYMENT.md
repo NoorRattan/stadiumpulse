@@ -91,11 +91,12 @@ Set these GitHub secrets:
 | `VITE_API_BASE_URL`       | Public Render backend base URL.                                                        |
 | `VITE_ENABLE_GOOGLE_AUTH` | Set to `true` only when Google OAuth is enabled.                                       |
 
-The same Cloudflare credentials deploy the cron-only
-`stadiumpulse-keep-alive` Worker. Its native Cron Trigger calls both `/health`
-and the database-backed `/api/demo` every ten minutes. GitHub Actions retains a
-second best-effort schedule, but it is a fallback because scheduled Actions may
-be delayed or dropped under load.
+The repository includes a cron-only `stadiumpulse-keep-alive` Worker that calls
+both `/health` and the database-backed `/api/demo` every ten minutes. Deploy it
+with the manual **Deploy Keep-Alive Worker** workflow after replacing
+`CLOUDFLARE_API_TOKEN` with a token that has **Account > Workers Scripts >
+Edit** in addition to its Pages permission. Until then, GitHub Actions is the
+active best-effort schedule and may be delayed or dropped under load.
 
 Cloudflare Pages should serve the Vite app directly. API calls go to Render through `VITE_API_BASE_URL`; do not add a Firebase-style `/api/**` rewrite.
 
