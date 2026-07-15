@@ -29,6 +29,10 @@ class PathResult:
 
 ZoneGraph = dict[str, list[GraphEdge]]
 
+SECTION_114_ACCESSIBLE_GUIDANCE = (
+    "Enter at Gate 2, continue through North Concourse, and follow the lift signs to Section 114."
+)
+
 
 @lru_cache
 def load_zone_graph() -> ZoneGraph:

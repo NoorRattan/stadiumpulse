@@ -20,6 +20,7 @@ from services.crowd_service import (
 )
 from services.exceptions import ResourceNotFoundError
 from services.wayfinding_service import (
+    SECTION_114_ACCESSIBLE_GUIDANCE,
     dijkstra_shortest_path,
     format_route_as_static_steps,
     load_zone_graph,
@@ -110,7 +111,7 @@ async def build_demo_experience(db: asyncpg.Pool) -> DemoExperienceResponse:
             DemoConciergeExample(
                 language="English",
                 question="What is the step-free route to Section 114?",
-                answer="Enter at Gate 2, continue through North Concourse, and follow the lift signs to Section 114.",
+                answer=SECTION_114_ACCESSIBLE_GUIDANCE,
             ),
             DemoConciergeExample(
                 language="Español",

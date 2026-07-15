@@ -9,7 +9,12 @@ import services.crowd_simulator as crowd_simulator
 from models.route import AccessibilityNeed, CongestionLevel
 from models.zone import Zone, ZoneType
 from services.briefing_service import generate_briefing, summarize_incidents
-from services.concierge_service import fallback_concierge_reply, handle_chat_message, normalize_language
+from services.concierge_service import (
+    enforce_route_grounding,
+    fallback_concierge_reply,
+    handle_chat_message,
+    normalize_language,
+)
 from services.crowd_simulator import nudge_crowd_data
 from services.exceptions import AIServiceError, ResourceNotFoundError
 from services.incident_service import draft_incident
@@ -203,6 +208,26 @@ async def test_concierge_returns_static_reply_when_groq_fails(mock_db: FakeDb) -
     assert "Wayfinding" in fallback_concierge_reply("gate help", "en")
     assert "replying in English" in fallback_concierge_reply("hola", "es")
     assert "venue basics" in fallback_concierge_reply("help", "en")
+
+
+def test_concierge_replaces_ungrounded_section_route() -> None:
+    unsafe_reply = "Enter at Gate 3 and take the elevator to Section 114."
+
+    guarded = enforce_route_grounding(
+        "What is the step-free route to Section 114?",
+        "en",
+        unsafe_reply,
+    )
+
+    assert "Gate 2" in guarded
+    assert "North Concourse" in guarded
+    assert "Gate 3" not in guarded
+    assert enforce_route_grounding("Where is food?", "en", unsafe_reply) == unsafe_reply
+    assert enforce_route_grounding("Ruta accesible a la Seccion 114", "es", unsafe_reply) == unsafe_reply
+    grounded_reply = "Use Gate 2, continue through North Concourse, and follow signs to Section 114."
+    assert (
+        enforce_route_grounding("What is the accessible route to Section 114?", "en", grounded_reply) == grounded_reply
+    )
 
 
 @pytest.mark.asyncio

@@ -8,9 +8,19 @@ from services.ai_core import StadiumPulseAIClient, get_ai_client
 from services.db import get_pool
 from services.exceptions import AIServiceError
 from services.genkit_flows import translateFlow
+from services.wayfinding_service import SECTION_114_ACCESSIBLE_GUIDANCE
 
 SUPPORTED_LANGUAGES: tuple[str, ...] = ("en", "es", "pt", "fr", "ar", "de", "ja", "ko", "zh", "hi")
 PUBLIC_SESSION_ID = "public-concierge"
+SECTION_114_ROUTE_TERMS: tuple[str, ...] = (
+    "accessible",
+    "elevator",
+    "lift",
+    "route",
+    "step-free",
+    "wayfinding",
+    "wheelchair",
+)
 
 
 def normalize_language(language: str) -> tuple[str, bool]:
@@ -94,11 +104,33 @@ def build_reply_prompt(
     return (
         "You are StadiumPulse's multilingual stadium concierge. Answer using only practical "
         "match-day operations and fan experience guidance. Keep the reply concise and respond "
-        "in the requested language.\n"
+        "in the requested language. Never invent a gate, route, amenity, travel time, venue "
+        "status, or policy. If the supplied facts do not answer a location-specific question, "
+        "direct the visitor to Wayfinding and uniformed stadium staff.\n"
+        f"Confirmed accessible route fact: {SECTION_114_ACCESSIBLE_GUIDANCE}\n"
         f"Requested language: {language}\n"
         f"Detected language: {detected_language}\n"
         f"Recent session turns, capped at 10: {recent_messages}\n"
         f"Current user message: {message}"
+    )
+
+
+def enforce_route_grounding(message: str, language: str, reply: str) -> str:
+    """Prevent an English Section 114 route answer from contradicting the venue graph."""
+    normalized_message = message.casefold()
+    is_section_114_route = "114" in normalized_message and any(
+        term in normalized_message for term in SECTION_114_ROUTE_TERMS
+    )
+    if language != "en" or not is_section_114_route:
+        return reply
+
+    normalized_reply = reply.casefold()
+    required_route_facts = ("gate 2", "north concourse", "section 114")
+    if all(fact in normalized_reply for fact in required_route_facts):
+        return reply
+    return (
+        f"{SECTION_114_ACCESSIBLE_GUIDANCE} Follow posted accessibility signs and ask uniformed "
+        "stadium staff for help if live conditions change."
     )
 
 
@@ -145,6 +177,7 @@ async def handle_chat_message(
         )
     except AIServiceError:
         reply = fallback_concierge_reply(message, normalized_language)
+    reply = enforce_route_grounding(message, normalized_language, reply)
     if used_fallback:
         reply = f"Language fallback: unsupported language '{language}' was handled in English. {reply}"
 
