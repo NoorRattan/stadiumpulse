@@ -83,10 +83,11 @@ presented as live integrations.
 
 ## Reliability and security lessons
 
-A shallow health endpoint is not enough for a hosted demo. The warm-up workflow
-therefore calls both `/health` and the database-backed `/api/demo` path every ten
-minutes. That exercises the useful dependency path instead of hiding database
-wake-up latency behind a process-only response.
+A shallow health endpoint is not enough for a hosted demo. A Cloudflare Cron
+Trigger therefore calls both `/health` and the database-backed `/api/demo` path
+every ten minutes, with GitHub Actions retained as a best-effort fallback. That
+exercises the useful dependency path instead of hiding database wake-up latency
+behind a process-only response.
 
 The security boundary is tested at several layers: JWT validation, server-side
 role checks, Postgres RLS, a protected role-change trigger, and a custom access-

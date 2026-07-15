@@ -74,7 +74,7 @@ After Render creates the service, copy the deploy hook URL and health URL into G
 | Secret                   | Purpose                                           |
 | ------------------------ | ------------------------------------------------- |
 | `RENDER_DEPLOY_HOOK_URL` | `deploy.yml` calls this after backend tests pass. |
-| `RENDER_HEALTH_URL`      | `keep-alive.yml` pings this every ten minutes.    |
+| `RENDER_HEALTH_URL`      | GitHub's fallback `keep-alive.yml` pings this URL. |
 
 ## Frontend on Cloudflare Pages
 
@@ -90,6 +90,12 @@ Set these GitHub secrets:
 | `VITE_SUPABASE_ANON_KEY`  | Supabase anon key for browser auth and Realtime. Do not use the service-role key here. |
 | `VITE_API_BASE_URL`       | Public Render backend base URL.                                                        |
 | `VITE_ENABLE_GOOGLE_AUTH` | Set to `true` only when Google OAuth is enabled.                                       |
+
+The same Cloudflare credentials deploy the cron-only
+`stadiumpulse-keep-alive` Worker. Its native Cron Trigger calls both `/health`
+and the database-backed `/api/demo` every ten minutes. GitHub Actions retains a
+second best-effort schedule, but it is a fallback because scheduled Actions may
+be delayed or dropped under load.
 
 Cloudflare Pages should serve the Vite app directly. API calls go to Render through `VITE_API_BASE_URL`; do not add a Firebase-style `/api/**` rewrite.
 

@@ -1,0 +1,14 @@
+name = "stadiumpulse-keep-alive"
+main = "src/index.mjs"
+compatibility_date = "2026-07-15"
+workers_dev = false
+
+[triggers]
+crons = ["*/10 * * * *"]
+
+[vars]
+HEALTH_URL = "https://stadiumpulse-d7js.onrender.com/health"
+DEMO_URL = "https://stadiumpulse-d7js.onrender.com/api/demo"
+
+[observability]
+enabled = true
