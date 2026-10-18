@@ -3,27 +3,14 @@ export type UserRole = "fan" | "staff" | "volunteer";
 
 /** Supported concierge and preference language codes. */
 export type SupportedLanguage =
-  | "en"
-  | "es"
-  | "pt"
-  | "fr"
-  | "ar"
-  | "de"
-  | "ja"
-  | "ko"
-  | "zh"
-  | "hi";
+  "en" | "es" | "pt" | "fr" | "ar" | "de" | "ja" | "ko" | "zh" | "hi";
 
 /** Stadium zone category from Supabase and the backend API. */
 type ZoneType = "concourse" | "gate" | "seating-block" | "transit-hub";
 
 /** Accessibility need enum shared with the wayfinding request. */
 export type AccessibilityNeed =
-  | "wheelchair"
-  | "visual"
-  | "hearing"
-  | "cognitive"
-  | "none";
+  "wheelchair" | "visual" | "hearing" | "cognitive" | "none";
 
 /** Congestion level returned on route options. */
 type CongestionLevel = "low" | "medium" | "high" | "critical";

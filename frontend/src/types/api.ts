@@ -327,10 +327,7 @@ export interface AccountExperienceResponse {
 }
 
 export type PortalKind =
-  | "volunteer"
-  | "operations"
-  | "venue-staff"
-  | "command-center";
+  "volunteer" | "operations" | "venue-staff" | "command-center";
 
 export interface RolePortalResponse {
   portal: PortalKind;
