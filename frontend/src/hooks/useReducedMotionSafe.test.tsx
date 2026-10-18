@@ -42,7 +42,7 @@ describe("useReducedMotionSafe", () => {
   });
 
   it("honors the operating-system preference without a provider", () => {
-    vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+    vi.spyOn(window, "matchMedia").mockImplementation((query: string) => ({
       matches: query === "(prefers-reduced-motion: reduce)",
       media: query,
       onchange: null,

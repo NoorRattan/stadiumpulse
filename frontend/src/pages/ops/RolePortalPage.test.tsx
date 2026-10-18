@@ -1,5 +1,4 @@
 import { screen } from "@testing-library/react";
-import type { User } from "@supabase/supabase-js";
 import { axe } from "vitest-axe";
 
 import { createAuthValue, renderWithAuth } from "@/testUtils";
@@ -43,7 +42,7 @@ const authValue = createAuthValue({
     aud: "authenticated",
     created_at: "2026-07-14T00:00:00Z",
     user_metadata: {},
-  } as User,
+  },
   role: "staff",
 });
 

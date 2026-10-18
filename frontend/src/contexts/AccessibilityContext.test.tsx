@@ -17,7 +17,7 @@ describe("AccessibilityProvider", () => {
   it("tracks the operating-system reduced-motion preference", () => {
     let matches = true;
     let listener: MediaChangeListener | undefined;
-    vi.mocked(window.matchMedia).mockImplementation(
+    vi.spyOn(window, "matchMedia").mockImplementation(
       (query: string): MediaQueryList => ({
         matches,
         media: query,

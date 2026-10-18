@@ -4,15 +4,15 @@ version = "0.1.0"
 description = "FastAPI backend for StadiumPulse match-day operations and fan experience."
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi==0.139.0",
-    "uvicorn[standard]==0.34.0",
-    "pydantic==2.13.4",
-    "pydantic-settings==2.14.2",
+    "fastapi==0.143.5",
+    "uvicorn[standard]==0.54.0",
+    "pydantic==2.14.1",
+    "pydantic-settings==2.16.0",
     "asyncpg==0.31.0",
     "httpx==0.28.1",
     "PyJWT[crypto]==2.13.0",
     "slowapi==0.1.10",
-    "python-dotenv==1.2.2",
+    "python-dotenv==1.2.4",
 ]
 
 [project.optional-dependencies]
