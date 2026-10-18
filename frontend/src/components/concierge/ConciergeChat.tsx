@@ -75,7 +75,7 @@ function ComposerControls(props: ComposerControlsProps) {
         <Send aria-hidden="true" className="size-4" /> Send message
       </Button>
       <Button
-        aria-label={voiceLabel}
+        aria-label={`${props.listening ? "Stop listening" : "Speak"}: ${voiceLabel}`}
         disabled={!props.recognitionAvailable || props.sending}
         onClick={props.toggleListening}
         type="button"

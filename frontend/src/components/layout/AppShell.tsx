@@ -100,7 +100,7 @@ export const AppShell = memo(function AppShell({
             <Link
               to="/login"
               className="navbar-login-btn"
-              aria-label="Sign in to your account"
+              aria-label="Login: sign in to your account"
             >
               <LogIn aria-hidden="true" className="size-3.5" />
               <span>Login</span>

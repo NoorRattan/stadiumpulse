@@ -34,7 +34,7 @@ test("venue signals are keyboard-native and expose selection state", async ({
   await expect(venueMap).toBeVisible({ timeout: 30_000 });
 
   const zone = venueMap.getByRole("button", {
-    name: /Gate 4, 58 percent density/,
+    name: "Gate 4 58% Moderate density",
   });
   await zone.focus();
   await expect(zone).toBeFocused();
@@ -140,7 +140,7 @@ test("voice input fills the concierge message composer", async ({ page }) => {
     }
   });
   await page.goto("/concierge", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Start voice input" }).click();
+  await page.getByRole("button", { name: "Speak: Start voice input" }).click();
   await expect(page.getByLabel("Message")).toHaveValue("Take me to Gate 12");
   await expect(page.getByText(/Voice captured/)).toBeVisible();
 });

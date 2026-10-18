@@ -116,18 +116,17 @@ function ZoneSignalButton({
   const density = Math.round(zone.currentDensityPct);
   return (
     <button
-      aria-label={`${zone.name}, ${density} percent density, ${style.label}`}
       aria-pressed={selected}
       className="group min-h-16 rounded-xl border border-border bg-background/60 p-3 text-left transition hover:border-primary/50 aria-pressed:border-primary aria-pressed:bg-primary/10"
       onClick={() => onSelect?.(zone)}
       type="button"
     >
       <span className="flex items-center justify-between gap-3">
-        <span className="font-bold text-foreground">{zone.name}</span>
+        <span className="font-bold text-foreground">{zone.name}</span>{" "}
         <span className="font-mono text-sm font-bold text-foreground">
           {density}%
         </span>
-      </span>
+      </span>{" "}
       <span className="mt-1 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
         {style.label} density
       </span>

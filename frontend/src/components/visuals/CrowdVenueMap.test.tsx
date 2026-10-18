@@ -19,7 +19,7 @@ describe("CrowdVenueMap", () => {
     render(<CrowdVenueMap zones={[zone]} onSelectZone={onSelectZone} />);
 
     const zoneButton = screen.getByRole("button", {
-      name: "Gate 4, 58 percent density, Moderate",
+      name: "Gate 4 58% Moderate density",
     });
 
     expect(within(zoneButton).getByText("Moderate density")).toBeVisible();

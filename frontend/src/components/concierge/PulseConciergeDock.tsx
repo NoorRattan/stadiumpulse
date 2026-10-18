@@ -229,7 +229,7 @@ export function PulseConciergeDock(): JSX.Element {
       )}
       <button
         aria-expanded={open}
-        aria-label="Open AI Concierge"
+        aria-label={`Ask PulseAI: ${open ? "Close" : "Open"} AI Concierge`}
         className="ml-auto flex min-h-14 items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--brand-cyan),var(--brand-magenta))] px-4 font-extrabold text-[var(--brand-deep)] shadow-[0_0_32px_var(--glow-accent)] transition-transform hover:scale-[1.03]"
         onClick={() => setOpen((current) => !current)}
         type="button"

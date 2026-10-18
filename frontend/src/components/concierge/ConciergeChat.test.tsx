@@ -57,7 +57,9 @@ it("captures speech into the message composer", async () => {
     </LanguageProvider>,
   );
 
-  fireEvent.click(screen.getByRole("button", { name: "Start voice input" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Speak: Start voice input" }),
+  );
 
   expect(await screen.findByDisplayValue("Take me to Gate 12")).toBeVisible();
   expect(screen.getByText(/Voice captured/)).toBeVisible();
@@ -94,7 +96,9 @@ it("explains when microphone permission is denied", async () => {
     </LanguageProvider>,
   );
 
-  fireEvent.click(screen.getByRole("button", { name: "Start voice input" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Speak: Start voice input" }),
+  );
 
   expect(await screen.findByText(/Microphone access was denied/)).toBeVisible();
 });

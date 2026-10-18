@@ -160,7 +160,7 @@ export function ThemeToggle(): JSX.Element {
   const Icon = isDark ? Moon : Sun;
   return (
     <button
-      aria-label={`Switch to ${next} theme`}
+      aria-label={`${isDark ? "Dark" : "Light"} theme. Switch to ${next} theme`}
       className="theme-toggle-pill"
       onClick={(event) => transitionTheme(event, next)}
       title={`Switch to ${next} theme`}
